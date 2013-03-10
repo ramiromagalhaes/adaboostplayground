@@ -8,14 +8,14 @@
 #ifndef WEAKHYPOTHESIS_H_
 #define WEAKHYPOTHESIS_H_
 
-#include "Classification.h"
+#include "Common.h"
 
 template<typename dataType> class WeakHypothesis {
 public:
 	WeakHypothesis() { }
 	virtual ~WeakHypothesis() { }
 
-	Classification test(const dataType &data) {
+	virtual Classification test(const dataType &data) {
 		return no;
 	}
 
