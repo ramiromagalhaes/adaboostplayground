@@ -5,7 +5,32 @@
  *      Author: ramiro
  */
 
+
+
+#include <vector>
+#include <utility>
+#include "WeakLearner.h"
+#include "StrongHypothesis.h"
 #include "Adaboost.h"
+
+
+
+class Point {
+public:
+	double x, y;
+
+	Point () {
+		x = y = 0;
+	}
+
+	Point(double x, double y) {
+		this->x = x;
+		this->y = y;
+	}
+
+	virtual ~Point() {}
+};
+
 
 
 enum Orientation {
@@ -14,17 +39,7 @@ enum Orientation {
 
 
 
-class Point {
-public:
-	double x, y;
-	Point(double x, double y) {
-		this->x = x;
-		this->y = y;
-	}
-};
-
-
-
+/*
 class Hypothesis {
 public:
 	Hypothesis(Orientation o, double p) {
@@ -32,7 +47,7 @@ public:
 		position = p;
 	}
 
-	Classification test(const Point input) {
+	Classification test(const Point &input) {
 		switch (orientation) {
 			case vertical:
 				//if input is to the left of the vertical bar, then return yes
@@ -57,12 +72,20 @@ private:
 	double position;
 	Orientation orientation;
 };
-
-
+*/
 
 
 
 int main(int argc, char **argv) {
+	//TODO load training data from somewhere
+	typename Adaboost<Point>::traning_data_type training_data;
+
+	WeakLearner<Point> learner; //TODO implement a real Weak Learner
+
+	StrongHypothesis<Point> strong_hypothesis;
+
+	Adaboost<Point> boosting(learner);
+	boosting.train(training_data, strong_hypothesis);
 
 	return 0;
 }

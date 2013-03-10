@@ -8,15 +8,20 @@
 #ifndef WEAKLEARNER_H_
 #define WEAKLEARNER_H_
 
-#include "WeakHypothesis.h"
 #include <vector>
+#include <utility>
+#include "WeakHypothesis.h"
 
-template <class dataType> class WeakLearner {
+template <typename dataType> class WeakLearner {
 public:
-	WeakLearner();
-	virtual ~WeakLearner();
+	WeakLearner() {} //note: intentional inline con/destructor. See http://stackoverflow.com/questions/644397/c-class-with-template-cannot-find-its-constructor
+	virtual ~WeakLearner() {}
 
-	WeakHypothesis learn(std::vector<dataType> &data);
+	WeakHypothesis<dataType> learn(const std::vector< std::pair<dataType, Classification> > &data) {
+		// TODO Auto-generated method stub
+		return WeakHypothesis<dataType>();
+	}
+
 };
 
 #endif /* WEAKLEARNER_H_ */
