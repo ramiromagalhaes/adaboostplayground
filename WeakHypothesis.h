@@ -16,7 +16,6 @@ public:
 	virtual ~WeakHypothesis() { }
 
 	virtual Classification classify(const dataType &data) const =0;
-
 };
 
 #endif /* WEAKHYPOTHESIS_H_ */
