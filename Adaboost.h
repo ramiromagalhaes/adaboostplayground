@@ -9,11 +9,9 @@
 #define ADABOOST_H_
 
 #include <vector>
-#include <utility>
 #include <math.h>
 #include <numeric>
 #include <algorithm>
-#include <stdlib.h>
 #include "Common.h"
 #include "WeakLearner.h"
 #include "WeakHypothesis.h"
@@ -27,22 +25,26 @@ public:
 	WeakLearner <dataType> *weak_learner;
 
 	Adaboost(WeakLearner<dataType> *w_learner) {
-		t= 0;
+		t = 0;
 		weak_learner = w_learner;
 	}
 
 	virtual ~Adaboost() { }
 
-	//TODO implement a way to allow different sampling strategies
+	//TODO implement means to allow different sampling strategies
 
 private:
 	int t; //iteration (epoch) counter
+
+
 
 	void init_distribution(std::vector<double> &distribution) {
 		for (std::vector<double>::iterator it = distribution.begin(); it != distribution.end(); ++it) {
 			*it = 1.0 / distribution.size();
 		}
 	}
+
+
 
 	void resample(
 			const int sample_size,
@@ -57,10 +59,12 @@ private:
 
 		for (typename std::vector < training_data <dataType> >::iterator it = sample.begin(); it != sample.end(); ++it) {
 			const double random = ((double)rand() / (double)RAND_MAX) * (double)sample_size;
-			const int index = binarySearch(cumulative_distribution_weight, random);
+			const int index = binarySearchForSamples(cumulative_distribution_weight, random);
 			*it = trainingData[index];
 		}
 	}
+
+
 
 	void init_cumulative_distribution(
 			const int sample_size,
@@ -77,13 +81,27 @@ private:
 	}
 
 
+
 	double evaluate_error(
-			const WeakHypothesis<dataType> &weakHypothesis,
+			WeakHypothesis<dataType> const * const weakHypothesis,
 			const std::vector < training_data <dataType> > &trainingData) {
-		return 0;
+
+		unsigned int wrong_conclusions = 0;
+
+		for (typename std::vector < training_data<dataType> >::const_iterator itTrain = trainingData.begin(); itTrain != trainingData.end(); ++itTrain) {
+			const training_data<dataType> train = *itTrain;
+
+			if (weakHypothesis->classify(train.data) != train.classification) {
+				wrong_conclusions++;
+			}
+		}
+
+		return (double)wrong_conclusions / (double)trainingData.size();
 	}
 
-	int binarySearch(
+
+
+	int binarySearchForSamples(
 			std::vector<double> cumulative_distribution_weight,
 			double key) {
 		int first = 0;
@@ -107,15 +125,16 @@ private:
 	}
 
 
+
 	void update_distribution(
 			const double alpha,
-			WeakHypothesis<dataType> &current_weak_hypothesis,
+			WeakHypothesis<dataType> const * const current_weak_hypothesis,
 			const std::vector < training_data <dataType> > &trainingData,
 			std::vector<double> &distribution_weight) {
 		const double normalizationFactor = std::accumulate(distribution_weight.begin(), distribution_weight.end(), 0);
 
 		for (unsigned int i = 0; i < distribution_weight.size(); i++) {
-			const Classification trainingResult = current_weak_hypothesis.test(trainingData[i].data);
+			const Classification trainingResult = current_weak_hypothesis->classify(trainingData[i].data);
 
 			distribution_weight[i] = distribution_weight[i]
 					* exp(-1.0 * alpha * trainingData[i].classification * trainingResult)
@@ -127,39 +146,37 @@ public:
 	void train(
 			const std::vector < training_data <dataType> > &trainingData,
 			StrongHypothesis<dataType> strong_hypothesis) {
-		//TODO iterations and stop criteria
 
 		const int m = trainingData.size(); //the size of sample we'll take from the trainingData to train a WeakLearner each round
 		std::vector<double> distribution_weight(m); //holds all weights elements in the last t
 		init_distribution(distribution_weight);
 
-	/*
-		TODO Evaluate how these variables will be used.
+		//TODO How will I store the internal data?
 
-		std::vector<double> alpha; //alpha subscript t where t is the vector's index
-		std::vector<double> weightedError;
-	*/
+		do { //TODO how will iterations and stop criteria work
+			//Main Adaboost loop
 
-		//get a sample of the trainingData...
-		std::vector < training_data <dataType> > sample(m);
-		resample(m, distribution_weight, trainingData, sample);
+			//get a sample of the trainingData...
+			std::vector < training_data <dataType> > sample(m);
+			resample(m, distribution_weight, trainingData, sample);
 
-		//train weak learner and get weak hypothesis
-		WeakHypothesis<dataType> weak_hypothesis = weak_learner->learn(sample);
+			//train weak learner and get weak hypothesis
+			WeakHypothesis<dataType> * weak_hypothesis = weak_learner->learn(sample);
 
-		//select h(t) to minimalize the weighted error
-		const double weighted_error = evaluate_error(weak_hypothesis, trainingData);
+			//select h(t) to minimalize the weighted error
+			const double weighted_error = evaluate_error(weak_hypothesis, trainingData);
 
-		//choose alpha(t)
-		const double alpha = log( (1.0 - weighted_error)/weighted_error ) / 2.0;
+			//choose alpha(t)
+			const double alpha = log( (1.0 - weighted_error)/weighted_error ) / 2.0;
 
-		//update the distribution
-		update_distribution(alpha, weak_hypothesis, trainingData, distribution_weight);
+			//update the distribution
+			update_distribution(alpha, weak_hypothesis, trainingData, distribution_weight);
 
-		t++; //next training iteration
+			t++; //next training iteration
 
-		//output final hypothesis
-		strong_hypothesis.include(alpha, weak_hypothesis);
+			//output final hypothesis
+			strong_hypothesis.insert(alpha, weak_hypothesis);
+		} while (t < 3);
 	}
 
 };

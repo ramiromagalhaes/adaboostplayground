@@ -8,8 +8,6 @@
 #ifndef CLASSIFICATION_H_
 #define CLASSIFICATION_H_
 
-#include <vector>
-
 enum Classification {
 	no = -1, yes = 1
 };

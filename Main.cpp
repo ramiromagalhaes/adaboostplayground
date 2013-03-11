@@ -46,12 +46,12 @@ public:
 	Orientation orientation;
 	double position;
 
-	MyWeakHypothesis(Orientation o, double p) : WeakHypothesis() {
+	MyWeakHypothesis(Orientation o, double p) : WeakHypothesis<Point>() {
 		orientation = o;
 		position = p;
 	}
 
-	virtual Classification test(const Point &input) {
+	virtual Classification classify(const Point &input) const {
 		switch (orientation) {
 			case vertical:
 				//if input is to the left of the vertical bar, then return yes
@@ -97,7 +97,7 @@ public:
 
 	~MyWeakLearner(){};
 
-	virtual WeakHypothesis<Point> learn(const std::vector < training_data<Point> > &data) {
+	virtual WeakHypothesis<Point>* learn(const std::vector < training_data<Point> > &data) {
 		double lowest_error = 1;
 		std::vector < training_data<Point> >::size_type best_hypothesis_index = 0;
 
@@ -108,7 +108,7 @@ public:
 			for (typename std::vector < training_data<Point> >::const_iterator itTrain = data.begin(); itTrain != data.end(); ++itTrain) {
 				training_data<Point> train = *itTrain;
 
-				if (hyp.test(train.data) != train.classification) {
+				if (hyp.classify(train.data) != train.classification) {
 					wrong_conclusions++;
 				}
 			}
@@ -121,7 +121,7 @@ public:
 			}
 		}
 
-		return hypothesis[best_hypothesis_index];
+		return &hypothesis[best_hypothesis_index];
 	}
 };
 
@@ -181,6 +181,7 @@ int main(int argc, char **argv) {
 	WeakLearner<Point> *learner = new MyWeakLearner();
 	StrongHypothesis<Point> strong_hypothesis;
 	Adaboost<Point> boosting(learner);
+
 	boosting.train(training_data, strong_hypothesis);
 
 	{

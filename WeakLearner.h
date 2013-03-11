@@ -16,10 +16,11 @@
 template <typename dataType> class WeakLearner {
 public:
 	WeakLearner() {} //note: intentional inline con/destructor. See http://stackoverflow.com/questions/644397/c-class-with-template-cannot-find-its-constructor
-	virtual ~WeakLearner() {}
+	virtual ~WeakLearner() {
+		//WeakLearner implementations should hold the data
+	}
 
-	virtual WeakHypothesis<dataType> learn(const std::vector < training_data <dataType> > &data) =0;
-
+	virtual WeakHypothesis<dataType>* learn(const std::vector < training_data <dataType> > &data) =0;
 };
 
 #endif /* WEAKLEARNER_H_ */

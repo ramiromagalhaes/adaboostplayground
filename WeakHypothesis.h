@@ -15,9 +15,7 @@ public:
 	WeakHypothesis() { }
 	virtual ~WeakHypothesis() { }
 
-	virtual Classification test(const dataType &data) {
-		return no;
-	}
+	virtual Classification classify(const dataType &data) const =0;
 
 };
 
