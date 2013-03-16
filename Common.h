@@ -8,6 +8,8 @@
 #ifndef CLASSIFICATION_H_
 #define CLASSIFICATION_H_
 
+
+
 enum Classification {
 	no = -1, yes = 1
 };
@@ -22,9 +24,7 @@ public:
 		classification = no;
 	}
 
-	training_data (const dataType d, const Classification c) {
-		data = d;
-		classification = c;
+	training_data (const dataType d, const Classification c) : data(d), classification(c) {
 	}
 };
 
