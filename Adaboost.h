@@ -17,16 +17,12 @@
 #include "WeakHypothesis.h"
 #include "StrongHypothesis.h"
 
-
+#include <iostream>
 
 
 template<typename dataType> class Adaboost {
 public:
-	WeakLearner <dataType> *weak_learner;
-
-	Adaboost(WeakLearner<dataType> *w_learner) {
-		t = 0;
-		weak_learner = w_learner;
+	Adaboost(WeakLearner<dataType> *w_learner) : t(0), weak_learner(w_learner) {
 	}
 
 	virtual ~Adaboost() { }
@@ -35,6 +31,7 @@ public:
 
 private:
 	int t; //iteration (epoch) counter
+	WeakLearner <dataType> *weak_learner;
 
 
 
@@ -58,7 +55,7 @@ private:
 		init_cumulative_distribution(sample_size, distribution_weight, cumulative_distribution_weight);
 
 		for (typename std::vector < training_data <dataType> >::iterator it = sample.begin(); it != sample.end(); ++it) {
-			const double random = ((double)rand() / (double)RAND_MAX) * (double)sample_size;
+			const double random = ((double)rand() / (double)RAND_MAX);
 			const int index = binarySearchForSamples(cumulative_distribution_weight, random);
 			*it = trainingData[index];
 		}
@@ -102,7 +99,7 @@ private:
 
 
 	int binarySearchForSamples(
-			std::vector<double> cumulative_distribution_weight,
+			std::vector<double> &cumulative_distribution_weight,
 			double key) {
 		int first = 0;
 		int last = cumulative_distribution_weight.size() - 1;
@@ -110,7 +107,7 @@ private:
 		while (first <= last) {
 			int mid = (first + last) / 2; //compute mid point.
 
-			if (key < cumulative_distribution_weight[mid] && key > cumulative_distribution_weight[mid - 1]) {
+			if (key <= cumulative_distribution_weight[mid] && key >= cumulative_distribution_weight[mid - 1]) {
 				return mid; // found it. return position
 			}
 
@@ -121,7 +118,8 @@ private:
 			}
 		}
 
-		return -(first + 1);    // failed to find key
+		throw 2;
+		//return -(first + 1);    // failed to find key
 	}
 
 
@@ -145,7 +143,7 @@ private:
 public:
 	void train(
 			const std::vector < training_data <dataType> > &trainingData,
-			StrongHypothesis<dataType> strong_hypothesis) {
+			StrongHypothesis<dataType> &strong_hypothesis) {
 
 		const int m = trainingData.size(); //the size of sample we'll take from the trainingData to train a WeakLearner each round
 		std::vector<double> distribution_weight(m); //holds all weights elements in the last t
@@ -160,10 +158,8 @@ public:
 			std::vector < training_data <dataType> > sample(m);
 			resample(m, distribution_weight, trainingData, sample);
 
-			//train weak learner and get weak hypothesis
+			//train weak learner and get weak hypothesis so that it minimalizes the weighted error
 			WeakHypothesis<dataType> * weak_hypothesis = weak_learner->learn(sample);
-
-			//select h(t) to minimalize the weighted error
 			const double weighted_error = evaluate_error(weak_hypothesis, trainingData);
 
 			//choose alpha(t)
