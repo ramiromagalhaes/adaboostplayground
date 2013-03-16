@@ -35,7 +35,7 @@ private:
 
 
 
-	void init_distribution(std::vector<double> &distribution) {
+	inline void init_distribution(std::vector<double> &distribution) {
 		for (std::vector<double>::iterator it = distribution.begin(); it != distribution.end(); ++it) {
 			*it = 1.0 / distribution.size();
 		}
@@ -131,7 +131,7 @@ private:
 			std::vector<double> &distribution_weight) {
 		const double normalizationFactor = std::accumulate(distribution_weight.begin(), distribution_weight.end(), 0);
 
-		for (unsigned int i = 0; i < distribution_weight.size(); i++) {
+		for (std::vector<double>::size_type i = 0; i < distribution_weight.size(); i++) {
 			const Classification trainingResult = current_weak_hypothesis->classify(trainingData[i].data);
 
 			distribution_weight[i] = distribution_weight[i]
@@ -139,6 +139,8 @@ private:
 					/ normalizationFactor;
 		}
 	}
+
+
 
 public:
 	void train(
@@ -162,8 +164,9 @@ public:
 			WeakHypothesis<dataType> * weak_hypothesis = weak_learner->learn(sample);
 			const double weighted_error = evaluate_error(weak_hypothesis, trainingData);
 
-			//choose alpha(t)
-			const double alpha = log( (1.0 - weighted_error)/weighted_error ) / 2.0;
+			//choose alpha(t) - Note that this 0 error treatment is not described in the original algorithm
+			const double alpha = weighted_error == 0.0 ? 0.5 :
+					log( (1.0 - weighted_error)/weighted_error ) / 2.0;
 
 			//update the distribution
 			update_distribution(alpha, weak_hypothesis, trainingData, distribution_weight);
