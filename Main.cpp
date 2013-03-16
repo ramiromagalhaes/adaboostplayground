@@ -53,10 +53,10 @@ public:
 		switch (orientation) {
 			case vertical:
 				//if input is to the left of the vertical bar, then return yes
-				return input.x <= position ? yes : no;
+				return input.x < position ? yes : no;
 			case horizontal:
 				//if input is above the horizontal bar, then return yes
-				return input.y >= position ? yes : no;
+				return input.y > position ? yes : no;
 			default:
 				throw 1;
 		}
