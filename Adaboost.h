@@ -35,69 +35,6 @@ private:
 
 
 
-	inline void init_distribution(std::vector<double> &distribution) {
-		for (std::vector<double>::iterator it = distribution.begin(); it != distribution.end(); ++it) {
-			*it = 1.0 / distribution.size();
-		}
-	}
-
-
-
-	void resample(
-			const int sample_size,
-			const std::vector<double> &distribution_weight,
-			const std::vector < training_data <dataType> > &trainingData,
-			std::vector < training_data <dataType> > &sample) {
-
-		//TODO assertion: all vectors must be of sample_size
-
-		std::vector<double> cumulative_distribution_weight(sample_size);
-		init_cumulative_distribution(sample_size, distribution_weight, cumulative_distribution_weight);
-
-		for (typename std::vector < training_data <dataType> >::iterator it = sample.begin(); it != sample.end(); ++it) {
-			const double random = ((double)rand() / (double)RAND_MAX);
-			const int index = binarySearchForSamples(cumulative_distribution_weight, random);
-			*it = trainingData[index];
-		}
-	}
-
-
-
-	void init_cumulative_distribution(
-			const int sample_size,
-			const std::vector<double> &distribution_weight,
-			std::vector<double> &cumulative_distribution_weight) {
-		for (int i = 0; i < sample_size; i++) {
-			if (i) {
-				cumulative_distribution_weight[i] = cumulative_distribution_weight[i - 1] + distribution_weight[i];
-			} else {
-				cumulative_distribution_weight[i] = distribution_weight[i];
-			}
-		}
-		cumulative_distribution_weight[sample_size - 1] = 1;
-	}
-
-
-
-	double evaluate_error(
-			WeakHypothesis<dataType> const * const weakHypothesis,
-			const std::vector < training_data <dataType> > &trainingData) {
-
-		unsigned int wrong_conclusions = 0;
-
-		for (typename std::vector < training_data<dataType> >::const_iterator itTrain = trainingData.begin(); itTrain != trainingData.end(); ++itTrain) {
-			const training_data<dataType> train = *itTrain;
-
-			if (weakHypothesis->classify(train.data) != train.classification) {
-				wrong_conclusions++;
-			}
-		}
-
-		return (double)wrong_conclusions / (double)trainingData.size();
-	}
-
-
-
 	int binarySearchForSamples(
 			std::vector<double> &cumulative_distribution_weight,
 			double key) {
@@ -118,8 +55,68 @@ private:
 			}
 		}
 
-		throw 2;
-		//return -(first + 1);    // failed to find key
+		throw 2; // failed to find key
+	}
+
+
+
+	inline void init_distribution(std::vector<double> &distribution) {
+		for (std::vector<double>::iterator it = distribution.begin(); it != distribution.end(); ++it) {
+			*it = 1.0 / distribution.size();
+		}
+	}
+
+
+
+	inline void init_cumulative_distribution(
+			const int sample_size,
+			const std::vector<double> &distribution_weight,
+			std::vector<double> &cumulative_distribution_weight) {
+		for (int i = 0; i < sample_size; i++) {
+			if (i) {
+				cumulative_distribution_weight[i] = cumulative_distribution_weight[i - 1] + distribution_weight[i];
+			} else {
+				cumulative_distribution_weight[i] = distribution_weight[i];
+			}
+		}
+
+		cumulative_distribution_weight[sample_size - 1] = 1;
+	}
+
+
+
+	void resample(
+			const int sample_size,
+			const std::vector<double> &distribution_weight,
+			const std::vector < training_data <dataType> > &trainingData,
+			std::vector < training_data <dataType> > &sample) {
+		//TODO assertion: all vectors must be of sample_size
+
+		std::vector<double> cumulative_distribution_weight(sample_size);
+		init_cumulative_distribution(sample_size, distribution_weight, cumulative_distribution_weight);
+
+		for (typename std::vector < training_data <dataType> >::iterator it = sample.begin(); it != sample.end(); ++it) {
+			const double random = (double)rand() / (double)RAND_MAX;
+			const int index = binarySearchForSamples(cumulative_distribution_weight, random);
+			*it = trainingData[index];
+		}
+	}
+
+
+
+	double evaluate_error(
+			WeakHypothesis<dataType> const * const weak_hypothesis,
+			const std::vector < training_data <dataType> >& trainingData) {
+
+		unsigned int wrong_conclusions = 0;
+
+		for (typename std::vector < training_data<dataType> >::const_iterator itTrain = trainingData.begin(); itTrain != trainingData.end(); ++itTrain) {
+			if (weak_hypothesis->classify(itTrain->data) != itTrain->classification) {
+				wrong_conclusions++;
+			}
+		}
+
+		return (double)wrong_conclusions / (double)trainingData.size();
 	}
 
 
@@ -129,14 +126,18 @@ private:
 			WeakHypothesis<dataType> const * const current_weak_hypothesis,
 			const std::vector < training_data <dataType> > &trainingData,
 			std::vector<double> &distribution_weight) {
-		const double normalizationFactor = std::accumulate(distribution_weight.begin(), distribution_weight.end(), 0);
+
+		double normalizationFactor = 0;
 
 		for (std::vector<double>::size_type i = 0; i < distribution_weight.size(); i++) {
 			const Classification trainingResult = current_weak_hypothesis->classify(trainingData[i].data);
 
-			distribution_weight[i] = distribution_weight[i]
-					* exp(-1.0 * alpha * trainingData[i].classification * trainingResult)
-					/ normalizationFactor;
+			distribution_weight[i] *= exp(-alpha * trainingData[i].classification * trainingResult);
+			normalizationFactor += distribution_weight[i];
+		}
+
+		for (std::vector<double>::size_type i = 0; i < distribution_weight.size(); i++) {
+			distribution_weight[i] /= normalizationFactor;
 		}
 	}
 
@@ -148,7 +149,7 @@ public:
 			StrongHypothesis<dataType> &strong_hypothesis) {
 
 		const int m = trainingData.size(); //the size of sample we'll take from the trainingData to train a WeakLearner each round
-		std::vector<double> distribution_weight(m); //holds all weights elements in the last t
+		std::vector<double> distribution_weight(m); //holds all weight elements in the last t
 		init_distribution(distribution_weight);
 
 		//TODO How will I store the internal data?
@@ -164,9 +165,14 @@ public:
 			WeakHypothesis<dataType> * weak_hypothesis = weak_learner->learn(sample);
 			const double weighted_error = evaluate_error(weak_hypothesis, trainingData);
 
-			//choose alpha(t) - Note that this 0 error treatment is not described in the original algorithm
-			const double alpha = weighted_error == 0.0 ? 0.5 :
-					log( (1.0 - weighted_error)/weighted_error ) / 2.0;
+			//Note: this 0 error treatment is not described in the original algorithm. It's not supposed to happen...
+			if (!weighted_error) {
+				strong_hypothesis.insert(1, weak_hypothesis);
+				break;
+			}
+
+			//choose alpha(t)
+			const double alpha = log( (1.0 - weighted_error)/weighted_error ) / 2.0;
 
 			//update the distribution
 			update_distribution(alpha, weak_hypothesis, trainingData, distribution_weight);
