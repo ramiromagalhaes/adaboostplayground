@@ -9,6 +9,10 @@
 #define STRONGHYPOTHESIS_H_
 
 #include <vector>
+#include <ostream>
+#include <iostream>
+#include <iomanip>
+
 #include "Common.h"
 #include "WeakHypothesis.h"
 
@@ -57,6 +61,26 @@ public:
 		return result >= 0 ? yes : no;
 	}
 
+
+
+	//TODO lean more about C++ friend operator. It is a funny thing...
+	friend std::ostream& operator<<(std::ostream& os, StrongHypothesis<dataType>& s) {
+		os << "Strong Hypothesis {" << std::endl;
+		for (typename std::vector<entry>::const_iterator it = s.hypothesis.begin(); it != s.hypothesis.end(); ++it) {
+			os << "\t " << std::fixed << std::setprecision(4) << (*it).weight << ' ';
+
+			WeakHypothesis<dataType> const * const wht = (*it).weakHypothesis;
+
+			os << wht->toString();
+			os << std::endl;
+		}
+
+		os << '}' << std::endl;
+
+		return os;
+	}
 };
+
+
 
 #endif /* STRONGHYPOTHESIS_H_ */

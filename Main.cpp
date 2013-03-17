@@ -9,7 +9,10 @@
 
 #include <vector>
 #include <iostream>
-#include <iomanip>
+#include <sstream> //for std::stringstream
+#include <string>
+#include <ostream>
+
 #include "Common.h"
 #include "WeakLearner.h"
 #include "StrongHypothesis.h"
@@ -17,24 +20,19 @@
 
 
 
-class Point {
-public:
-	double x, y;
-
-	Point () {
-		x = y = 0;
-	}
-
-	Point(double _x, double _y) : x(_x), y(_y) {
-	}
-
-	virtual ~Point() {}
+enum Orientation {
+	vertical, horizontal
 };
 
 
 
-enum Orientation {
-	vertical, horizontal
+class Point {
+public:
+	double x, y;
+
+	Point () : x(0), y(0) {}
+	Point(double _x, double _y) : x(_x), y(_y) {}
+	virtual ~Point() {}
 };
 
 
@@ -51,15 +49,28 @@ public:
 
 	virtual Classification classify(const Point &input) const {
 		switch (orientation) {
-			case vertical:
-				//if input is to the left of the vertical bar, then return yes
-				return input.x < position ? yes : no;
-			case horizontal:
-				//if input is above the horizontal bar, then return yes
-				return input.y > position ? yes : no;
-			default:
-				throw 1;
+			case vertical  : return input.x < position ? yes : no;
+			case horizontal: return input.y > position ? yes : no;
+			default        : throw 1;
 		}
+	}
+
+	virtual std::string toString() const {
+		std::string os("Hypothesis ");
+		switch (orientation) {
+			case vertical  : os.append("V "); break;
+			case horizontal: os.append("H "); break;
+			default        : throw 3;
+		}
+
+		{
+			std::ostringstream oss;
+			oss << position;
+			os.append(oss.str());
+		}
+
+		os.append("; ");
+		return os;
 	}
 };
 
@@ -107,9 +118,7 @@ public:
 			int wrong_conclusions = 0;
 
 			for (typename std::vector < training_data<Point> >::const_iterator itTrain = data.begin(); itTrain != data.end(); ++itTrain) {
-				training_data<Point> const * const train = &(*itTrain);
-
-				if (hyp->classify(train->data) != train->classification) {
+				if (hyp->classify(itTrain->data) != itTrain->classification) {
 					wrong_conclusions++;
 				}
 			}
@@ -120,9 +129,6 @@ public:
 				lowest_error = error_ratio;
 				best_hypothesis_index = i;
 			}
-
-//			std::cout << "Lowest error: " << std::setprecision(10) << lowest_error << std::endl;
-//			std::cout << "Best hyp index: " << best_hypothesis_index << std::endl;
 		}
 
 		return hypothesis[best_hypothesis_index];
@@ -142,7 +148,7 @@ std::vector < training_data <Point> >* get_training_data() {
 	d = new training_data<Point>(*p, yes);
 	data->push_back(*d);
 
-	p = new Point(3, 9);
+	p = new Point(3, 5);
 	d = new training_data<Point>(*p, yes);
 	data->push_back(*d);
 
@@ -158,7 +164,7 @@ std::vector < training_data <Point> >* get_training_data() {
 	d = new training_data<Point>(*p, yes);
 	data->push_back(*d);
 
-	p = new Point(7, 9);
+	p = new Point(6, 9);
 	d = new training_data<Point>(*p, no);
 	data->push_back(*d);
 
@@ -190,6 +196,9 @@ int main(int argc, char **argv) {
 		Adaboost<Point> boosting(learner);
 
 		boosting.train(*training_data, strong_hypothesis);
+
+		std::cout << strong_hypothesis;
+		std::cout << std::endl;
 
 		{
 			Point p(2, 8);
