@@ -71,7 +71,7 @@ public:
 
 			WeakHypothesis<dataType> const * const wht = (*it).weakHypothesis;
 
-			os << wht->toString();
+			os << wht->str();
 			os << std::endl;
 		}
 

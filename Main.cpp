@@ -55,7 +55,7 @@ public:
 		}
 	}
 
-	virtual std::string toString() const {
+	virtual std::string str() const {
 		std::string os("Hypothesis ");
 		switch (orientation) {
 			case vertical  : os.append("V "); break;

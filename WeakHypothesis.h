@@ -20,7 +20,7 @@ public:
 
 	virtual Classification classify(const dataType &data) const =0;
 
-	virtual std::string toString() const =0;
+	virtual std::string str() const =0;
 
 };
 
