@@ -1,7 +1,9 @@
 .project
 .settings
 *.o
+*.d
 adaboostplayground
 Default/*.o
+Default/*.d
 Default/adaboostplayground
 
