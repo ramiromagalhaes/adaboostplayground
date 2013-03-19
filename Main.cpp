@@ -166,7 +166,7 @@ std::vector < training_data <Point> * >* get_training_data() {
 	data->push_back(d);
 
 	p = new Point(6, 9);
-	d = new training_data<Point>(*p, yes);
+	d = new training_data<Point>(*p, no);
 	data->push_back(d);
 
 	p = new Point(8, 5);
