@@ -50,7 +50,7 @@ public:
 	virtual Classification classify(const Point &input) const {
 		switch (orientation) {
 			case vertical  : return input.x < position ? yes : no;
-			case horizontal: return input.y > position ? yes : no;
+			case horizontal: return input.y < position ? yes : no;
 			default        : throw 1;
 		}
 	}
@@ -109,7 +109,7 @@ public:
 
 	~MyWeakLearner(){};
 
-	virtual WeakHypothesis<Point>* learn(const std::vector < training_data<Point> > &data) {
+	virtual WeakHypothesis<Point>* learn(const std::vector < training_data<Point> * > &data) {
 		double lowest_error = 1;
 		std::vector < training_data<Point> >::size_type best_hypothesis_index = 0;
 
@@ -117,8 +117,9 @@ public:
 			MyWeakHypothesis const * const hyp = hypothesis[i];
 			int wrong_conclusions = 0;
 
-			for (typename std::vector < training_data<Point> >::const_iterator itTrain = data.begin(); itTrain != data.end(); ++itTrain) {
-				if (hyp->classify(itTrain->data) != itTrain->classification) {
+			for (typename std::vector < training_data<Point> * >::const_iterator itTrain = data.begin(); itTrain != data.end(); ++itTrain) {
+				training_data<Point> const * const train = *itTrain;
+				if (hyp->classify(train->data) != train->classification) {
 					wrong_conclusions++;
 				}
 			}
@@ -137,59 +138,59 @@ public:
 
 
 
-std::vector < training_data <Point> >* get_training_data() {
-	std::vector < training_data <Point> > * const data = new std::vector < training_data <Point> >();
+std::vector < training_data <Point> * >* get_training_data() {
+	std::vector < training_data <Point> * > * const data = new std::vector < training_data <Point> * >();
 
 	Point *p = new Point(1, 2);
 	training_data<Point> * d = new training_data<Point>(*p, yes);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(2, 7);
 	d = new training_data<Point>(*p, yes);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(3, 5);
 	d = new training_data<Point>(*p, yes);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(4, 4);
 	d = new training_data<Point>(*p, yes);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(5, 6);
 	d = new training_data<Point>(*p, yes);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(6, 2);
 	d = new training_data<Point>(*p, yes);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(6, 9);
 	d = new training_data<Point>(*p, no);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(8, 5);
 	d = new training_data<Point>(*p, no);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(9, 7);
 	d = new training_data<Point>(*p, no);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(8, 3);
 	d = new training_data<Point>(*p, no);
-	data->push_back(*d);
+	data->push_back(d);
 
 	p = new Point(9, 1);
 	d = new training_data<Point>(*p, no);
-	data->push_back(*d);
+	data->push_back(d);
 
 	return data;
 }
 
 int main(int argc, char **argv) {
 	try {
-		std::vector < training_data <Point> > const * const training_data = get_training_data();
+		std::vector < training_data <Point> * > const * const training_data = get_training_data();
 
 		WeakLearner<Point> *learner = new MyWeakLearner();
 		StrongHypothesis<Point> strong_hypothesis;
