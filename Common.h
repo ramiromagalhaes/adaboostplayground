@@ -15,16 +15,16 @@ enum Classification {
 };
 
 //"typedef"
-template < typename dataType > class training_data {
+template < typename dataType > class LabeledExample {
 public:
-	dataType data;
-	Classification classification;
+	dataType example;
+	Classification label;
 
-	training_data() {
-		classification = no;
+	LabeledExample() {
+		label = no;
 	}
 
-	training_data (const dataType d, const Classification c) : data(d), classification(c) {
+	LabeledExample (const dataType d, const Classification c) : example(d), label(c) {
 	}
 };
 

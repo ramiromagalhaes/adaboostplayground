@@ -20,7 +20,10 @@ public:
 		//WeakLearner implementations should hold the data
 	}
 
-	virtual WeakHypothesis<dataType>* learn(const std::vector < training_data <dataType> * > &data) =0;
+	virtual WeakHypothesis<dataType>* learn(
+		const std::vector < LabeledExample <dataType> * > &training_sample,
+		const std::vector < double > &weighted_errors,
+		double &weighted_error) =0;
 };
 
 #endif /* WEAKLEARNER_H_ */

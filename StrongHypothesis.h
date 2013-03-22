@@ -12,7 +12,6 @@
 #include <ostream>
 #include <iostream>
 #include <iomanip>
-
 #include "Common.h"
 #include "WeakHypothesis.h"
 

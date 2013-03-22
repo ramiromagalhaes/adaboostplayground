@@ -7,6 +7,7 @@
 
 
 
+#include <limits>
 #include <vector>
 #include <iostream>
 #include <sstream> //for std::stringstream
@@ -109,28 +110,33 @@ public:
 
 	~MyWeakLearner(){};
 
-	virtual WeakHypothesis<Point>* learn(const std::vector < training_data<Point> * > &data) {
-		double lowest_error = 1;
-		std::vector < training_data<Point> >::size_type best_hypothesis_index = 0;
+	virtual WeakHypothesis<Point>* learn(
+			const std::vector < LabeledExample<Point> * > &training_sample,
+			const std::vector < double > &weighted_errors,
+			double &weighted_error) {
 
-		for (std::vector < training_data<Point> >::size_type i = 0; i < hypothesis.size(); i++) {
+		double lowest_error = std::numeric_limits<double>::max();
+		std::vector < LabeledExample<Point> >::size_type best_hypothesis_index = 0;
+
+		for (std::vector < LabeledExample<Point> >::size_type i = 0; i < hypothesis.size(); i++) {
 			MyWeakHypothesis const * const hyp = hypothesis[i];
-			int wrong_conclusions = 0;
 
-			for (typename std::vector < training_data<Point> * >::const_iterator itTrain = data.begin(); itTrain != data.end(); ++itTrain) {
-				training_data<Point> const * const train = *itTrain;
-				if (hyp->classify(train->data) != train->classification) {
-					wrong_conclusions++;
+			weighted_error = 0;
+
+			for (typename std::vector < LabeledExample<Point> * >::const_iterator itTrain = training_sample.begin(); itTrain != training_sample.end(); ++itTrain) {
+				LabeledExample<Point> const * const train = *itTrain;
+				if (hyp->classify(train->example) != train->label) {
+					weighted_error += weighted_errors[i];
 				}
 			}
 
-			const double error_ratio = ((double)wrong_conclusions) / ((double)data.size());
-
-			if (error_ratio < lowest_error) {
-				lowest_error = error_ratio;
+			if (weighted_error < lowest_error) {
+				lowest_error = weighted_error;
 				best_hypothesis_index = i;
 			}
 		}
+
+		weighted_error = lowest_error;
 
 		return hypothesis[best_hypothesis_index];
 	}
@@ -138,51 +144,51 @@ public:
 
 
 
-std::vector < training_data <Point> * >* get_training_data() {
-	std::vector < training_data <Point> * > * const data = new std::vector < training_data <Point> * >();
+std::vector < LabeledExample <Point> * >* get_training_data() {
+	std::vector < LabeledExample <Point> * > * const data = new std::vector < LabeledExample <Point> * >();
 
 	Point *p = new Point(1, 2);
-	training_data<Point> * d = new training_data<Point>(*p, yes);
+	LabeledExample<Point> * d = new LabeledExample<Point>(*p, yes);
 	data->push_back(d);
 
 	p = new Point(2, 7);
-	d = new training_data<Point>(*p, yes);
+	d = new LabeledExample<Point>(*p, yes);
 	data->push_back(d);
 
 	p = new Point(3, 5);
-	d = new training_data<Point>(*p, yes);
+	d = new LabeledExample<Point>(*p, yes);
 	data->push_back(d);
 
 	p = new Point(4, 4);
-	d = new training_data<Point>(*p, yes);
+	d = new LabeledExample<Point>(*p, yes);
 	data->push_back(d);
 
 	p = new Point(5, 6);
-	d = new training_data<Point>(*p, yes);
+	d = new LabeledExample<Point>(*p, yes);
 	data->push_back(d);
 
 	p = new Point(6, 2);
-	d = new training_data<Point>(*p, yes);
+	d = new LabeledExample<Point>(*p, yes);
 	data->push_back(d);
 
 	p = new Point(6, 9);
-	d = new training_data<Point>(*p, no);
+	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
 	p = new Point(8, 5);
-	d = new training_data<Point>(*p, no);
+	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
 	p = new Point(9, 7);
-	d = new training_data<Point>(*p, no);
+	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
 	p = new Point(8, 3);
-	d = new training_data<Point>(*p, no);
+	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
 	p = new Point(9, 1);
-	d = new training_data<Point>(*p, no);
+	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
 	return data;
@@ -190,13 +196,13 @@ std::vector < training_data <Point> * >* get_training_data() {
 
 int main(int argc, char **argv) {
 	try {
-		std::vector < training_data <Point> * > const * const training_data = get_training_data();
+		std::vector < LabeledExample <Point> * > const * const training_set = get_training_data();
 
 		WeakLearner<Point> *learner = new MyWeakLearner();
 		StrongHypothesis<Point> strong_hypothesis;
 		Adaboost<Point> boosting(learner);
 
-		boosting.train(*training_data, strong_hypothesis);
+		boosting.train(*training_set, strong_hypothesis);
 
 		std::cout << strong_hypothesis;
 		std::cout << std::endl;
