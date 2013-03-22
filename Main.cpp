@@ -34,6 +34,12 @@ public:
 	Point () : x(0), y(0) {}
 	Point(double _x, double _y) : x(_x), y(_y) {}
 	virtual ~Point() {}
+
+	friend std::ostream& operator<<(std::ostream& os, Point& s) {
+		os << "Point(" << s.x << ", " << s.y << ")";
+		return os;
+	}
+
 };
 
 
@@ -207,25 +213,9 @@ int main(int argc, char **argv) {
 		std::cout << strong_hypothesis;
 		std::cout << std::endl;
 
-		{
-			Point p(2, 8);
-			std::cout << strong_hypothesis.classify(p) << std::endl;
-		}
-		{
-			Point p(6, 6);
-			std::cout << strong_hypothesis.classify(p) << std::endl;
-		}
-		{
-			Point p(1, 1);
-			std::cout << strong_hypothesis.classify(p) << std::endl;
-		}
-		{
-			Point p(7, 9);
-			std::cout << strong_hypothesis.classify(p) << std::endl;
-		}
-		{
-			Point p(8, 3);
-			std::cout << strong_hypothesis.classify(p) << std::endl;
+		for (std::vector < LabeledExample <Point> * >::const_iterator it = training_set->begin(); it != training_set->end(); ++it) {
+			LabeledExample<Point> * le = *it;
+			std::cout << le->example << " esperado " << le->label << " obtido " << strong_hypothesis.classify(le->example) << std::endl;
 		}
 	} catch (int e) {
 		std::cout << "Erro " << e << std::endl;
