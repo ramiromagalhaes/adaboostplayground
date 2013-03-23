@@ -117,9 +117,17 @@ public:
 	~MyWeakLearner(){};
 
 	virtual WeakHypothesis<Point>* learn(
-			const std::vector < LabeledExample<Point> * > &training_sample,
-			const std::vector < double > &weighted_errors,
+			const std::vector < LabeledExample<Point> * > &training_set,
+			const std::vector < double > &weight_distribution,
 			double &weighted_error) {
+
+		const int m = training_set.size(); //the size of sample we'll take from the trainingData to train a WeakLearner each round
+
+		//get a sample of the trainingData...
+		std::vector < LabeledExample <Point> * > training_sample(m);
+		std::vector < double > training_sample_weight_distribution(m);
+		resample(m, weight_distribution, training_set, training_sample, training_sample_weight_distribution);
+
 
 		double lowest_error = std::numeric_limits<double>::max();
 		std::vector < LabeledExample<Point> >::size_type best_hypothesis_index = 0;
@@ -129,10 +137,10 @@ public:
 
 			weighted_error = 0;
 
-			for (typename std::vector < LabeledExample<Point> * >::const_iterator itTrain = training_sample.begin(); itTrain != training_sample.end(); ++itTrain) {
+			for (typename std::vector < LabeledExample<Point> * >::const_iterator itTrain = training_set.begin(); itTrain != training_set.end(); ++itTrain) {
 				LabeledExample<Point> const * const train = *itTrain;
 				if (hyp->classify(train->example) != train->label) {
-					weighted_error += weighted_errors[i];
+					weighted_error += weight_distribution[i];
 				}
 			}
 
