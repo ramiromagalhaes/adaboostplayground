@@ -21,12 +21,6 @@
 
 
 
-enum Orientation {
-	vertical, horizontal
-};
-
-
-
 class Point {
 public:
 	double x, y;
@@ -46,18 +40,29 @@ public:
 
 class MyWeakHypothesis : public WeakHypothesis<Point> {
 public:
+	enum Orientation {
+		vertical = -1, horizontal = 1
+	};
+
+	enum Inclusion {
+		before = -1, after = 1
+	};
+
 	Orientation orientation;
+	Inclusion inclusion;
 	double position;
 
-	MyWeakHypothesis(Orientation o, double p) : WeakHypothesis<Point>() {
+	MyWeakHypothesis(Orientation o, Inclusion i, double p) : WeakHypothesis<Point>() {
+		//orientation(o), inclusion(i), position(p)
 		orientation = o;
+		inclusion = i;
 		position = p;
 	}
 
 	virtual Classification classify(const Point &input) const {
 		switch (orientation) {
-			case vertical  : return input.x < position ? yes : no;
-			case horizontal: return input.y < position ? yes : no;
+			case vertical  : return inclusion * (input.x - position) >= 0 ? yes : no;
+			case horizontal: return inclusion * (input.y - position) >= 0 ? yes : no;
 			default        : throw 1;
 		}
 	}
@@ -68,6 +73,12 @@ public:
 			case vertical  : os.append("V "); break;
 			case horizontal: os.append("H "); break;
 			default        : throw 3;
+		}
+
+		switch (inclusion) {
+			case before : os.append("B "); break;
+			case after  : os.append("A "); break;
+			default        : throw 4;
 		}
 
 		{
@@ -89,29 +100,19 @@ private:
 
 public:
 	MyWeakLearner() : WeakLearner<Point>() {
-		MyWeakHypothesis *h = new MyWeakHypothesis(vertical, 3);
-		hypothesis.insert(hypothesis.end(), h);
+		for (int i = 1; i < 10; i++) {
+			MyWeakHypothesis *h = new MyWeakHypothesis(MyWeakHypothesis::vertical, MyWeakHypothesis::before, i);
+			hypothesis.insert(hypothesis.end(), h);
 
-		h = new MyWeakHypothesis(vertical, 5);
-		hypothesis.insert(hypothesis.end(), h);
+			h = new MyWeakHypothesis(MyWeakHypothesis::vertical, MyWeakHypothesis::after, i);
+			hypothesis.insert(hypothesis.end(), h);
 
-		h = new MyWeakHypothesis(vertical, 7);
-		hypothesis.insert(hypothesis.end(), h);
+			h = new MyWeakHypothesis(MyWeakHypothesis::horizontal, MyWeakHypothesis::before, i);
+			hypothesis.insert(hypothesis.end(), h);
 
-		h = new MyWeakHypothesis(vertical, 9);
-		hypothesis.insert(hypothesis.end(), h);
-
-		h = new MyWeakHypothesis(horizontal, 2);
-		hypothesis.insert(hypothesis.end(), h);
-
-		h = new MyWeakHypothesis(horizontal, 4);
-		hypothesis.insert(hypothesis.end(), h);
-
-		h = new MyWeakHypothesis(horizontal, 6);
-		hypothesis.insert(hypothesis.end(), h);
-
-		h = new MyWeakHypothesis(horizontal, 8);
-		hypothesis.insert(hypothesis.end(), h);
+			h = new MyWeakHypothesis(MyWeakHypothesis::horizontal, MyWeakHypothesis::after, i);
+			hypothesis.insert(hypothesis.end(), h);
+		}
 	};
 
 	~MyWeakLearner(){};
@@ -121,36 +122,39 @@ public:
 			const std::vector < double > &weight_distribution,
 			double &weighted_error) {
 
+		/*
 		const int m = training_set.size(); //the size of sample we'll take from the trainingData to train a WeakLearner each round
 
 		//get a sample of the trainingData...
 		std::vector < LabeledExample <Point> * > training_sample(m);
 		std::vector < double > training_sample_weight_distribution(m);
 		resample(m, weight_distribution, training_set, training_sample, training_sample_weight_distribution);
-
+		*/
 
 		double lowest_error = std::numeric_limits<double>::max();
-		std::vector < LabeledExample<Point> >::size_type best_hypothesis_index = 0;
+		std::vector < MyWeakHypothesis* >::size_type best_hypothesis_index = 0;
 
-		for (std::vector < LabeledExample<Point> >::size_type i = 0; i < hypothesis.size(); i++) {
+		for (std::vector < MyWeakHypothesis* >::size_type i = 0; i < hypothesis.size(); i++) {
 			MyWeakHypothesis const * const hyp = hypothesis[i];
 
-			weighted_error = 0;
+			double weak_hypothesis_weight = 0;
 
-			for (typename std::vector < LabeledExample<Point> * >::const_iterator itTrain = training_set.begin(); itTrain != training_set.end(); ++itTrain) {
-				LabeledExample<Point> const * const train = *itTrain;
-				if (hyp->classify(train->example) != train->label) {
-					weighted_error += weight_distribution[i];
+			for (std::vector < LabeledExample<Point> * >::size_type j = 0; j < training_set.size(); j++) {
+				if (hyp->classify(training_set[j]->example) != training_set[j]->label) {
+					weak_hypothesis_weight += weight_distribution[j];
 				}
 			}
 
-			if (weighted_error < lowest_error) {
-				lowest_error = weighted_error;
+			if (weak_hypothesis_weight < lowest_error) {
+				lowest_error = weak_hypothesis_weight;
 				best_hypothesis_index = i;
 			}
+
+			//std::cout << "Erro de " << i << ": " << ((double)error_counter / (double)training_set.size()) << std::endl;
 		}
 
 		weighted_error = lowest_error;
+
 
 		return hypothesis[best_hypothesis_index];
 	}
@@ -161,13 +165,8 @@ public:
 std::vector < LabeledExample <Point> * >* get_training_data() {
 	std::vector < LabeledExample <Point> * > * const data = new std::vector < LabeledExample <Point> * >();
 
-	Point *p = new Point(1, 2);
-	LabeledExample<Point> * d = new LabeledExample<Point>(*p, yes);
-	data->push_back(d);
-
-	p = new Point(2, 7);
-	d = new LabeledExample<Point>(*p, yes);
-	data->push_back(d);
+	Point *p;
+	LabeledExample<Point> * d;
 
 	p = new Point(3, 5);
 	d = new LabeledExample<Point>(*p, yes);
@@ -177,23 +176,131 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	d = new LabeledExample<Point>(*p, yes);
 	data->push_back(d);
 
-	p = new Point(5, 6);
+	p = new Point(4, 5);
 	d = new LabeledExample<Point>(*p, yes);
+	data->push_back(d);
+
+	p = new Point(5, 4);
+	d = new LabeledExample<Point>(*p, yes);
+	data->push_back(d);
+
+	p = new Point(5, 5);
+	d = new LabeledExample<Point>(*p, yes);
+	data->push_back(d);
+
+	p = new Point(6, 5);
+	d = new LabeledExample<Point>(*p, yes);
+	data->push_back(d);
+
+	p = new Point(6, 6);
+	d = new LabeledExample<Point>(*p, yes);
+	data->push_back(d);
+
+	p = new Point(7, 4);
+	d = new LabeledExample<Point>(*p, yes);
+	data->push_back(d);
+
+	p = new Point(7, 5);
+	d = new LabeledExample<Point>(*p, yes);
+	data->push_back(d);
+
+	p = new Point(8, 4);
+	d = new LabeledExample<Point>(*p, yes);
+	data->push_back(d);
+
+	p = new Point(2, 4);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(2, 5);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(3, 2);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(3, 3);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(3, 4);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(3, 6);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(4, 1);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(4, 2);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(4, 3);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(4, 6);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(4, 7);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(5, 2);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(5, 3);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(5, 6);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(5, 7);
+	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
 	p = new Point(6, 2);
-	d = new LabeledExample<Point>(*p, yes);
-	data->push_back(d);
-
-	p = new Point(6, 9);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
-	p = new Point(8, 5);
+	p = new Point(6, 3);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
-	p = new Point(9, 7);
+	p = new Point(6, 4);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(6, 7);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(7, 2);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(7, 3);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(7, 6);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(7, 7);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(8, 2);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
@@ -201,7 +308,19 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
-	p = new Point(9, 1);
+	p = new Point(8, 5);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(8, 6);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(9, 4);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(9, 5);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
@@ -222,7 +341,7 @@ int main(int argc, char **argv) {
 		std::cout << std::endl;
 
 		for (std::vector < LabeledExample <Point> * >::const_iterator it = training_set->begin(); it != training_set->end(); ++it) {
-			LabeledExample<Point> * le = *it;
+			LabeledExample<Point> * const le = *it;
 			std::cout << le->example << " esperado " << le->label << " obtido " << strong_hypothesis.classify(le->example) << std::endl;
 		}
 	} catch (int e) {
