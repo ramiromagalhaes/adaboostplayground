@@ -82,8 +82,7 @@ public:
 			WeakHypothesis<dataType> * weak_hypothesis =
 					weak_learner->learn(training_set, weight_distribution, weighted_error);
 
-			//Note: this 0 error treatment is not described in the original algorithm. It's not supposed to happen...
-			if (!weighted_error) {
+			if (!weighted_error) { //Note: this 0 error treatment is not described in the original algorithm. It should not happen usually.
 				strong_hypothesis.insert(1, weak_hypothesis);
 				break;
 			}
@@ -94,11 +93,11 @@ public:
 			//update the distribution
 			update_distribution(alpha, weak_hypothesis, training_set, weight_distribution);
 
-			t++; //next training iteration
-
 			//output final hypothesis
 			strong_hypothesis.insert(alpha, weak_hypothesis);
-		} while (t < 2);
+
+			t++; //next training iteration
+		} while (t < 20);
 	}
 
 };
