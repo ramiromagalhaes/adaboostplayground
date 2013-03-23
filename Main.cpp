@@ -33,7 +33,6 @@ public:
 		os << "Point(" << s.x << ", " << s.y << ")";
 		return os;
 	}
-
 };
 
 
@@ -340,10 +339,18 @@ int main(int argc, char **argv) {
 		std::cout << strong_hypothesis;
 		std::cout << std::endl;
 
+		int error_counter;
+
 		for (std::vector < LabeledExample <Point> * >::const_iterator it = training_set->begin(); it != training_set->end(); ++it) {
 			LabeledExample<Point> * const le = *it;
-			std::cout << le->example << " esperado " << le->label << " obtido " << strong_hypothesis.classify(le->example) << std::endl;
+			const Classification c = strong_hypothesis.classify(le->example);
+			if (c != le->label) {
+				error_counter++;
+			}
+			std::cout << le->example << " esperado " << le->label << " obtido " << c << std::endl;
 		}
+
+		std::cout << "Erro final de classificação: " << (double)error_counter/(double)training_set->size() << std::endl;
 	} catch (int e) {
 		std::cout << "Erro " << e << std::endl;
 	}
