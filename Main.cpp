@@ -207,11 +207,59 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	d = new LabeledExample<Point>(*p, yes);
 	data->push_back(d);
 
+	p = new Point(1, 1);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(1, 2);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(1, 8);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(1, 9);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(2, 1);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(2, 2);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(2, 3);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
 	p = new Point(2, 4);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
 	p = new Point(2, 5);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(2, 6);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(2, 7);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(2, 8);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(2, 9);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(3, 1);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
@@ -228,6 +276,14 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	data->push_back(d);
 
 	p = new Point(3, 6);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(3, 7);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(3, 8);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
@@ -251,6 +307,18 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
+	p = new Point(4, 8);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(4, 9);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(5, 1);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
 	p = new Point(5, 2);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
@@ -264,6 +332,18 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	data->push_back(d);
 
 	p = new Point(5, 7);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(5, 8);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(5, 9);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(6, 1);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
@@ -283,6 +363,18 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
+	p = new Point(6, 8);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(6, 9);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(7, 1);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
 	p = new Point(7, 2);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
@@ -296,6 +388,10 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	data->push_back(d);
 
 	p = new Point(7, 7);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(8, 1);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
@@ -315,11 +411,35 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
+	p = new Point(8, 7);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(9, 1);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(9, 2);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(9, 3);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
 	p = new Point(9, 4);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
 	p = new Point(9, 5);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(9, 6);
+	d = new LabeledExample<Point>(*p, no);
+	data->push_back(d);
+
+	p = new Point(9, 7);
 	d = new LabeledExample<Point>(*p, no);
 	data->push_back(d);
 
