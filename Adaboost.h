@@ -32,7 +32,7 @@ public:
 	//TODO devise means to implement some flexible stop criteria
 
 private:
-	int t; //iteration (epoch) counter
+	unsigned int t; //iteration (epoch) counter
 	WeakLearner <dataType> *weak_learner;
 
 
@@ -70,7 +70,8 @@ private:
 public:
 	void train(
 			const std::vector < LabeledExample <dataType> * > &training_set,
-			StrongHypothesis<dataType> &strong_hypothesis) {
+			StrongHypothesis<dataType> &strong_hypothesis,
+			const unsigned int maximum_iterations) {
 
 		std::vector<double> weight_distribution(training_set.size()); //holds all weight elements
 		init_distribution(weight_distribution);
@@ -82,22 +83,17 @@ public:
 			WeakHypothesis<dataType> * weak_hypothesis =
 					weak_learner->learn(training_set, weight_distribution, weighted_error);
 
-			if (!weighted_error) { //Note: this 0 error treatment is not described in the original algorithm. It should not happen usually.
-				strong_hypothesis.insert(1, weak_hypothesis);
-				break;
-			}
-
 			//choose alpha(t)
 			const double alpha = log( (1.0 - weighted_error)/weighted_error ) / 2.0;
 
 			//update the distribution
 			update_distribution(alpha, weak_hypothesis, training_set, weight_distribution);
 
-			//output final hypothesis
+			//update the final hypothesis
 			strong_hypothesis.insert(alpha, weak_hypothesis);
 
 			t++; //next training iteration
-		} while (t < 15);
+		} while (t < maximum_iterations);
 	}
 
 };

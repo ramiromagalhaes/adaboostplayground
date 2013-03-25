@@ -13,6 +13,7 @@
 #include <sstream> //for std::stringstream
 #include <string>
 #include <ostream>
+#include <cstdlib>
 
 #include "Common.h"
 #include "WeakLearner.h"
@@ -121,35 +122,31 @@ public:
 			const std::vector < double > &weight_distribution,
 			double &weighted_error) {
 
-		/*
-		const int m = training_set.size(); //the size of sample we'll take from the trainingData to train a WeakLearner each round
-
-		//get a sample of the trainingData...
-		std::vector < LabeledExample <Point> * > training_sample(m);
-		std::vector < double > training_sample_weight_distribution(m);
-		resample(m, weight_distribution, training_set, training_sample, training_sample_weight_distribution);
-		*/
+		const double maximum_weighted_error = 0.5;
 
 		double lowest_error = std::numeric_limits<double>::max();
-		std::vector < MyWeakHypothesis* >::size_type best_hypothesis_index = 0;
+		std::vector < MyWeakHypothesis* >::size_type best_hypothesis_index = training_set.size();
 
 		for (std::vector < MyWeakHypothesis* >::size_type i = 0; i < hypothesis.size(); i++) {
 			MyWeakHypothesis const * const hyp = hypothesis[i];
 
-			double weak_hypothesis_weight = 0;
+			double hypothesis_weighted_error = 0;
 
 			for (std::vector < LabeledExample<Point> * >::size_type j = 0; j < training_set.size(); j++) {
 				if (hyp->classify(training_set[j]->example) != training_set[j]->label) {
-					weak_hypothesis_weight += weight_distribution[j];
+					hypothesis_weighted_error += weight_distribution[j];
 				}
 			}
 
-			if (weak_hypothesis_weight < lowest_error) {
-				lowest_error = weak_hypothesis_weight;
+			if (hypothesis_weighted_error < maximum_weighted_error && hypothesis_weighted_error < lowest_error) {
+				lowest_error = hypothesis_weighted_error;
 				best_hypothesis_index = i;
 			}
+		}
 
-			//std::cout << "Erro de " << i << ": " << ((double)error_counter / (double)training_set.size()) << std::endl;
+		//no hypothesis fulfilled the criteria to
+		if (best_hypothesis_index == training_set.size()) {
+			throw 10;
 		}
 
 		weighted_error = lowest_error;
@@ -447,33 +444,44 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 }
 
 int main(int argc, char **argv) {
-	try {
+		const unsigned int maximum_iterations = strtol(argv[1], 0, 10);
+
 		std::vector < LabeledExample <Point> * > const * const training_set = get_training_data();
 
 		WeakLearner<Point> *learner = new MyWeakLearner();
 		StrongHypothesis<Point> strong_hypothesis;
 		Adaboost<Point> boosting(learner);
 
-		boosting.train(*training_set, strong_hypothesis);
+		try {
+			boosting.train(*training_set, strong_hypothesis, maximum_iterations);
+		} catch (int e) {
+			std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;
+		}
 
-		std::cout << strong_hypothesis;
-		std::cout << std::endl;
-
-		int error_counter;
+		int false_positive = 0;
+		int true_negative = 0; //positive samples that were classified as negative.
 
 		for (std::vector < LabeledExample <Point> * >::const_iterator it = training_set->begin(); it != training_set->end(); ++it) {
 			LabeledExample<Point> * const le = *it;
 			const Classification c = strong_hypothesis.classify(le->example);
-			if (c != le->label) {
-				error_counter++;
+			if (le->label == yes) {
+				if (c == no) {
+					true_negative++;
+				}
+			} else /* le->label == no*/ {
+				if (c == yes) {
+					false_positive++;
+				}
 			}
+
 			std::cout << le->example << " esperado " << le->label << " obtido " << c << std::endl;
 		}
 
-		std::cout << "Erro final de classificação: " << (double)error_counter/(double)training_set->size() << std::endl;
-	} catch (int e) {
-		std::cout << "Erro " << e << std::endl;
-	}
+		std::cout << std::endl << strong_hypothesis << std::endl;
+		std::cout << "True negative        : " << (double)true_negative  / (double)training_set->size() << std::endl;
+		std::cout << "False positive       : " << (double)false_positive / (double)training_set->size() << std::endl;
+		std::cout << "Misclassified        : " << (double)(true_negative + false_positive) / (double)training_set->size() << std::endl;
+		std::cout << "Correctly classified : " << (double)(training_set->size() - true_negative - false_positive) / (double)training_set->size() << std::endl;
 
 	return 0;
 }
