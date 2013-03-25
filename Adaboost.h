@@ -97,7 +97,7 @@ public:
 			strong_hypothesis.insert(alpha, weak_hypothesis);
 
 			t++; //next training iteration
-		} while (t < 20);
+		} while (t < 15);
 	}
 
 };
