@@ -1,12 +1,3 @@
-/*
- * Main.cpp
- *
- *  Created on: 02/03/2013
- *      Author: ramiro
- */
-
-
-
 #include <limits>
 #include <vector>
 #include <iostream>

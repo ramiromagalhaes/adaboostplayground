@@ -1,10 +1,3 @@
-/*
- * WeakLearner.h
- *
- *  Created on: 06/03/2013
- *      Author: ramiro
- */
-
 #ifndef WEAKLEARNER_H_
 #define WEAKLEARNER_H_
 

@@ -1,10 +1,3 @@
-/*
- * Adaboost.h
- *
- *  Created on: 02/03/2013
- *      Author: ramiro
- */
-
 #ifndef ADABOOST_H_
 #define ADABOOST_H_
 
@@ -68,7 +61,14 @@ private:
 
 
 public:
-	void train(
+
+    /**
+     * @brief This method trains a strong classifier.
+     * @param training_set A vector of LabeledExamples that will be used in training.
+     * @param strong_hypothesis The object that will hold the strong classifier.
+     * @param maximum_iterations The maximum iterations that this training will perform.
+     */
+    void train(
 			const std::vector < LabeledExample <dataType> * > &training_set,
 			StrongHypothesis<dataType> &strong_hypothesis,
 			const unsigned int maximum_iterations) {

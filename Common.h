@@ -1,10 +1,3 @@
-/*
- * Classification.h
- *
- *  Created on: 06/03/2013
- *      Author: ramiro
- */
-
 #ifndef CLASSIFICATION_H_
 #define CLASSIFICATION_H_
 

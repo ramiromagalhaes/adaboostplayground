@@ -1,10 +1,3 @@
-/*
- * StrongHypothesis.h
- *
- *  Created on: 06/03/2013
- *      Author: ramiro
- */
-
 #ifndef STRONGHYPOTHESIS_H_
 #define STRONGHYPOTHESIS_H_
 
@@ -16,18 +9,22 @@
 #include "WeakHypothesis.h"
 
 
-/*
+/**
  * Instances of this class hold the weights and weak classifiers that make the strong classifier.
  */
 template<typename dataType> class StrongHypothesis {
 private:
 
+    /**
+     * @brief The entry class holds the WeakHypothesis pointer and it's weight.
+     */
 	class entry {
 	public:
 		double weight;
 		WeakHypothesis<dataType> * weakHypothesis;
 
-		entry(double w, WeakHypothesis<dataType> * h) : weight(w), weakHypothesis(h) {}
+        entry(double w, WeakHypothesis<dataType> * h) : weight(w),
+                                                        weakHypothesis(h) {}
 		virtual ~entry() {}
 	};
 
