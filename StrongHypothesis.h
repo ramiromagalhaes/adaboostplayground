@@ -9,6 +9,7 @@
 #include "WeakHypothesis.h"
 
 
+
 /**
  * Instances of this class hold the weights and weak classifiers that make the strong classifier.
  */
@@ -18,63 +19,63 @@ private:
     /**
      * @brief The entry class holds the WeakHypothesis pointer and it's weight.
      */
-	class entry {
-	public:
-		double weight;
-		WeakHypothesis<dataType> * weakHypothesis;
+    class entry {
+    public:
+        weight_type weight;
+        WeakHypothesis<dataType> * weakHypothesis;
 
-        entry(double w, WeakHypothesis<dataType> * h) : weight(w),
-                                                        weakHypothesis(h) {}
-		virtual ~entry() {}
-	};
+        entry(weight_type w, WeakHypothesis<dataType> * h) : weight(w),
+                                                             weakHypothesis(h) {}
+        virtual ~entry() {}
+    };
 
-	std::vector<entry> hypothesis;
+    std::vector<entry> hypothesis;
 
 public:
-	//note: intentional inline methods thanks to templates. See http://stackoverflow.com/questions/644397/c-class-with-template-cannot-find-its-constructor
-	StrongHypothesis() {}
-	virtual ~StrongHypothesis() {
-		//We won't destroy all elements inside the hypothesis because we expect the weak learner to do that.
-	}
+    //note: intentional inline methods thanks to templates. See http://stackoverflow.com/questions/644397/c-class-with-template-cannot-find-its-constructor
+    StrongHypothesis() {}
+    virtual ~StrongHypothesis() {
+        //We won't destroy all elements inside the hypothesis because we expect the weak learner to do that.
+    }
 
 
 
-	void insert(double alpha, WeakHypothesis<dataType> * weak_hypothesis) {
-		entry e(alpha, weak_hypothesis);
-		hypothesis.insert(hypothesis.end(), e);
-	}
+    void insert(weight_type alpha, WeakHypothesis<dataType> * weak_hypothesis) {
+        entry e(alpha, weak_hypothesis);
+        hypothesis.insert(hypothesis.end(), e);
+    }
 
 
 
-	Classification classify(const dataType &input) const {
-		double result = 0;
+    Classification classify(const dataType &input) const {
+        weight_type result = 0;
 
-		for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
-			entry e = *it;
-			result += (e.weight) * (e.weakHypothesis->classify(input));
-		}
+        for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
+            entry e = *it;
+            result += (e.weight) * (e.weakHypothesis->classify(input));
+        }
 
-		return result >= 0 ? yes : no;
-	}
+        return result >= 0 ? yes : no;
+    }
 
 
 
-	//TODO lean more about C++ friend operator. It is a funny thing...
-	friend std::ostream& operator<<(std::ostream& os, StrongHypothesis<dataType>& s) {
-		os << "Strong Hypothesis {" << std::endl;
-		for (typename std::vector<entry>::const_iterator it = s.hypothesis.begin(); it != s.hypothesis.end(); ++it) {
-			os << "\t " << std::fixed << std::setprecision(4) << (*it).weight << ' ';
+    //TODO lean more about C++ friend operator. It is a funny thing...
+    friend std::ostream& operator<<(std::ostream& os, StrongHypothesis<dataType>& s) {
+        os << "Strong Hypothesis {" << std::endl;
+        for (typename std::vector<entry>::const_iterator it = s.hypothesis.begin(); it != s.hypothesis.end(); ++it) {
+            os << "\t " << std::fixed << std::setprecision(4) << (*it).weight << ' ';
 
-			WeakHypothesis<dataType> const * const wht = (*it).weakHypothesis;
+            WeakHypothesis<dataType> const * const wht = (*it).weakHypothesis;
 
-			os << wht->str();
-			os << std::endl;
-		}
+            os << wht->str();
+            os << std::endl;
+        }
 
-		os << '}' << std::endl;
+        os << '}' << std::endl;
 
-		return os;
-	}
+        return os;
+    }
 };
 
 

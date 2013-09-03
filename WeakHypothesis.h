@@ -8,12 +8,12 @@
 
 template<typename dataType> class WeakHypothesis {
 public:
-	WeakHypothesis() { }
-	virtual ~WeakHypothesis() { }
+    WeakHypothesis() { }
+    virtual ~WeakHypothesis() { }
 
-	virtual Classification classify(const dataType &data) const =0;
+    virtual Classification classify(const dataType &data) const =0;
 
-	virtual std::string str() const =0;
+    virtual std::string str() const =0;
 
 };
 
