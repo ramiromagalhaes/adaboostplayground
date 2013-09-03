@@ -434,7 +434,13 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
     return data;
 }
 
+
+
 int main(int argc, char **argv) {
+    if (argc != 2)
+    {
+        return -1;
+    }
     const unsigned int maximum_iterations = strtol(argv[1], 0, 10);
 
     std::vector < LabeledExample <Point> * > const * const training_set = get_training_data();
