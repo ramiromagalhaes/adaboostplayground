@@ -435,44 +435,44 @@ std::vector < LabeledExample <Point> * >* get_training_data() {
 }
 
 int main(int argc, char **argv) {
-        const unsigned int maximum_iterations = strtol(argv[1], 0, 10);
+    const unsigned int maximum_iterations = strtol(argv[1], 0, 10);
 
-        std::vector < LabeledExample <Point> * > const * const training_set = get_training_data();
+    std::vector < LabeledExample <Point> * > const * const training_set = get_training_data();
 
-        WeakLearner<Point> *learner = new MyWeakLearner();
-        StrongHypothesis<Point> strong_hypothesis;
-        Adaboost<Point> boosting(learner);
+    WeakLearner<Point> *learner = new MyWeakLearner();
+    StrongHypothesis<Point> strong_hypothesis;
+    Adaboost<Point> boosting(learner);
 
-        try {
-            boosting.train(*training_set, strong_hypothesis, maximum_iterations);
-        } catch (int e) {
-            std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;
-        }
+    try {
+        boosting.train(*training_set, strong_hypothesis, maximum_iterations);
+    } catch (int e) {
+        std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;
+    }
 
-        int false_positive = 0;
-        int true_negative = 0; //positive samples that were classified as negative.
+    int false_positive = 0;
+    int true_negative = 0; //positive samples that were classified as negative.
 
-        for (std::vector < LabeledExample <Point> * >::const_iterator it = training_set->begin(); it != training_set->end(); ++it) {
-            LabeledExample<Point> * const le = *it;
-            const Classification c = strong_hypothesis.classify(le->example);
-            if (le->label == yes) {
-                if (c == no) {
-                    true_negative++;
-                }
-            } else /* le->label == no*/ {
-                if (c == yes) {
-                    false_positive++;
-                }
+    for (std::vector < LabeledExample <Point> * >::const_iterator it = training_set->begin(); it != training_set->end(); ++it) {
+        LabeledExample<Point> * const le = *it;
+        const Classification c = strong_hypothesis.classify(le->example);
+        if (le->label == yes) {
+            if (c == no) {
+                true_negative++;
             }
-
-            std::cout << le->example << " esperado " << le->label << " obtido " << c << std::endl;
+        } else /* le->label == no*/ {
+            if (c == yes) {
+                false_positive++;
+            }
         }
 
-        std::cout << std::endl << strong_hypothesis << std::endl;
-        std::cout << "True negative        : " << (double)true_negative  / (double)training_set->size() << std::endl;
-        std::cout << "False positive       : " << (double)false_positive / (double)training_set->size() << std::endl;
-        std::cout << "Misclassified        : " << (double)(true_negative + false_positive) / (double)training_set->size() << std::endl;
-        std::cout << "Correctly classified : " << (double)(training_set->size() - true_negative - false_positive) / (double)training_set->size() << std::endl;
+        std::cout << le->example << " esperado " << le->label << " obtido " << c << std::endl;
+    }
+
+    std::cout << std::endl << strong_hypothesis << std::endl;
+    std::cout << "True negative        : " << (double)true_negative  / (double)training_set->size() << std::endl;
+    std::cout << "False positive       : " << (double)false_positive / (double)training_set->size() << std::endl;
+    std::cout << "Misclassified        : " << (double)(true_negative + false_positive) / (double)training_set->size() << std::endl;
+    std::cout << "Correctly classified : " << (double)(training_set->size() - true_negative - false_positive) / (double)training_set->size() << std::endl;
 
     return 0;
 }
