@@ -21,8 +21,10 @@ protected:
 
     /**
      * @brief binarySearchForSamples Run a binary search over a cumulative distribution and returns
-     *                               the index of the key parameter located in the cumulative distribution vector.
-     * @param cumulative_distribution_weight The cumulative distribution vector. It is assumed that the values increase with the index.
+     *                               the index of the key parameter located in the cumulative distribution
+     *                               vector.
+     * @param cumulative_distribution_weight The cumulative distribution vector. It is assumed that the values
+     *                                       increase with the index.
      * @param key The value which index is to be found.
      * @return The index of key in cumulative_distribution_weight.
      */
@@ -74,12 +76,25 @@ protected:
 
 
 
+    /**
+     * @brief resample Takes samples from training_set and, according to the probabilities found
+     *                 in weight_distribution, produces a sample of from it.
+     * @param training_set The original full training set from which samples will be taken.
+     * @param weight_distribution The weights of each element of training_set. This must be a
+     *                            distribution, i.e., all elements must add up to 1.
+     * @param sample_size The size of the resulting sample.
+     * @param training_sample Output parameter. A collection of samples taken from training_set
+     *                        according to weight_distribution.
+     * @param training_sample_weight_distribution Output parameter. The weights of each element
+     *                                            of training_sample.
+     */
     void resample(
-            const unsigned int sample_size,
-            const std::vector<weight_type> &weight_distribution,
             const std::vector < LabeledExample <dataType> * > &training_set,
+            const std::vector<weight_type> &weight_distribution,
+            const unsigned int sample_size,
             std::vector < LabeledExample <dataType> * > &training_sample,
             std::vector<weight_type> &training_sample_weight_distribution) {
+
         //TODO assertion: all vectors must be of sample_size
 
         std::vector<weight_type> cumulative_distribution_weight(sample_size);
