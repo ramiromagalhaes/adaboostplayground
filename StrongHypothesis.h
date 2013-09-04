@@ -12,6 +12,8 @@
 
 /**
  * Instances of this class hold the weights and weak classifiers that make the strong classifier.
+ * Notice that this class holds pointers to the weak classifiers, added via the insert method.
+ * All those pointers will be deleted on destruction of this class.
  */
 template<typename dataType> class StrongHypothesis {
 private:
@@ -26,7 +28,9 @@ private:
 
         entry(weight_type w, WeakHypothesis<dataType> * h) : weight(w),
                                                              weakHypothesis(h) {}
-        virtual ~entry() {}
+        ~entry() {
+            delete weakHypothesis;
+        }
     };
 
     std::vector<entry> hypothesis;
@@ -34,8 +38,9 @@ private:
 public:
     //note: intentional inline methods thanks to templates. See http://stackoverflow.com/questions/644397/c-class-with-template-cannot-find-its-constructor
     StrongHypothesis() {}
+
     virtual ~StrongHypothesis() {
-        //We won't destroy all elements inside the hypothesis because we expect the weak learner to do that.
+        hypothesis.clear();
     }
 
 
