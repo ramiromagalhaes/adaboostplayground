@@ -475,10 +475,10 @@ int main(int argc, char **argv) {
     }
 
     std::cout << std::endl << strong_hypothesis << std::endl;
-    std::cout << "True negative        : " << (double)true_negative  / (double)training_set->size() << std::endl;
-    std::cout << "False positive       : " << (double)false_positive / (double)training_set->size() << std::endl;
-    std::cout << "Misclassified        : " << (double)(true_negative + false_positive) / (double)training_set->size() << std::endl;
-    std::cout << "Correctly classified : " << (double)(training_set->size() - true_negative - false_positive) / (double)training_set->size() << std::endl;
+    std::cout << "True negative        : " << true_negative  / (double)training_set->size() << std::endl;
+    std::cout << "False positive       : " << false_positive / (double)training_set->size() << std::endl;
+    std::cout << "Misclassified        : " << (true_negative + false_positive) / (double)training_set->size() << std::endl;
+    std::cout << "Correctly classified : " << (training_set->size() - true_negative - false_positive) / (double)training_set->size() << std::endl;
 
     return 0;
 }
