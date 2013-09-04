@@ -15,7 +15,7 @@
  * Notice that this class holds pointers to the weak classifiers, added via the insert method.
  * All those pointers will be deleted on destruction of this class.
  */
-template<typename dataType> class StrongHypothesis {
+class StrongHypothesis {
 private:
 
     /**
@@ -24,10 +24,13 @@ private:
     class entry {
     public:
         weight_type weight;
-        WeakHypothesis<dataType> * weakHypothesis;
+        WeakHypothesis const * weakHypothesis;
 
-        entry(weight_type w, WeakHypothesis<dataType> * h) : weight(w),
-                                                             weakHypothesis(h) {}
+        entry() : weight(0), weakHypothesis(0) {}
+        entry(weight_type w, WeakHypothesis const * h) : weight(w),
+                                                         weakHypothesis(h) {
+
+        }
         ~entry() {
             delete weakHypothesis;
         }
@@ -45,17 +48,17 @@ public:
 
 
 
-    void insert(weight_type alpha, WeakHypothesis<dataType> * weak_hypothesis) {
-        entry e(alpha, weak_hypothesis);
+    void insert(weight_type alpha, WeakHypothesis const * const weak_hypothesis) {
+        entry e(alpha, const_cast<WeakHypothesis const *>(weak_hypothesis)); //from now on, this class is responsible for handling properly these pointers
         hypothesis.insert(hypothesis.end(), e);
     }
 
 
 
-    Classification classify(const dataType &input) const {
+    Classification classify(const cv::Mat &input) const {
         weight_type result = 0;
 
-        for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
+        for (std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
             entry e = *it;
             result += (e.weight) * (e.weakHypothesis->classify(input));
         }
@@ -64,23 +67,7 @@ public:
     }
 
 
-
-    //TODO lean more about C++ friend operator. It is a funny thing...
-    friend std::ostream& operator<<(std::ostream& os, StrongHypothesis<dataType>& s) {
-        os << "Strong Hypothesis {" << std::endl;
-        for (typename std::vector<entry>::const_iterator it = s.hypothesis.begin(); it != s.hypothesis.end(); ++it) {
-            os << "\t " << std::fixed << std::setprecision(4) << (*it).weight << ' ';
-
-            WeakHypothesis<dataType> const * const wht = (*it).weakHypothesis;
-
-            os << wht->str();
-            os << std::endl;
-        }
-
-        os << '}' << std::endl;
-
-        return os;
-    }
+    //TODO accessor methods to the weak hypothesis
 };
 
 

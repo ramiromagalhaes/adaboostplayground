@@ -8,17 +8,22 @@
 #include <iostream>
 #include "Common.h"
 #include "WeakLearner.h"
+#include "ReweightingWeakLearner.h"
 #include "WeakHypothesis.h"
 #include "StrongHypothesis.h"
 
 
 
-template<typename dataType> class Adaboost {
+class Adaboost {
 public:
-    Adaboost(WeakLearner<dataType> *w_learner) : t(0),
-                                                 weak_learner(w_learner) {}
+    Adaboost() : t(0),
+                 weak_learner(new ReweightingWeakLearner()) {}
+    Adaboost(WeakLearner * w_learner) : t(0),
+                                        weak_learner(w_learner) {}
 
-    virtual ~Adaboost() { }
+    virtual ~Adaboost() {
+        delete weak_learner;
+    }
 
     //TODO implement means to allow different sampling strategies
     //TODO Store errors and historic data gathered through the iterations
@@ -27,7 +32,7 @@ public:
 protected:
     unsigned int t; /** iteration (epoch) counter */
 
-    WeakLearner <dataType> *weak_learner;
+    WeakLearner * weak_learner; /** the weak learner used in this Adaboost instance */
 
 
 
@@ -52,16 +57,16 @@ protected:
      */
     void update_distribution(
             const weight_type alpha,
-            WeakHypothesis<dataType> const * const current_weak_hypothesis,
-            const std::vector < LabeledExample <dataType> * > &trainingData,
+            WeakHypothesis const * const current_weak_hypothesis,
+            const std::vector < LabeledExample > &trainingData,
             std::vector<weight_type> &distribution_weight) {
 
         weight_type normalizationFactor = 0;
 
         for (std::vector<weight_type>::size_type i = 0; i < distribution_weight.size(); i++) {
-            const Classification trainingResult = current_weak_hypothesis->classify(trainingData[i]->example);
+            const Classification trainingResult = current_weak_hypothesis->classify(trainingData[i].example);
 
-            distribution_weight[i] *= exp(-alpha * trainingData[i]->label * trainingResult);
+            distribution_weight[i] *= exp(-alpha * trainingData[i].label * trainingResult);
             normalizationFactor += distribution_weight[i];
         }
 
@@ -81,8 +86,9 @@ public:
      * @param maximum_iterations The maximum iterations that this training will perform.
      */
     void train(
-            const std::vector < LabeledExample <dataType> * > &training_set,
-            StrongHypothesis<dataType> &strong_hypothesis,
+            const std::vector < LabeledExample > &training_set,
+            StrongHypothesis &strong_hypothesis,
+            const std::vector < WeakHypothesis * > hypothesis,
             const unsigned int maximum_iterations) {
 
         std::vector<weight_type> weight_distribution(training_set.size()); //holds all weight elements
@@ -92,8 +98,8 @@ public:
 
             //train weak learner and get weak hypothesis so that it minimalizes the weighted error
             weight_type weighted_error = 0;
-            WeakHypothesis<dataType> * weak_hypothesis =
-                    weak_learner->learn(training_set, weight_distribution, weighted_error);
+            WeakHypothesis const * const weak_hypothesis =
+                    weak_learner->learn(training_set, weight_distribution, hypothesis, weighted_error);
 
             //choose alpha(t)
             const weight_type alpha = (weight_type)std::log( (1.0 - weighted_error)/weighted_error ) / 2.0;

@@ -1,6 +1,7 @@
 #ifndef CLASSIFICATION_H_
 #define CLASSIFICATION_H_
 
+#include <opencv2/core.hpp>
 
 
 /**
@@ -23,16 +24,16 @@ enum Classification {
 /**
  * Holds the sample and its classification.
  */
-template < typename dataType > class LabeledExample {
+class LabeledExample {
 public:
-    dataType example;
+    cv::Mat example;
     Classification label;
 
     LabeledExample() {
         label = no;
     }
 
-    LabeledExample (const dataType d, const Classification c) : example(d), label(c) {
+    LabeledExample (const cv::Mat e, const Classification c) : example(e), label(c) {
     }
 };
 
