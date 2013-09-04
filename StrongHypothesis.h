@@ -39,7 +39,7 @@ public:
     //note: intentional inline methods thanks to templates. See http://stackoverflow.com/questions/644397/c-class-with-template-cannot-find-its-constructor
     StrongHypothesis() {}
 
-    virtual ~StrongHypothesis() {
+     ~StrongHypothesis() {
         hypothesis.clear();
     }
 
