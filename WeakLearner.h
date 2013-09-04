@@ -10,8 +10,16 @@
 template <typename dataType> class WeakLearner {
 public:
     WeakLearner() {} //note: intentional inline con/destructor. See http://stackoverflow.com/questions/644397/c-class-with-template-cannot-find-its-constructor
+
     virtual ~WeakLearner() {} //WeakLearner implementations should hold the data
 
+    /**
+     * @brief learn Trains a weak classifier that produces the smallest classification error in the training data set.
+     * @param training_set The samples used to train the weak classifier.
+     * @param weighted_errors The weighted errors of each training sample.
+     * @param weighted_error Output parameter. The classification error associated with the returned weak classifier.
+     * @return A pointer to the WeakHypothesis that "minimalizes" the classification error.
+     */
     virtual WeakHypothesis<dataType>* learn(
         const std::vector < LabeledExample <dataType> * > &training_set,
         const std::vector < weight_type > &weighted_errors,
@@ -105,7 +113,7 @@ protected:
             const int index = binarySearchForSamples(cumulative_distribution_weight, random);
 
             training_sample[i] = training_set[index];
-            training_sample_weight_distribution[i] = weight_distribution[index];
+            training_sample_weight_distribution[i] = weight_distribution[index]; //TODO shouldn't this be a distribution too?
         }
     }
 

@@ -15,8 +15,8 @@
 
 template<typename dataType> class Adaboost {
 public:
-    Adaboost(WeakLearner<dataType> *w_learner) : t(0), weak_learner(w_learner) {
-    }
+    Adaboost(WeakLearner<dataType> *w_learner) : t(0),
+                                                 weak_learner(w_learner) {}
 
     virtual ~Adaboost() { }
 
@@ -24,7 +24,7 @@ public:
     //TODO Store errors and historic data gathered through the iterations
     //TODO devise means to implement some flexible stop criteria
 
-private:
+protected:
     unsigned int t; //iteration (epoch) counter
     WeakLearner <dataType> *weak_learner;
 
