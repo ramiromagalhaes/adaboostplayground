@@ -3,13 +3,9 @@
 
 #include <vector>
 #include <cmath>
-#include <numeric>
-#include <algorithm>
-#include <iostream>
 #include "Common.h"
 #include "WeakLearner.h"
 #include "ReweightingWeakLearner.h"
-#include "WeakHypothesis.h"
 #include "StrongHypothesis.h"
 
 
@@ -18,6 +14,7 @@ class Adaboost {
 public:
     Adaboost() : t(0),
                  weak_learner(new ReweightingWeakLearner()) {}
+
     Adaboost(WeakLearner * w_learner) : t(0),
                                         weak_learner(w_learner) {}
 
@@ -66,7 +63,7 @@ protected:
         for (std::vector<weight_type>::size_type i = 0; i < distribution_weight.size(); i++) {
             const Classification trainingResult = current_weak_hypothesis->classify(trainingData[i].example);
 
-            distribution_weight[i] *= exp(-alpha * trainingData[i].label * trainingResult);
+            distribution_weight[i] *= std::exp(-alpha * trainingData[i].label * trainingResult);
             normalizationFactor += distribution_weight[i];
         }
 
@@ -101,8 +98,8 @@ public:
             WeakHypothesis const * const weak_hypothesis =
                     weak_learner->learn(training_set, weight_distribution, hypothesis, weighted_error);
 
-            //choose alpha(t)
-            const weight_type alpha = (weight_type)std::log( (1.0 - weighted_error)/weighted_error ) / 2.0;
+            //set alpha(t)
+            const weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
 
             //update the distribution
             update_distribution(alpha, weak_hypothesis, training_set, weight_distribution);

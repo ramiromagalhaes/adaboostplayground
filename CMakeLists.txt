@@ -10,11 +10,11 @@ find_package( OpenCV REQUIRED COMPONENTS core imgproc )
 #find_package( Boost REQUIRED COMPONENTS filesystem system serialization )
 
 # Setting the main program
-set(source_files Main.cpp
-    Adaboost.h
+set(source_files
     Common.h
     StrongHypothesis.h
-    WeakHypothesis.h
-    WeakLearner.h)
+    WeakLearner.h ResamplingWeakLearner.h ReweightingWeakLearner.h
+    Adaboost.h
+    Main.cpp)
 add_executable( adaboostplayground ${source_files} )
 target_link_libraries( adaboostplayground ${OpenCV_LIBS} )

@@ -37,4 +37,16 @@ public:
     }
 };
 
+
+
+/**
+ * @brief The WeakHypothesis represents a weak hypothesis.
+ */
+class WeakHypothesis {
+public:
+    WeakHypothesis() { }
+    virtual ~WeakHypothesis() { }
+    virtual Classification classify(const cv::Mat &data) const =0;
+};
+
 #endif /* CLASSIFICATION_H_ */

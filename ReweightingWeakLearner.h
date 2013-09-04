@@ -27,7 +27,7 @@ public:
         WeakHypothesis const * best_hypothesis = 0;
 
         for (std::vector < WeakHypothesis * >::const_iterator it = hypothesis.begin(); it != hypothesis.end(); it++) {
-            weight_type hypothesis_weighted_error = 0;
+            weight_type hypothesis_weighted_error = .0f;
 
             for (std::vector < LabeledExample >::size_type j = 0; j < training_set.size(); j++) {
                 if ((*it)->classify(training_set[j].example) != training_set[j].label) {
@@ -41,7 +41,7 @@ public:
             }
         }
 
-        const weight_type maximum_weighted_error = 0.5;
+        const weight_type maximum_weighted_error = 0.5f;
         if (lowest_error < maximum_weighted_error //checks for the weak learning assumption
                 || best_hypothesis == 0) { //checks if some hypothesis was selected
             throw 10;

@@ -20,9 +20,8 @@ int main(int argc, char **argv) {
     }
     const unsigned int maximum_iterations = strtol(argv[1], 0, 10);
 
-    std::vector < LabeledExample > training_set;
-    //get_training_data(training_set);
-    std::vector < WeakHypothesis * > hypothesis;
+    std::vector < LabeledExample > training_set; //TODO load from somewhere
+    std::vector < WeakHypothesis * > hypothesis; //TODO load from somewhere
 
     //WeakLearner * learner = new MyWeakLearner();
     StrongHypothesis strong_hypothesis;

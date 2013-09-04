@@ -1,7 +1,7 @@
 #ifndef RESAMPLINGWEAKLEARNER_H_
 #define RESAMPLINGWEAKLEARNER_H_
 
-#include "WeakHypothesis.h"
+#include "WeakLearner.h"
 
 class ResamplingWeakLearner : public WeakLearner {
 public:
@@ -21,7 +21,10 @@ public:
         const std::vector < LabeledExample > &training_set,
         const std::vector < weight_type > &weight_distribution,
         const std::vector < WeakHypothesis * > hypothesis,
-        weight_type &weighted_error) =0;
+        weight_type &weighted_error)
+    {
+        //TODO
+    }
 
 protected:
 

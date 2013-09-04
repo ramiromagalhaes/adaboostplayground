@@ -2,10 +2,7 @@
 #define WEAKLEARNER_H_
 
 #include <vector>
-#include <utility>
-#include <cstdlib>
 #include "Common.h"
-#include "WeakHypothesis.h"
 
 class WeakLearner {
 public:

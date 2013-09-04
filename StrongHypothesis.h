@@ -2,11 +2,7 @@
 #define STRONGHYPOTHESIS_H_
 
 #include <vector>
-#include <ostream>
-#include <iostream>
-#include <iomanip>
 #include "Common.h"
-#include "WeakHypothesis.h"
 
 
 
@@ -56,7 +52,7 @@ public:
 
 
     Classification classify(const cv::Mat &input) const {
-        weight_type result = 0;
+        weight_type result = .0f;
 
         for (std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
             entry e = *it;
