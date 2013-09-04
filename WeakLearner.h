@@ -86,7 +86,7 @@ protected:
 
     /**
      * @brief resample Takes samples from training_set and, according to the probabilities found
-     *                 in weight_distribution, produces a sample of from it.
+     *                 in weight_distribution, produces a sample from it.
      * @param training_set The original full training set from which samples will be taken.
      * @param weight_distribution The weights of each element of training_set. This must be a
      *                            distribution, i.e., all elements must add up to 1.

@@ -25,7 +25,8 @@ public:
     //TODO devise means to implement some flexible stop criteria
 
 protected:
-    unsigned int t; //iteration (epoch) counter
+    unsigned int t; /** iteration (epoch) counter */
+
     WeakLearner <dataType> *weak_learner;
 
 
@@ -36,14 +37,14 @@ protected:
      */
     void init_distribution(std::vector<weight_type> &distribution) {
         for (std::vector<weight_type>::iterator it = distribution.begin(); it != distribution.end(); ++it) {
-            *it = 1.0 / distribution.size();
+            *it = 1.0f / distribution.size();
         }
     }
 
 
 
     /**
-     * @brief update_distribution Updates the sample weight distribution.
+     * @brief update_distribution Updates the weight distribution of the samples.
      * @param alpha
      * @param current_weak_hypothesis
      * @param trainingData
