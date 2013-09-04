@@ -104,22 +104,25 @@ public:
             h = new MyWeakHypothesis(MyWeakHypothesis::horizontal, MyWeakHypothesis::after, i);
             hypothesis.insert(hypothesis.end(), h);
         }
-    };
+    }
 
-    ~MyWeakLearner(){};
+    ~MyWeakLearner() {
+        for (std::vector < MyWeakHypothesis* >::const_iterator it = hypothesis.begin(); it != hypothesis.end(); it++) {
+            delete *it;
+        }
+        hypothesis.clear();
+    }
 
     virtual WeakHypothesis<Point>* learn(
             const std::vector < LabeledExample<Point> * > &training_set,
             const std::vector < weight_type > &weight_distribution,
             weight_type &weighted_error) {
 
-        const weight_type maximum_weighted_error = 0.5;
-
         weight_type lowest_error = std::numeric_limits<weight_type>::max();
-        std::vector < MyWeakHypothesis* >::size_type best_hypothesis_index = training_set.size();
+        MyWeakHypothesis* best_hypothesis = 0;
 
-        for (std::vector < MyWeakHypothesis* >::size_type i = 0; i < hypothesis.size(); i++) {
-            MyWeakHypothesis const * const hyp = hypothesis[i];
+        for (std::vector < MyWeakHypothesis* >::const_iterator it = hypothesis.begin(); it != hypothesis.end(); it++) {
+            MyWeakHypothesis const * const hyp = *it;
 
             weight_type hypothesis_weighted_error = 0;
 
@@ -129,309 +132,305 @@ public:
                 }
             }
 
-            if (hypothesis_weighted_error < maximum_weighted_error && hypothesis_weighted_error < lowest_error) {
+            if (hypothesis_weighted_error < lowest_error) {
                 lowest_error = hypothesis_weighted_error;
-                best_hypothesis_index = i;
+                best_hypothesis = *it;
             }
         }
 
-        //no hypothesis fulfilled the criteria to
-        if (best_hypothesis_index == training_set.size()) {
+        const weight_type maximum_weighted_error = 0.5;
+        if (lowest_error < maximum_weighted_error //checks for the weak learning assumption
+                || best_hypothesis == 0) { //checks if some hypothesis was selected
             throw 10;
         }
 
         weighted_error = lowest_error;
 
-
-        return hypothesis[best_hypothesis_index];
+        return best_hypothesis;
     }
 };
 
 
 
-std::vector < LabeledExample <Point> * >* get_training_data() {
-    std::vector < LabeledExample <Point> * > * const data = new std::vector < LabeledExample <Point> * >();
-
+void get_training_data(std::vector < LabeledExample <Point> * > & data) {
     Point *p;
     LabeledExample<Point> * d;
 
     p = new Point(3, 5);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 4);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 5);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 4);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 5);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 5);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 6);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(7, 4);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(7, 5);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(8, 4);
     d = new LabeledExample<Point>(*p, yes);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(1, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(1, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(1, 8);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(1, 9);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 3);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 4);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 5);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 6);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 7);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 8);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(2, 9);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(3, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(3, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(3, 3);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(3, 4);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(3, 6);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(3, 7);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(3, 8);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 3);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 6);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 7);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 8);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(4, 9);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 3);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 6);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 7);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 8);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(5, 9);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 3);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 4);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 7);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 8);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(6, 9);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(7, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(7, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(7, 3);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(7, 6);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(7, 7);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(8, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(8, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(8, 3);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(8, 5);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(8, 6);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(8, 7);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(9, 1);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(9, 2);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(9, 3);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(9, 4);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(9, 5);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(9, 6);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
+    data.push_back(d);
 
     p = new Point(9, 7);
     d = new LabeledExample<Point>(*p, no);
-    data->push_back(d);
-
-    return data;
+    data.push_back(d);
 }
 
 
@@ -443,14 +442,15 @@ int main(int argc, char **argv) {
     }
     const unsigned int maximum_iterations = strtol(argv[1], 0, 10);
 
-    std::vector < LabeledExample <Point> * > const * const training_set = get_training_data();
+    std::vector < LabeledExample <Point> * > training_set;
+    get_training_data(training_set);
 
     WeakLearner<Point> *learner = new MyWeakLearner();
     StrongHypothesis<Point> strong_hypothesis;
     Adaboost<Point> boosting(learner);
 
     try {
-        boosting.train(*training_set, strong_hypothesis, maximum_iterations);
+        boosting.train(training_set, strong_hypothesis, maximum_iterations);
     } catch (int e) {
         std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;
     }
@@ -458,7 +458,7 @@ int main(int argc, char **argv) {
     int false_positive = 0;
     int true_negative = 0; //positive samples that were classified as negative.
 
-    for (std::vector < LabeledExample <Point> * >::const_iterator it = training_set->begin(); it != training_set->end(); ++it) {
+    for (std::vector < LabeledExample <Point> * >::const_iterator it = training_set.begin(); it != training_set.end(); ++it) {
         LabeledExample<Point> * const le = *it;
         const Classification c = strong_hypothesis.classify(le->example);
         if (le->label == yes) {
@@ -475,10 +475,10 @@ int main(int argc, char **argv) {
     }
 
     std::cout << std::endl << strong_hypothesis << std::endl;
-    std::cout << "True negative        : " << true_negative  / (double)training_set->size() << std::endl;
-    std::cout << "False positive       : " << false_positive / (double)training_set->size() << std::endl;
-    std::cout << "Misclassified        : " << (true_negative + false_positive) / (double)training_set->size() << std::endl;
-    std::cout << "Correctly classified : " << (training_set->size() - true_negative - false_positive) / (double)training_set->size() << std::endl;
+    std::cout << "True negative        : " << true_negative  / (double)training_set.size() << std::endl;
+    std::cout << "False positive       : " << false_positive / (double)training_set.size() << std::endl;
+    std::cout << "Misclassified        : " << (true_negative + false_positive) / (double)training_set.size() << std::endl;
+    std::cout << "Correctly classified : " << (training_set.size() - true_negative - false_positive) / (double)training_set.size() << std::endl;
 
     return 0;
 }
