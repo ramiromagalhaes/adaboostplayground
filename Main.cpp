@@ -1,15 +1,33 @@
-#include <limits>
 #include <vector>
 #include <iostream>
-#include <sstream> //for std::stringstream
-#include <string>
-#include <ostream>
-#include <cstdlib>
 
 #include "Common.h"
 #include "WeakLearner.h"
 #include "StrongHypothesis.h"
 #include "Adaboost.h"
+#include "Haarwavelet.h"
+#include "Haarwaveletutilities.h"
+
+
+class HaarClassifier : public WeakHypothesis, public HaarWavelet
+{
+public:
+    int p;
+    float theta;
+
+    HaarClassifier() : p(1), theta(.0f) { }
+
+    ~HaarClassifier() { }
+
+    Classification classify(const cv::Mat &data) const //TODO who should pass the data to the wavelet?
+    {
+        if (p > 0)
+        {
+            return value() > theta ? yes : no;
+        }
+        return value() < theta ? yes : no;
+    }
+};
 
 
 
@@ -20,15 +38,25 @@ int main(int argc, char **argv) {
     }
     const unsigned int maximum_iterations = strtol(argv[1], 0, 10);
 
-    std::vector < LabeledExample > training_set; //TODO load from somewhere
-    std::vector < WeakHypothesis * > hypothesis; //TODO load from somewhere
+    std::vector < HaarClassifier * > * hypothesis = new std::vector < HaarClassifier * >();
+    {
+        cv::Size size = cv::Size(20, 20);
+        loadHaarWavelets(&size,
+                         "/home/ramiro/workspace/ecrsgen/data/haarwavelets.txt",
+                         *((std::vector < HaarWavelet * > *)hypothesis) );
+        std::cout << "Loaded " << hypothesis->size() << " weak classifiers.\n";
+    }
 
-    //WeakLearner * learner = new MyWeakLearner();
+    std::vector < LabeledExample > training_set; //TODO load from somewhere
+
     StrongHypothesis strong_hypothesis;
     Adaboost boosting; //default constructor uses the ReweightingWeakLearner
 
     try {
-        boosting.train(training_set, strong_hypothesis, hypothesis, maximum_iterations);
+        boosting.train(training_set,
+                       strong_hypothesis,
+                       *(std::vector < WeakHypothesis * > *)hypothesis,
+                       maximum_iterations);
     } catch (int e) {
         std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;
     }
