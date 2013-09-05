@@ -85,7 +85,7 @@ public:
     void train(
             const std::vector < LabeledExample > &training_set,
             StrongHypothesis &strong_hypothesis,
-            const std::vector < WeakHypothesis * > hypothesis,
+            const std::vector < WeakHypothesis * > & hypothesis,
             const unsigned int maximum_iterations) {
 
         std::vector<weight_type> weight_distribution(training_set.size()); //holds all weight elements
