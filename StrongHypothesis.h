@@ -39,12 +39,13 @@ public:
     StrongHypothesis() {}
 
      ~StrongHypothesis() {
-        hypothesis.clear();
+        hypothesis.clear(); //each entry object destroys its contents
     }
 
 
 
     void insert(weight_type alpha, WeakHypothesis const * const weak_hypothesis) {
+        //TODO copy the weak_hypothesis
         entry e(alpha, const_cast<WeakHypothesis const *>(weak_hypothesis)); //from now on, this class is responsible for handling properly these pointers
         hypothesis.insert(hypothesis.end(), e);
     }
