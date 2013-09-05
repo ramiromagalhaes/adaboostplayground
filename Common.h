@@ -1,7 +1,7 @@
 #ifndef CLASSIFICATION_H_
 #define CLASSIFICATION_H_
 
-#include <opencv2/core.hpp>
+#include <opencv2/core/core.hpp>
 
 
 /**
