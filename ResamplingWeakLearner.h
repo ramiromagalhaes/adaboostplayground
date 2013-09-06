@@ -37,6 +37,7 @@ protected:
      * @param key The value which index is to be found.
      * @return The index of key in cumulative_distribution_weight.
      */
+    //TODO might be replaced for std::lower_bound (or std::upper_bound) from algorithm library
     inline int binarySearchForSamples(
             std::vector<weight_type> &cumulative_distribution,
             weight_type key) {
