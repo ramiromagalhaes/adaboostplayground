@@ -2,6 +2,8 @@
 #define CLASSIFICATION_H_
 
 #include <opencv2/core/core.hpp>
+#include <fstream>
+
 
 
 /**
@@ -47,6 +49,7 @@ public:
     WeakHypothesis() { }
     virtual ~WeakHypothesis() { }
     virtual Classification classify(const cv::Mat &data) const =0;
+    virtual bool write(std::ostream & output) const =0;
 };
 
 #endif /* CLASSIFICATION_H_ */
