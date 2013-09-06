@@ -1,12 +1,16 @@
 #include <vector>
 #include <iostream>
 
+#include <boost/filesystem.hpp>
+
 #include "Common.h"
 #include "WeakLearner.h"
 #include "StrongHypothesis.h"
 #include "Adaboost.h"
 #include "Haarwavelet.h"
 #include "Haarwaveletutilities.h"
+#include "dataprovider.h"
+
 
 
 class HaarClassifier : public WeakHypothesis, public HaarWavelet
@@ -27,16 +31,23 @@ public:
         }
         return value() < theta ? yes : no;
     }
+
+    bool write(std::ostream & output) //TODO is this really necessary???
+    {
+        HaarWavelet::write(output);
+    }
 };
 
 
 
 int main(int argc, char **argv) {
-    if (argc != 2)
-    {
-        return -1;
-    }
-    const unsigned int maximum_iterations = strtol(argv[1], 0, 10);
+    const unsigned int buffer_size = strtol(argv[1], 0, 10);
+    boost::filesystem::path positivesFile = "/mnt/faces.txt";
+    boost::filesystem::path negativesFile = "/mnt/background.txt";
+
+    const unsigned int maximum_iterations = 40;
+
+    StrongHypothesis strongHypothesis("/mnt/strongHypothesis.txt");
 
     std::vector < HaarClassifier * > * hypothesis = new std::vector < HaarClassifier * >();
     {
@@ -47,42 +58,20 @@ int main(int argc, char **argv) {
         std::cout << "Loaded " << hypothesis->size() << " weak classifiers.\n";
     }
 
-    std::vector < LabeledExample > training_set; //TODO load from somewhere
+    DataProvider provider(positivesFile, negativesFile, buffer_size);
 
-    StrongHypothesis strong_hypothesis;
-    Adaboost boosting; //default constructor uses the ReweightingWeakLearner
+    Adaboost boosting;
+
+    return 0;
 
     try {
-        boosting.train(training_set,
-                       strong_hypothesis,
+        boosting.train(provider,
+                       strongHypothesis,
                        *(std::vector < WeakHypothesis * > *)hypothesis,
                        maximum_iterations);
     } catch (int e) {
         std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;
     }
-
-    int false_positive = 0;
-    int true_negative = 0; //positive samples that were classified as negative.
-
-    for (std::vector < LabeledExample >::const_iterator it = training_set.begin(); it != training_set.end(); ++it) {
-        const Classification c = strong_hypothesis.classify(it->example);
-        if (it->label == yes) {
-            if (c == no) {
-                true_negative++;
-            }
-        } else /* le->label == no*/ {
-            if (c == yes) {
-                false_positive++;
-            }
-        }
-
-        std::cout << it->example << " esperado " << it->label << " obtido " << c << std::endl;
-    }
-
-    std::cout << "True negative        : " << true_negative  / (double)training_set.size() << std::endl;
-    std::cout << "False positive       : " << false_positive / (double)training_set.size() << std::endl;
-    std::cout << "Misclassified        : " << (true_negative + false_positive) / (double)training_set.size() << std::endl;
-    std::cout << "Correctly classified : " << (training_set.size() - true_negative - false_positive) / (double)training_set.size() << std::endl;
 
     return 0;
 }
