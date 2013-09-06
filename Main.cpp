@@ -4,7 +4,6 @@
 #include <boost/filesystem.hpp>
 
 #include "Common.h"
-#include "WeakLearner.h"
 #include "StrongHypothesis.h"
 #include "Adaboost.h"
 #include "Haarwavelet.h"
@@ -23,18 +22,15 @@ public:
 
     ~HaarClassifier() { }
 
-    Classification classify(const cv::Mat &data) const //TODO who should pass the data to the wavelet?
+    Classification classify(const cv::Mat &data) const
     {
+        //TODO who should pass the data to the wavelet?
+        //TODO how should I produce the the integral image? In here? Out of here? If out, then what parameter should I pass?
         if (p > 0)
         {
             return value() > theta ? yes : no;
         }
         return value() < theta ? yes : no;
-    }
-
-    bool write(std::ostream & output) //TODO is this really necessary???
-    {
-        HaarWavelet::write(output);
     }
 };
 
@@ -61,8 +57,6 @@ int main(int argc, char **argv) {
     DataProvider provider(positivesFile, negativesFile, buffer_size);
 
     Adaboost boosting;
-
-    return 0;
 
     try {
         boosting.train(provider,

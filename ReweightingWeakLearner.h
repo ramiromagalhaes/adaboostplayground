@@ -49,7 +49,7 @@ public:
 
         weighted_error = lowest_error;
 
-        return const_cast<WeakHypothesis const * const>(best_hypothesis);
+        return best_hypothesis;
     }
 };
 

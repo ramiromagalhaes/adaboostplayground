@@ -39,7 +39,11 @@ public:
 
 
 private:
-    int load(boost::filesystem::ifstream &stream, const unsigned int offset, const unsigned int amount, std::vector< LabeledExample > & target, const Classification classification);
+    int load(fs::ifstream &stream,
+             const unsigned int offset,
+             const unsigned int amount,
+             std::vector< LabeledExample > & target,
+             const Classification classification);
     void initBuffers(int maxBuffer);
     void pushIntoSample(std::vector<LabeledExample>::size_type index, const LabeledExample &s);
 

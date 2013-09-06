@@ -34,19 +34,7 @@ protected:
 
 
 
-    /**
-     * @brief init_distribution Initializes the sample weight distribution.
-     * @param distribution
-     */
-    void reset_vector(std::vector<weight_type> &vec, const weight_type value) {
-        for (std::vector<weight_type>::iterator it = vec.begin(); it != vec.end(); ++it) {
-            *it = value;
-        }
-    }
-
-
-
-    /**
+     /**
      * @brief update_distribution Updates the weight distribution of the samples.
      * @param alpha
      * @param current_weak_hypothesis
@@ -92,7 +80,7 @@ public:
         t = 0;
 
         std::vector<weight_type> weight_distribution(training_set.size()); //holds all weight elements
-        reset_vector(weight_distribution, 1.0f / training_set.size()); //initialize the weight to default values
+        std::fill(weight_distribution.begin(), weight_distribution.end(), 1.0f / training_set.size()); //NOTE: this is the initialization proposed by Schapire and Freund
 
         do {//Main Adaboost loop
 
@@ -127,9 +115,14 @@ public:
 
         t = 0;
 
-        //this holds the weights of each sample
+        //Vector weight_distribution holds the weights of each data sample.
+        //NOTE: in this method we initialize it as proposed by Viola and Jones. The resulting vector is already normalized.
+        //NOTE: the std::fill method bellow is also part of this initialization.
         std::vector<weight_type> weight_distribution(training_set.size(),
-                                                     1.0f / weight_distribution.size()); //initialize the weight to default values
+                                                     0.5f / training_set.sizeNegatives());
+        std::fill(weight_distribution.begin(),
+                  weight_distribution.begin() + training_set.sizePositives(),
+                  0.5f / training_set.sizePositives());
 
         //this holds the weighted error of each weak classifier
         std::vector<weight_type> hypothesis_weighted_errors(hypothesis.size());

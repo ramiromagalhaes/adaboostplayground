@@ -73,7 +73,11 @@ bool DataProvider::loadNext()
     return true;
 }
 
-int DataProvider::load(fs::ifstream & stream, const unsigned int offset, const unsigned int amount, std::vector< LabeledExample > & target, const Classification classification)
+int DataProvider::load(fs::ifstream & stream,
+                       const unsigned int offset,
+                       const unsigned int amount,
+                       std::vector< LabeledExample > & target,
+                       const Classification classification)
 {
     unsigned int i = 0;
     for (;; ++i)
@@ -126,12 +130,12 @@ std::vector<LabeledExample>::size_type DataProvider::size()
     return totalPositives + totalNegatives;
 }
 
-std::vector::size_type DataProvider::sizePositives()
+std::vector<LabeledExample>::size_type DataProvider::sizePositives()
 {
     return totalPositives;
 }
 
-std::vector::size_type DataProvider::sizeNegatives()
+std::vector<LabeledExample>::size_type DataProvider::sizeNegatives()
 {
     return totalNegatives;
 }
