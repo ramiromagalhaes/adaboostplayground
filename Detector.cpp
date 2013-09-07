@@ -40,6 +40,10 @@ bool Detector::setSubwindow(const int left, const int top)
                                          ) / area
     );
 
+    //TODO the only normalization mentioned in Pavani et al. is the "intensity normalization" (section 2.3).
+    //Viola and Jones mention a variance normalization that might be more resilient to lightning conditions.
+    //What now??
+
     //snipet taken from OpenCV. This is how they calculate the "normalization factor"
     //return (float) sqrt( (double) (area * valSqSum - (double)valSum * valSum) );
 
