@@ -15,6 +15,13 @@ typedef float weight_type;
 
 
 /**
+ * @brief WeightVector A vector to hold instances of weight_type.
+ */
+typedef std::vector<weight_type> WeightVector;
+
+
+
+/**
  * @brief The Classification enum holds default values for the binary classification case.
  */
 enum Classification {
@@ -46,9 +53,8 @@ public:
  */
 class WeakHypothesis {
 public:
-    WeakHypothesis() { }
     virtual ~WeakHypothesis() { }
-    virtual Classification classify(const cv::Mat &data) const =0;
+    virtual Classification classify(const cv::Mat & sample) const =0;
     virtual bool write(std::ostream & output) const =0;
 };
 

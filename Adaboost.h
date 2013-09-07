@@ -45,18 +45,18 @@ protected:
             const weight_type alpha,
             WeakHypothesis const * const current_weak_hypothesis,
             const std::vector < LabeledExample > &trainingData,
-            std::vector<weight_type> &distribution_weight) {
+            WeightVector &distribution_weight) {
 
         weight_type normalizationFactor = 0;
 
-        for (std::vector<weight_type>::size_type i = 0; i < distribution_weight.size(); i++) {
+        for (WeightVector::size_type i = 0; i < distribution_weight.size(); i++) {
             const Classification trainingResult = current_weak_hypothesis->classify(trainingData[i].example);
 
             distribution_weight[i] *= std::exp(-alpha * trainingData[i].label * trainingResult);
             normalizationFactor += distribution_weight[i];
         }
 
-        for (std::vector<weight_type>::size_type i = 0; i < distribution_weight.size(); i++) {
+        for (WeightVector::size_type i = 0; i < distribution_weight.size(); i++) {
             distribution_weight[i] /= normalizationFactor;
         }
     }
@@ -79,7 +79,7 @@ public:
 
         t = 0;
 
-        std::vector<weight_type> weight_distribution(training_set.size()); //holds all weight elements
+        WeightVector weight_distribution(training_set.size()); //holds all weight elements
         std::fill(weight_distribution.begin(), weight_distribution.end(), 1.0f / training_set.size()); //NOTE: this is the initialization proposed by Schapire and Freund
 
         do {//Main Adaboost loop
@@ -118,14 +118,14 @@ public:
         //Vector weight_distribution holds the weights of each data sample.
         //NOTE: in this method we initialize it as proposed by Viola and Jones. The resulting vector is already normalized.
         //NOTE: the std::fill method bellow is also part of this initialization.
-        std::vector<weight_type> weight_distribution(training_set.size(),
+        WeightVector weight_distribution(training_set.size(),
                                                      0.5f / training_set.sizeNegatives());
         std::fill(weight_distribution.begin(),
                   weight_distribution.begin() + training_set.sizePositives(),
                   0.5f / training_set.sizePositives());
 
         //this holds the weighted error of each weak classifier
-        std::vector<weight_type> hypothesis_weighted_errors(hypothesis.size());
+        WeightVector hypothesis_weighted_errors(hypothesis.size());
 
         do {//Main Adaboost loop
             //train weak learner and get weak hypothesis so that it minimalizes the weighted error
@@ -140,7 +140,9 @@ public:
             //TODO For example: we could here produce the vector we'll effectively use do the training.
             //TODO This means that the hypothesis_weighted_error vector might need to be resized
 
-            reset_vector(hypothesis_weighted_errors, .0f); //clean it prior to calculating the weighted errors
+            std::fill(hypothesis_weighted_errors.begin(),
+                      hypothesis_weighted_errors.end(),
+                      .0f); //clean it prior to calculating the weighted errors
 
             //Well, that was easy...
             //Now we iterate over the negative samples taken from a DataProvider
@@ -163,7 +165,7 @@ public:
             //Not too hard too...
             //Now we must choose the weak hypothesis that produces the smallest weighted error
             //this is the final weighted_error we'll get from the best weak hypothesis found in this iteration
-            const std::vector<weight_type>::iterator lowest_weighted_error =
+            const WeightVector::iterator lowest_weighted_error =
                 std::min_element(hypothesis_weighted_errors.begin(), hypothesis_weighted_errors.end());
             const weight_type weighted_error = *lowest_weighted_error;
 
@@ -190,7 +192,7 @@ public:
 
                 weight_type normalizationFactor = 0;
 
-                std::vector<weight_type>::size_type i = 0;
+                WeightVector::size_type i = 0;
                 while ( training_set.loadNext() )
                 {
                     std::vector < LabeledExample > const * const samples = training_set.getCurrentBuffer();
@@ -203,7 +205,7 @@ public:
                     }
                 }
 
-                for (std::vector<weight_type>::size_type i = 0; i < weight_distribution.size(); i++) {
+                for (WeightVector::size_type i = 0; i < weight_distribution.size(); i++) {
                     weight_distribution[i] /= normalizationFactor;
                 }
             }

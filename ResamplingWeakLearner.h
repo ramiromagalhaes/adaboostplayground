@@ -39,7 +39,7 @@ protected:
      */
     //TODO might be replaced for std::lower_bound (or std::upper_bound) from algorithm library
     inline int binarySearchForSamples(
-            std::vector<weight_type> &cumulative_distribution,
+            WeightVector &cumulative_distribution,
             weight_type key) {
         int first = 0;
         int last = cumulative_distribution.size() - 1;
@@ -71,8 +71,8 @@ protected:
      */
     inline void init_cumulative_distribution(
             const int sample_size,
-            const std::vector<weight_type> &probability_distribution,
-            std::vector<weight_type> &cumulative_distribution) {
+            const WeightVector &probability_distribution,
+            WeightVector &cumulative_distribution) {
         for (int i = 0; i < sample_size; i++) {
             if (i) {
                 cumulative_distribution[i] = cumulative_distribution[i - 1] + probability_distribution[i];
@@ -100,14 +100,14 @@ protected:
      */
     void resample(
             const std::vector<LabeledExample> &training_set,
-            const std::vector<weight_type> &weight_distribution,
+            const WeightVector &weight_distribution,
             const unsigned int sample_size,
             std::vector<LabeledExample> &training_sample,
-            std::vector<weight_type> &training_sample_weight_distribution) {
+            WeightVector &training_sample_weight_distribution) {
 
         //TODO assertion: all vectors must be of sample_size
 
-        std::vector<weight_type> cumulative_distribution_weight(sample_size);
+        WeightVector cumulative_distribution_weight(sample_size);
         init_cumulative_distribution(sample_size, weight_distribution, cumulative_distribution_weight);
 
         for (unsigned int i = 0; i < sample_size; ++i) {
