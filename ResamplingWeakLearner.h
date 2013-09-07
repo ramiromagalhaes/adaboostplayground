@@ -18,7 +18,7 @@ public:
      * @return A pointer to the WeakHypothesis that "minimalizes" the classification error.
      */
     virtual WeakHypothesis * learn(
-        const std::vector < LabeledExample > &training_set,
+        const LEContainer &training_set,
         const std::vector < weight_type > &weight_distribution,
         const std::vector < WeakHypothesis * > hypothesis,
         weight_type &weighted_error)
@@ -99,10 +99,10 @@ protected:
      *                                            of training_sample.
      */
     void resample(
-            const std::vector<LabeledExample> &training_set,
+            const LEContainer &training_set,
             const WeightVector &weight_distribution,
             const unsigned int sample_size,
-            std::vector<LabeledExample> &training_sample,
+            LEContainer &training_sample,
             WeightVector &training_sample_weight_distribution) {
 
         //TODO assertion: all vectors must be of sample_size

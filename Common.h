@@ -47,6 +47,12 @@ public:
 };
 
 
+/**
+ * @brief LEContainer LabeledExample container type.
+ */
+typedef std::vector< LabeledExample > LEContainer;
+
+
 
 /**
  * @brief The WeakHypothesis represents a weak hypothesis.

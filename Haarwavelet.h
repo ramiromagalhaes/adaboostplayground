@@ -46,7 +46,7 @@ public:
     /**
      * Returns the value of this Haar wavelet when applied to an image in a certain position
      */
-    double value() const;
+    float value() const;
 
     /**
      * Sets the values of the single rectangle feature space.
@@ -109,7 +109,7 @@ private:
     /**
      * Calculates the sum of pixels inside a rectangular area of the image.
      */
-    inline double singleRectangleValue(const cv::Rect &r, const cv::Mat &s) const;
+    float singleRectangleValue(const cv::Rect &r, const cv::Mat &s) const;
 
     /**
      * Each rectangle and its associated weight of this Haar wavelet

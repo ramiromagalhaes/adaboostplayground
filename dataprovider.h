@@ -3,11 +3,13 @@
 
 #include "Common.h"
 #include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include <fstream>
+
 
 namespace fs = boost::filesystem;
 
 
+//TODO if the data provider buffer is bigger than the amount of images, simply retain all of them in memory.
 class DataProvider
 {
 public:
@@ -20,43 +22,45 @@ public:
      */
     bool loadNext();
 
-    std::vector<LabeledExample> const * const getCurrentBuffer();
+    LEContainer const * const getCurrentBuffer();
 
     void reset();
 
     /**
      * @brief size Returns the total amount of samples in this collection.
      */
-    std::vector<LabeledExample>::size_type size();
+    LEContainer::size_type size();
     /**
      * @brief size Returns the size of the positive samples set.
      */
-    std::vector<LabeledExample>::size_type sizePositives();
+    LEContainer::size_type sizePositives();
     /**
      * @brief size Returns the size of the negative samples set.
      */
-    std::vector<LabeledExample>::size_type sizeNegatives();
+    LEContainer::size_type sizeNegatives();
 
 
 private:
-    int load(fs::ifstream &stream,
+    unsigned int load(std::ifstream &stream,
              const unsigned int offset,
              const unsigned int amount,
-             std::vector< LabeledExample > & target,
+             LEContainer & target,
              const Classification classification);
-    void initBuffers(int maxBuffer);
-    void pushIntoSample(std::vector<LabeledExample>::size_type index, const LabeledExample &s);
 
-    fs::ifstream streamPositives,
-                 streamNegatives;
+    void initBuffers(int maxBuffer);
+
+    void pushIntoSample(LEContainer::size_type index, const LabeledExample &s);
+
+    std::ifstream streamPositives,
+                  streamNegatives;
     unsigned int totalPositives,
                  totalNegatives;
 
     unsigned int maxObjectsInBuffer;
-    unsigned int currentLoad;
+    unsigned int nextIndexToLoad; //all loading into the buffer should be done from this index on
 
-    std::vector< LabeledExample > positives;
-    std::vector< LabeledExample > samples;
+    LEContainer positives;
+    LEContainer samples;
 };
 
 #endif // DATAPROVIDER_H

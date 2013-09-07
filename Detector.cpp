@@ -26,7 +26,7 @@ bool Detector::setSubwindow(const int left, const int top)
         currentSquareIntegralImage = squareIntegralImage(integralsRoi);
     }
 
-    const double area = currentRoi.area();
+    const float area = currentRoi.area();
     subwindowMean = (currentIntegralImage.at<int>(0, 0)
                     - currentIntegralImage.at<int>(0, currentRoi.width)
                     - currentIntegralImage.at<int>(currentRoi.height, 0)

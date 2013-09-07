@@ -3,24 +3,33 @@
 #include <opencv2/core/core.hpp>
 #include <boost/filesystem.hpp>
 
+#include "Haarwavelet.h"
 #include "Common.h"
+#include "dataprovider.h"
 #include "StrongHypothesis.h"
 #include "Adaboost.h"
-#include "Haarwavelet.h"
-#include "dataprovider.h"
 
 
 
 class HaarClassifier : public WeakHypothesis
 {
 public:
+    HaarWavelet * wavelet;
     int p;
     float theta;
 
-    HaarWavelet * wavelet;
+    HaarClassifier()
+    {
+        p = 1;
+        theta = 0.f;
+    }
 
-    HaarClassifier() : p(1), theta(.0f) { }
-    HaarClassifier(HaarWavelet * const wavelet_) : p(1), theta(.0f), wavelet(wavelet_) { }
+    HaarClassifier(HaarWavelet * const w)
+    {
+        wavelet = w;
+        p = 1;
+        theta = .0f;
+    }
 
     virtual ~HaarClassifier() {
         delete wavelet;
@@ -51,8 +60,10 @@ public:
 
 
 
-bool loadClassifiers(cv::Size * const sampleSize, const std::string &filename, std::vector<HaarClassifier *> & wavelets)
+bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier *> & wavelets)
 {
+    cv::Size * const size = new cv::Size(20, 20);
+
     std::ifstream ifs;
     ifs.open(filename.c_str(), std::ifstream::in);
 
@@ -63,7 +74,7 @@ bool loadClassifiers(cv::Size * const sampleSize, const std::string &filename, s
 
     do
     {
-        HaarClassifier * classifier = new HaarClassifier(new HaarWavelet(sampleSize, ifs));
+        HaarClassifier * classifier = new HaarClassifier(new HaarWavelet(size, ifs));
         if ( !ifs.eof() )
         {
             wavelets.push_back(classifier);
@@ -93,9 +104,7 @@ int main(int argc, char **argv) {
 
     std::vector < HaarClassifier * > * hypothesis = new std::vector < HaarClassifier * >();
     {
-        cv::Size size = cv::Size(20, 20);
-        loadClassifiers(&size,
-                        "/home/ramiro/workspace/ecrsgen/data/haarwavelets.txt",
+        loadClassifiers("/mnt/haarwavelets.txt",
                         *((std::vector < HaarClassifier * > *)hypothesis) );
         std::cout << "Loaded " << hypothesis->size() << " weak classifiers." << std::endl;
     }
@@ -109,7 +118,7 @@ int main(int argc, char **argv) {
     try {
         boosting.train(provider,
                        strongHypothesis,
-                       *(std::vector < WeakHypothesis * > *)hypothesis,
+                       *((std::vector < WeakHypothesis * > *)hypothesis),
                        maximum_iterations);
     } catch (int e) {
         std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;

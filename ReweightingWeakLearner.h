@@ -18,7 +18,7 @@ public:
      * @return A pointer to the WeakHypothesis that "minimalizes" the classification error.
      */
     virtual WeakHypothesis const * const learn(
-        const std::vector < LabeledExample > &training_set,
+        const LEContainer &training_set,
         const std::vector < weight_type > &weight_distribution,
         const std::vector < WeakHypothesis * > hypothesis,
         weight_type & weighted_error)
@@ -29,7 +29,7 @@ public:
         for (std::vector < WeakHypothesis * >::const_iterator it = hypothesis.begin(); it != hypothesis.end(); it++) {
             weight_type hypothesis_weighted_error = .0f;
 
-            for (std::vector < LabeledExample >::size_type j = 0; j < training_set.size(); j++) {
+            for (LEContainer::size_type j = 0; j < training_set.size(); j++) {
                 if ((*it)->classify(training_set[j].example) != training_set[j].label) {
                     hypothesis_weighted_error += weight_distribution[j];
                 }

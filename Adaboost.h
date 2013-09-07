@@ -11,6 +11,7 @@
 #include "dataprovider.h"
 
 
+
 class Adaboost {
 public:
     Adaboost() : t(0),
@@ -44,7 +45,7 @@ protected:
     void update_distribution(
             const weight_type alpha,
             WeakHypothesis const * const current_weak_hypothesis,
-            const std::vector < LabeledExample > &trainingData,
+            const LEContainer &trainingData,
             WeightVector &distribution_weight) {
 
         weight_type normalizationFactor = 0;
@@ -72,7 +73,7 @@ public:
      * @param maximum_iterations The maximum iterations that this training will perform.
      */
     void train(
-            const std::vector < LabeledExample > &training_set,
+            const LEContainer &training_set,
             StrongHypothesis &strong_hypothesis,
             const std::vector < WeakHypothesis * > & hypothesis,
             const unsigned int maximum_iterations) {
@@ -109,7 +110,7 @@ public:
      */
     void train(
             DataProvider & training_set,
-            StrongHypothesis &strong_hypothesis,
+            StrongHypothesis & strong_hypothesis,
             const std::vector < WeakHypothesis * > & hypothesis,
             const unsigned int maximum_iterations) {
 
@@ -144,13 +145,15 @@ public:
                       hypothesis_weighted_errors.end(),
                       .0f); //clean it prior to calculating the weighted errors
 
-            //Well, that was easy...
-            //Now we iterate over the negative samples taken from a DataProvider
+            const unsigned long totalIterations = training_set.size() * hypothesis.size();
+            unsigned long count = 0;
+            unsigned long progress = -1;
 
+            training_set.reset();
             while ( training_set.loadNext() )
             {
-                std::vector < LabeledExample > const * const samples = training_set.getCurrentBuffer();
-                for(std::vector < LabeledExample >::const_iterator it = samples->begin(); it != samples->end(); ++it)
+                LEContainer const * const samples = training_set.getCurrentBuffer();
+                for(LEContainer::const_iterator it = samples->begin(); it != samples->end(); ++it)
                 {
                     for (std::vector < WeakHypothesis * >::size_type j = 0; j < hypothesis.size(); ++j)
                     {
@@ -158,11 +161,21 @@ public:
                         {
                             hypothesis_weighted_errors[j] += weight_distribution[j];
                         }
+
+                        const unsigned long currentProgress = 100 * (double)count / (double)totalIterations;
+                        if (currentProgress != progress)
+                        {
+                            progress = currentProgress;
+                            std::cout << "Adaboost iteration " << t << " in " << progress << "%.\r";
+                            std::flush(std::cout);
+                        }
+                        ++count;
                     }
                 }
             }
 
-            //Not too hard too...
+            std::cout << "\nA new weak classifier was chosen. Will update the distribution." << std::endl;
+
             //Now we must choose the weak hypothesis that produces the smallest weighted error
             //this is the final weighted_error we'll get from the best weak hypothesis found in this iteration
             const WeightVector::iterator lowest_weighted_error =
@@ -171,10 +184,11 @@ public:
 
             //does the best hypothesis conform to the weak learning assumption?
             const weight_type maximum_weighted_error = 0.5f;
-            if (weighted_error < maximum_weighted_error)
+            if (weighted_error > maximum_weighted_error)
             {
-                //TODO really stop the world? Why not just a warning?
-                throw 10;
+                std::cout << "Weak classifier " << t
+                          << " fails to comply to the weak learning assumption with error "
+                          << weighted_error << std::endl;
             }
 
             //At last, we have a reference to the best weak hypothesis
@@ -195,8 +209,8 @@ public:
                 WeightVector::size_type i = 0;
                 while ( training_set.loadNext() )
                 {
-                    std::vector < LabeledExample > const * const samples = training_set.getCurrentBuffer();
-                    for(std::vector < LabeledExample >::const_iterator it = samples->begin(); it != samples->end(); ++it, ++i)
+                    LEContainer const * const samples = training_set.getCurrentBuffer();
+                    for(LEContainer::const_iterator it = samples->begin(); it != samples->end(); ++it, ++i)
                     {
                         const Classification c = weak_hypothesis->classify(it->example);
 

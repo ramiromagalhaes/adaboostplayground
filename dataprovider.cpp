@@ -9,8 +9,8 @@ DataProvider::DataProvider(boost::filesystem::path & pathIndexPositives,
 {
     initBuffers(maxObjectsInBuffer_);
 
-    streamPositives.open(pathIndexPositives);
-    streamNegatives.open(pathIndexNegatives);
+    streamPositives.open(pathIndexPositives.native().c_str());
+    streamNegatives.open(pathIndexNegatives.native().c_str());
 
     if ( !streamPositives.is_open() || !streamNegatives.is_open() )
     {
@@ -24,10 +24,11 @@ DataProvider::DataProvider(boost::filesystem::path & pathIndexPositives,
     //then we count how many images we have
     totalPositives = positives.size();
 
-    //we count the negatives seeking for newlines.
+    //we count the negatives counting the newlines
     totalNegatives = std::count(std::istreambuf_iterator<char>(streamNegatives),
                                 std::istreambuf_iterator<char>(), '\n');
-    streamNegatives.seekg(0);
+    streamNegatives.clear();
+    streamNegatives.seekg(0, std::ios::beg);
 }
 
 
@@ -40,23 +41,20 @@ DataProvider::~DataProvider()
 }
 
 
+/**
+ * Loads a chunk of the data into the buffer. The amount loaded varies.
+ */
 bool DataProvider::loadNext()
 {
-    unsigned int totalLoaded = 0;
-    unsigned int amountToLoad = maxObjectsInBuffer;
-
-    if (currentLoad == 0) //positives not yet loaded to user. They will always come first.
+    unsigned int positives_loaded = 0;
+    if (nextIndexToLoad < positives.size()) //this assumes that the positive sizes are smaller than the buffer
     {
-        for(unsigned int i = 0; i < positives.size(); ++i)
-        {
-            pushIntoSample(i, positives[i]);
-        }
-
-        totalLoaded = totalPositives;
-        amountToLoad -= totalPositives;
+        samples.assign(positives.begin(), positives.end());
+        positives_loaded = positives.size();
     }
 
-    totalLoaded += load(streamNegatives, totalPositives, amountToLoad, samples, no);
+    unsigned int totalLoaded = positives_loaded + load(streamNegatives, positives_loaded, maxObjectsInBuffer - positives_loaded, samples, no);
+    nextIndexToLoad += totalLoaded;
 
     if (!totalLoaded)
     {
@@ -68,15 +66,13 @@ bool DataProvider::loadNext()
         samples.resize(totalLoaded);
     }
 
-    ++currentLoad;
-
     return true;
 }
 
-int DataProvider::load(fs::ifstream & stream,
+unsigned int DataProvider::load(std::ifstream & stream,
                        const unsigned int offset,
                        const unsigned int amount,
-                       std::vector< LabeledExample > & target,
+                       LEContainer & target,
                        const Classification classification)
 {
     unsigned int i = 0;
@@ -90,7 +86,7 @@ int DataProvider::load(fs::ifstream & stream,
             break;
         }
 
-        if ( amount > 0 ? i >= amount : false )
+        if ( amount > 0 ? i > amount : false )
         {
             break;
         }
@@ -119,28 +115,29 @@ int DataProvider::load(fs::ifstream & stream,
 
 void DataProvider::reset()
 {
-    streamNegatives.seekg(0);
-    currentLoad = 0;
+    streamNegatives.clear();
+    streamNegatives.seekg(0, std::ios::beg);
+    nextIndexToLoad = 0;
 
     samples.reserve(maxObjectsInBuffer);
 }
 
-std::vector<LabeledExample>::size_type DataProvider::size()
+LEContainer::size_type DataProvider::size()
 {
     return totalPositives + totalNegatives;
 }
 
-std::vector<LabeledExample>::size_type DataProvider::sizePositives()
+LEContainer::size_type DataProvider::sizePositives()
 {
     return totalPositives;
 }
 
-std::vector<LabeledExample>::size_type DataProvider::sizeNegatives()
+LEContainer::size_type DataProvider::sizeNegatives()
 {
     return totalNegatives;
 }
 
-std::vector<LabeledExample> const * const DataProvider::getCurrentBuffer()
+LEContainer const * const DataProvider::getCurrentBuffer()
 {
     return &samples;
 }
@@ -150,10 +147,10 @@ void DataProvider::initBuffers(int maxBuffer)
     maxObjectsInBuffer = maxBuffer;
     samples.reserve(maxObjectsInBuffer);
 
-    currentLoad = 0;
+    nextIndexToLoad = 0;
 }
 
-void DataProvider::pushIntoSample(std::vector< LabeledExample >::size_type index, const LabeledExample &s)
+void DataProvider::pushIntoSample(LEContainer::size_type index, const LabeledExample &s)
 {
     //since I only reserved the memory, I need to decide between push_back or direct vector insertion
     if (index >= samples.size())

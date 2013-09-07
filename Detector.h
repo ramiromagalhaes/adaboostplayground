@@ -50,12 +50,12 @@ private:
     /**
      * @brief subwindowMean The mean value of the pixels in the subwindow.
      */
-    double subwindowMean;
+    float subwindowMean;
 
     /**
      * @brief subwindowStdDeviation The standard deviation of the pixels in the subwindow.
      */
-    double subwindowStdDeviation;
+    float subwindowStdDeviation;
 
 };
 

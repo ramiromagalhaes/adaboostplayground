@@ -19,7 +19,7 @@ public:
      * @return A pointer to the WeakHypothesis that "minimalizes" the classification error.
      */
     virtual WeakHypothesis const * const learn(
-        const std::vector < LabeledExample > &training_set,
+        const LEContainer &training_set,
         const std::vector < weight_type > &weight_distribution,
         const std::vector < WeakHypothesis * > hypothesis,
         weight_type & weighted_error) =0;

@@ -75,16 +75,16 @@ bool HaarWavelet::setIntegralImages(cv::Mat * const sum_, cv::Mat * const square
 }
 
 //TODO Should the normalization happen here?
-double HaarWavelet::value() const
+float HaarWavelet::value() const
 {
     assert(sum && squareSum); //TODO convert into exception?
 
-    double returnValue = 0;
+    float returnValue = 0;
 
     const int dim = dimensions();
     for (int i = 0; i < dim; ++i)
     {
-        double rectValue = singleRectangleValue(rects[i], *sum);
+        float rectValue = singleRectangleValue(rects[i], *sum);
         returnValue += (weights[i] * rectValue);
     }
 
@@ -206,9 +206,9 @@ void HaarWavelet::weight(const int index, const float new_value)
     weights[index] = new_value;
 }
 
-inline double HaarWavelet::singleRectangleValue(const cv::Rect &r, const cv::Mat &s) const
+float HaarWavelet::singleRectangleValue(const cv::Rect &r, const cv::Mat &s) const
 {
-    double rectVal = 0;
+    float rectVal = 0;
 
     //As per Lienhart, Maydt, 2002, section 2.2
     const int x_w = r.x + r.width;

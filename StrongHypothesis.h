@@ -26,8 +26,12 @@ private:
         WeakHypothesis const * weakHypothesis;
 
         entry() : weight(0), weakHypothesis(0) {}
-        entry(weight_type w, WeakHypothesis const * h) : weight(w),
-                                                         weakHypothesis(h) {}
+        entry(weight_type w, WeakHypothesis const * const h)
+        {
+            weight = w;
+            weakHypothesis = h;
+        }
+
         ~entry()
         {
             delete weakHypothesis;
@@ -69,17 +73,14 @@ public:
 
 
     void insert(weight_type alpha, WeakHypothesis const * const weak_hypothesis) {
-        //TODO copy the weak_hypothesis
-        entry e(alpha, const_cast<WeakHypothesis const *>(weak_hypothesis)); //from now on, this class is responsible for handling properly these pointers
-        hypothesis.insert(hypothesis.end(), e);
-
         if (writeToStreamOnInsert)
         {
             data << alpha << " ";
             weak_hypothesis->write(data);
             data << std::endl;
-            data.flush();//I think std::endl flushes data
         }
+
+        hypothesis.push_back( entry(alpha, weak_hypothesis) );
     }
 
 
