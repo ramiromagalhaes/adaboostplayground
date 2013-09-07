@@ -2,18 +2,15 @@
 #define DATAPROVIDER_H
 
 #include "Common.h"
-#include <boost/filesystem.hpp>
 #include <fstream>
 
-
-namespace fs = boost::filesystem;
 
 
 //TODO if the data provider buffer is bigger than the amount of images, simply retain all of them in memory.
 class DataProvider
 {
 public:
-    DataProvider(fs::path & pathIndexPositives, fs::path & pathIndexNegatives, unsigned int maxObjectsInBuffer_);
+    DataProvider(std::string &pathIndexPositives, std::string &pathIndexNegatives, unsigned int maxObjectsInBuffer_);
     ~DataProvider();
 
     /**

@@ -29,9 +29,9 @@ HaarWavelet::HaarWavelet(cv::Size * const detectorSize_,
  *
  */
 HaarWavelet::HaarWavelet(cv::Size * const detectorSize_,
-                         std::istream &input) : scale(1),
-                                                detectorSize(detectorSize_),
-                                                detector(0)
+                         std::istream & input) : scale(1),
+                                                 detectorSize(detectorSize_),
+                                                 detector(0)
 {
     int rectangles;
     input >> rectangles;

@@ -5,25 +5,11 @@
 #include <cmath>
 #include <algorithm>
 #include "Common.h"
-#include "WeakLearner.h"
-#include "ReweightingWeakLearner.h"
 #include "StrongHypothesis.h"
 #include "dataprovider.h"
 
-
-
+template<typename WeakHypothesisType>
 class Adaboost {
-public:
-    Adaboost() : t(0),
-                 weak_learner(new ReweightingWeakLearner()) {}
-
-    Adaboost(WeakLearner * w_learner) : t(0),
-                                        weak_learner(w_learner) {}
-
-    virtual ~Adaboost() {
-        delete weak_learner;
-    }
-
     //TODO implement means to allow different sampling strategies
     //TODO Store errors and historic data gathered through the iterations
     //TODO devise means to implement some flexible stop criteria
@@ -31,87 +17,21 @@ public:
 protected:
     unsigned int t; /** iteration (epoch) counter */
 
-    WeakLearner * weak_learner; /** the weak learner used in this Adaboost instance */
-
-
-
-     /**
-     * @brief update_distribution Updates the weight distribution of the samples.
-     * @param alpha
-     * @param current_weak_hypothesis
-     * @param trainingData
-     * @param distribution_weight
-     */
-    void update_distribution(
-            const weight_type alpha,
-            WeakHypothesis const * const current_weak_hypothesis,
-            const LEContainer &trainingData,
-            WeightVector &distribution_weight) {
-
-        weight_type normalizationFactor = 0;
-
-        for (WeightVector::size_type i = 0; i < distribution_weight.size(); i++) {
-            const Classification trainingResult = current_weak_hypothesis->classify(trainingData[i].example);
-
-            distribution_weight[i] *= std::exp(-alpha * trainingData[i].label * trainingResult);
-            normalizationFactor += distribution_weight[i];
-        }
-
-        for (WeightVector::size_type i = 0; i < distribution_weight.size(); i++) {
-            distribution_weight[i] /= normalizationFactor;
-        }
-    }
-
 
 
 public:
+    Adaboost() : t(0) {}
 
-    /**
-     * @brief This method trains a strong classifier.
-     * @param training_set A vector of LabeledExamples that will be used in training.
-     * @param strong_hypothesis The object that will hold the strong classifier.
-     * @param maximum_iterations The maximum iterations that this training will perform.
-     */
-    void train(
-            const LEContainer &training_set,
-            StrongHypothesis &strong_hypothesis,
-            const std::vector < WeakHypothesis * > & hypothesis,
-            const unsigned int maximum_iterations) {
-
-        t = 0;
-
-        WeightVector weight_distribution(training_set.size()); //holds all weight elements
-        std::fill(weight_distribution.begin(), weight_distribution.end(), 1.0f / training_set.size()); //NOTE: this is the initialization proposed by Schapire and Freund
-
-        do {//Main Adaboost loop
-
-            //train weak learner and get weak hypothesis so that it minimalizes the weighted error
-            weight_type weighted_error = 0;
-            WeakHypothesis const * const weak_hypothesis =
-                    weak_learner->learn(training_set, weight_distribution, hypothesis, weighted_error);
-
-            //set alpha(t)
-            const weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
-
-            //update the distribution
-            update_distribution(alpha, weak_hypothesis, training_set, weight_distribution);
-
-            //update the final hypothesis
-            strong_hypothesis.insert(alpha, weak_hypothesis);
-
-            t++; //next training iteration
-        } while (t < maximum_iterations);
+    virtual ~Adaboost() {
     }
-
-
 
     /**
      * @brief Same as above, but now you're handling too many negative samples.
      */
     void train(
             DataProvider & training_set,
-            StrongHypothesis & strong_hypothesis,
-            const std::vector < WeakHypothesis * > & hypothesis,
+            StrongHypothesis <WeakHypothesisType> & strong_hypothesis,
+            const std::vector <WeakHypothesisType> & hypothesis,
             const unsigned int maximum_iterations) {
 
         t = 0;
@@ -155,9 +75,9 @@ public:
                 LEContainer const * const samples = training_set.getCurrentBuffer();
                 for(LEContainer::const_iterator it = samples->begin(); it != samples->end(); ++it)
                 {
-                    for (std::vector < WeakHypothesis * >::size_type j = 0; j < hypothesis.size(); ++j)
+                    for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j)
                     {
-                        if( hypothesis[j]->classify(it->example) != it->label )
+                        if( hypothesis[j].classify(it->example) != it->label )
                         {
                             hypothesis_weighted_errors[j] += weight_distribution[j];
                         }
@@ -192,7 +112,7 @@ public:
             }
 
             //At last, we have a reference to the best weak hypothesis
-            WeakHypothesis const * const weak_hypothesis =
+            const WeakHypothesisType weak_hypothesis =
                     hypothesis[lowest_weighted_error - hypothesis_weighted_errors.begin()];
 
             //set alpha(t)
@@ -212,7 +132,7 @@ public:
                     LEContainer const * const samples = training_set.getCurrentBuffer();
                     for(LEContainer::const_iterator it = samples->begin(); it != samples->end(); ++it, ++i)
                     {
-                        const Classification c = weak_hypothesis->classify(it->example);
+                        const Classification c = weak_hypothesis.classify(it->example);
 
                         weight_distribution[i] *= std::exp(-alpha * it->label * c);
                         normalizationFactor += weight_distribution[i];

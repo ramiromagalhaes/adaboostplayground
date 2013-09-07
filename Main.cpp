@@ -11,31 +11,55 @@
 
 
 
-class HaarClassifier : public WeakHypothesis
+class HaarClassifier
 {
 public:
-    HaarWavelet * wavelet;
     int p;
     float theta;
+    HaarWavelet * wavelet;
 
     HaarClassifier()
     {
         p = 1;
-        theta = 0.f;
+        theta = .0f;
+        wavelet = 0;
     }
 
-    HaarClassifier(HaarWavelet * const w)
+    HaarClassifier(HaarWavelet * w)
     {
-        wavelet = w;
         p = 1;
         theta = .0f;
+        wavelet = w;
     }
 
-    virtual ~HaarClassifier() {
-        delete wavelet;
+    //http://pages.cs.wisc.edu/~hasti/cs368/CppTutorial/NOTES/CLASSES-PTRS.html#destructor
+    //http://stackoverflow.com/questions/6435404/c-error-double-free-or-corruption-fasttop
+
+    HaarClassifier(const HaarClassifier & h) : p(h.p),
+                                               theta(h.theta),
+                                               wavelet(h.wavelet) { }
+
+
+
+    HaarClassifier &operator=(const HaarClassifier & h)
+    {
+        p = h.p;
+        theta = h.theta;
+        wavelet = h.wavelet;
+        return *this;
     }
 
-    virtual Classification classify(const cv::Mat & sample) const
+    ~HaarClassifier() {
+        /* TODO properly delete the reference to wavelet. It is currently not working.
+        if (wavelet != 0)
+        {
+            delete wavelet;
+            wavelet = 0;
+        }
+        */
+    }
+
+    Classification classify(const cv::Mat & sample) const
     {
         //TODO who should pass the data to the wavelet?
         //TODO how should I produce the the integral image? In here? Out of here? If out, then what parameter should I pass?
@@ -52,7 +76,7 @@ public:
         return wavelet->value() < theta ? yes : no;
     }
 
-    virtual bool write(std::ostream & output) const
+    bool write(std::ostream & output) const
     {
         return wavelet->write(output);
     }
@@ -60,7 +84,7 @@ public:
 
 
 
-bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier *> & wavelets)
+bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers)
 {
     cv::Size * const size = new cv::Size(20, 20);
 
@@ -74,10 +98,12 @@ bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier *> 
 
     do
     {
-        HaarClassifier * classifier = new HaarClassifier(new HaarWavelet(size, ifs));
         if ( !ifs.eof() )
         {
-            wavelets.push_back(classifier);
+            HaarWavelet * wavelet = new HaarWavelet(size, ifs);
+            HaarClassifier classifier;
+            classifier.wavelet = wavelet;
+            classifiers.push_back(classifier);
         }
         else
         {
@@ -92,33 +118,32 @@ bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier *> 
 
 
 
-int main(int argc, char **argv) {
+int main(int, char **argv) {
     const unsigned int buffer_size = strtol(argv[1], 0, 10);
-    boost::filesystem::path positivesFile = "/mnt/faces.txt";
-    boost::filesystem::path negativesFile = "/mnt/background-excerpt.txt";
+    std::string positivesFile = "/mnt/faces.txt";
+    std::string negativesFile = "/mnt/background-excerpt.txt";
 
     const unsigned int maximum_iterations = 40;
 
-    StrongHypothesis strongHypothesis("/mnt/strongHypothesis.txt");
+    StrongHypothesis<HaarClassifier> strongHypothesis("/mnt/strongHypothesis.txt");
     std::cout << "Strong hypothesis ready." << std::endl;
 
-    std::vector < HaarClassifier * > * hypothesis = new std::vector < HaarClassifier * >();
+    std::vector<HaarClassifier> hypothesis;
     {
-        loadClassifiers("/mnt/haarwavelets.txt",
-                        *((std::vector < HaarClassifier * > *)hypothesis) );
-        std::cout << "Loaded " << hypothesis->size() << " weak classifiers." << std::endl;
+        loadClassifiers("/mnt/haarwavelets.txt", hypothesis);
+        std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 
     DataProvider provider(positivesFile, negativesFile, buffer_size);
     std::cout << "Data provider has " << provider.size() << " samples." << std::endl;
 
-    Adaboost boosting;
+    Adaboost<HaarClassifier> boosting;
     std::cout << "Boosting object created." << std::endl;
 
     try {
         boosting.train(provider,
                        strongHypothesis,
-                       *((std::vector < WeakHypothesis * > *)hypothesis),
+                       hypothesis,
                        maximum_iterations);
     } catch (int e) {
         std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;

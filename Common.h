@@ -54,14 +54,4 @@ typedef std::vector< LabeledExample > LEContainer;
 
 
 
-/**
- * @brief The WeakHypothesis represents a weak hypothesis.
- */
-class WeakHypothesis {
-public:
-    virtual ~WeakHypothesis() { }
-    virtual Classification classify(const cv::Mat & sample) const =0;
-    virtual bool write(std::ostream & output) const =0;
-};
-
 #endif /* CLASSIFICATION_H_ */

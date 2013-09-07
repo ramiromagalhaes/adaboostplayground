@@ -26,7 +26,7 @@ public:
     /**
      * Constructs a Haar wavelet by reading a input stream.
      */
-    HaarWavelet(cv::Size * const detectorSize_, std::istream &input);
+    HaarWavelet(cv::Size * const detectorSize_, std::istream & input);
 
     /**
      * Amount of rectangles this Haar wavelet has

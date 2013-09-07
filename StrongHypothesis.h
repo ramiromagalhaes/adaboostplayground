@@ -14,6 +14,7 @@
  * Notice that this class holds pointers to the weak classifiers, added via the insert method.
  * All those pointers will be deleted on destruction of this class.
  */
+template<typename WeakHypothesisType>
 class StrongHypothesis {
 private:
 
@@ -23,18 +24,13 @@ private:
     class entry {
     public:
         weight_type weight;
-        WeakHypothesis const * weakHypothesis;
+        WeakHypothesisType weakHypothesis;
 
         entry() : weight(0), weakHypothesis(0) {}
-        entry(weight_type w, WeakHypothesis const * const h)
+        entry(weight_type w, WeakHypothesisType h)
         {
             weight = w;
             weakHypothesis = h;
-        }
-
-        ~entry()
-        {
-            delete weakHypothesis;
         }
     };
 
@@ -72,11 +68,11 @@ public:
 
 
 
-    void insert(weight_type alpha, WeakHypothesis const * const weak_hypothesis) {
+    void insert(weight_type alpha, WeakHypothesisType weak_hypothesis) {
         if (writeToStreamOnInsert)
         {
             data << alpha << " ";
-            weak_hypothesis->write(data);
+            weak_hypothesis.write(data);
             data << std::endl;
         }
 
@@ -88,7 +84,7 @@ public:
     Classification classify(const cv::Mat &input) const {
         weight_type result = .0f;
 
-        for (std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
+        for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
             entry e = *it;
             result += (e.weight) * (e.weakHypothesis->classify(input));
         }

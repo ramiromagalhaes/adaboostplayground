@@ -3,14 +3,14 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-DataProvider::DataProvider(boost::filesystem::path & pathIndexPositives,
-                           boost::filesystem::path & pathIndexNegatives,
+DataProvider::DataProvider(std::string & pathIndexPositives,
+                           std::string & pathIndexNegatives,
                            unsigned int maxObjectsInBuffer_)
 {
     initBuffers(maxObjectsInBuffer_);
 
-    streamPositives.open(pathIndexPositives.native().c_str());
-    streamNegatives.open(pathIndexNegatives.native().c_str());
+    streamPositives.open(pathIndexPositives.c_str());
+    streamNegatives.open(pathIndexNegatives.c_str());
 
     if ( !streamPositives.is_open() || !streamNegatives.is_open() )
     {

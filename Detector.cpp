@@ -48,6 +48,8 @@ bool Detector::setSubwindow(const int left, const int top)
     //return (float) sqrt( (double) (area * valSqSum - (double)valSum * valSum) );
 
 //    const double normalized = (pixel - subwindowMean)/sqrt(subwindowVariance);
+
+    return true;
 }
 
 
@@ -55,4 +57,5 @@ bool Detector::setSubwindow(const int left, const int top)
 bool Detector::setSubwindow(const cv::Point topLeftPosition)
 {
     setSubwindow(topLeftPosition.x, topLeftPosition.y);
+    return true;
 }
