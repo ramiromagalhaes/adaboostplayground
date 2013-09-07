@@ -26,7 +26,7 @@ DataProvider::DataProvider(boost::filesystem::path & pathIndexPositives,
 
     //we count the negatives seeking for newlines.
     totalNegatives = std::count(std::istreambuf_iterator<char>(streamNegatives),
-                                std::istreambuf_iterator<char>(), '\n') + 1;
+                                std::istreambuf_iterator<char>(), '\n');
     streamNegatives.seekg(0);
 }
 
