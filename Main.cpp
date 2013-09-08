@@ -41,9 +41,9 @@ public:
 
     HaarClassifier(const HaarClassifier & h) : p(h.p),
                                                theta(h.theta),
-                                               wavelet(h.wavelet),
                                                integralSum(21, 21, CV_64F),
-                                               integralSquare(21, 21, CV_64F)
+                                               integralSquare(21, 21, CV_64F),
+                                               wavelet(h.wavelet)
     {
         wavelet->setIntegralImages(&integralSum, &integralSquare);
     }
@@ -127,22 +127,23 @@ bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & 
 
 
 int main(int, char **argv) {
-    const unsigned int buffer_size = strtol(argv[1], 0, 10);
-    std::string positivesFile = "/mnt/faces.txt";
-    std::string negativesFile = "/mnt/background-excerpt.txt";
+    const std::string positivesFile = argv[1];
+    const std::string negativesFile = argv[2];
+    const std::string waveletsFile = argv[3];
+    const std::string strongHypothesisFile = argv[4];
+    const unsigned int maximum_iterations = strtol(argv[5], 0, 10);
+    const unsigned int buffer_size = strtol(argv[6], 0, 10);
 
-    const unsigned int maximum_iterations = 40;
-
-    StrongHypothesis<HaarClassifier> strongHypothesis("/mnt/strongHypothesis.txt");
+    StrongHypothesis<HaarClassifier> strongHypothesis(strongHypothesisFile);
 
     std::vector<HaarClassifier> hypothesis;
     {
-        loadClassifiers("/mnt/haarwavelets.txt", hypothesis);
+        loadClassifiers(waveletsFile, hypothesis);
         std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 
     DataProvider provider(positivesFile, negativesFile, buffer_size);
-    std::cout << "Data provider has " << provider.size() << " samples." << std::endl;
+    std::cout << "Total samples to load " << provider.size() << "." << std::endl;
 
     Adaboost<HaarClassifier> boosting;
 
