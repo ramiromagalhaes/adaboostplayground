@@ -10,7 +10,7 @@
 class DataProvider
 {
 public:
-    DataProvider(std::string &pathIndexPositives, std::string &pathIndexNegatives, unsigned int maxObjectsInBuffer_);
+    DataProvider(const std::string & pathIndexPositives, const std::string & pathIndexNegatives, const unsigned int maxObjectsInBuffer_);
     ~DataProvider();
 
     /**
