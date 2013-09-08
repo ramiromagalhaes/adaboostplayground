@@ -53,7 +53,10 @@ bool DataProvider::loadNext()
         positives_loaded = positives.size();
     }
 
-    unsigned int totalLoaded = positives_loaded + load(streamNegatives, positives_loaded, maxObjectsInBuffer - positives_loaded, samples, no);
+    unsigned int totalLoaded = positives_loaded + load(streamNegatives,
+                                                       positives_loaded,
+                                                       maxObjectsInBuffer - positives_loaded,
+                                                       samples, no);
     nextIndexToLoad += totalLoaded;
 
     if (!totalLoaded)
