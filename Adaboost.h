@@ -152,7 +152,8 @@ public:
                                std::bind1st(std::divides<weight_type>(), normalizationFactor));
                 */
 
-                for (WeightVector::size_type i = 0; i < weight_distribution.size(); i++) {
+                for (WeightVector::size_type i = 0; i < weight_distribution.size(); i++)
+                {
                     weight_distribution[i] /= normalizationFactor;
                 }
 
