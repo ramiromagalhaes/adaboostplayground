@@ -215,10 +215,10 @@ float HaarWavelet::singleRectangleValue(const cv::Rect &r, const cv::Mat &s) con
     const int y_h = r.y + r.height;
 
     //TODO is there a faster implementation that avoids invoking s.at() functions? Maybe a pointer to the data? Check Mat::step1()
-    rectVal = s.at<int>(r.y, r.x)     // (x,     y)
-                - s.at<int>(r.y, x_w) // (x + w, y)
-                - s.at<int>(y_h, r.x) // (x,     y + h)
-                + s.at<int>(y_h, x_w);// (x + w, y + h)
+    rectVal = s.at<double>(r.y, r.x)     // (x,     y)
+                - s.at<double>(r.y, x_w) // (x + w, y)
+                - s.at<double>(y_h, r.x) // (x,     y + h)
+                + s.at<double>(y_h, x_w);// (x + w, y + h)
 
     return rectVal;
 }

@@ -18,18 +18,22 @@ public:
     float theta;
     HaarWavelet * wavelet;
 
-    HaarClassifier()
-    {
-        p = 1;
-        theta = .0f;
-        wavelet = 0;
-    }
+    cv::Mat integralSum;
+    cv::Mat integralSquare;
 
-    HaarClassifier(HaarWavelet * w)
+    HaarClassifier() : p(1),
+                       theta(.0f),
+                       integralSum(21, 21, CV_64F),
+                       integralSquare(21, 21, CV_64F),
+                       wavelet(0) { }
+
+    HaarClassifier(HaarWavelet * w) : p(1),
+                                      theta(.0f),
+                                      integralSum(21, 21, CV_64F),
+                                      integralSquare(21, 21, CV_64F),
+                                      wavelet(w)
     {
-        p = 1;
-        theta = .0f;
-        wavelet = w;
+        wavelet->setIntegralImages(&integralSum, &integralSquare);
     }
 
     //http://pages.cs.wisc.edu/~hasti/cs368/CppTutorial/NOTES/CLASSES-PTRS.html#destructor
@@ -37,7 +41,12 @@ public:
 
     HaarClassifier(const HaarClassifier & h) : p(h.p),
                                                theta(h.theta),
-                                               wavelet(h.wavelet) { }
+                                               wavelet(h.wavelet),
+                                               integralSum(21, 21, CV_64F),
+                                               integralSquare(21, 21, CV_64F)
+    {
+        wavelet->setIntegralImages(&integralSum, &integralSquare);
+    }
 
 
 
@@ -46,6 +55,9 @@ public:
         p = h.p;
         theta = h.theta;
         wavelet = h.wavelet;
+        integralSum = h.integralSum;
+        integralSquare = h.integralSquare;
+        wavelet->setIntegralImages(&integralSum, &integralSquare);
         return *this;
     }
 
@@ -64,10 +76,7 @@ public:
         //TODO who should pass the data to the wavelet?
         //TODO how should I produce the the integral image? In here? Out of here? If out, then what parameter should I pass?
         //TODO this is a temporary stupid solution for testing purposes.
-        cv::Mat integralSum(sample.rows + 1, sample.cols + 1, CV_32S);
-        cv::Mat integralSquare(sample.rows + 1, sample.cols + 1, CV_32S);
-        cv::integral(sample, integralSum, integralSquare, CV_32S);
-        wavelet->setIntegralImages(&integralSum, &integralSquare);
+        cv::integral(sample, integralSum, integralSquare, CV_64F);
 
         if (p > 0)
         {
@@ -98,12 +107,11 @@ bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & 
 
     do
     {
+        HaarClassifier classifier(new HaarWavelet(size, ifs));
+
         if ( !ifs.eof() )
         {
-            HaarWavelet * wavelet = new HaarWavelet(size, ifs);
-            HaarClassifier classifier;
-            classifier.wavelet = wavelet;
-            classifiers.push_back(classifier);
+            classifiers.push_back( classifier );
         }
         else
         {

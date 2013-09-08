@@ -40,7 +40,7 @@ public:
         //NOTE: in this method we initialize it as proposed by Viola and Jones. The resulting vector is already normalized.
         //NOTE: the std::fill method bellow is also part of this initialization.
         WeightVector weight_distribution(training_set.size(),
-                                                     0.5f / training_set.sizeNegatives());
+                                         0.5f / training_set.sizeNegatives());
         std::fill(weight_distribution.begin(),
                   weight_distribution.begin() + training_set.sizePositives(),
                   0.5f / training_set.sizePositives());
@@ -70,16 +70,18 @@ public:
             unsigned long progress = -1;
 
             training_set.reset();
+
             while ( training_set.loadNext() )
             {
                 LEContainer const * const samples = training_set.getCurrentBuffer();
-                for(LEContainer::const_iterator it = samples->begin(); it != samples->end(); ++it)
+
+                for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j)
                 {
-                    for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j)
+                    for(LEContainer::const_iterator it = samples->begin(); it != samples->end(); ++it)
                     {
                         if( hypothesis[j].classify(it->example) != it->label )
                         {
-                            hypothesis_weighted_errors[j] += weight_distribution[j];
+                            hypothesis_weighted_errors[j] += weight_distribution[it - samples->begin()];
                         }
 
                         const unsigned long currentProgress = 100 * (double)count / (double)totalIterations;
@@ -94,29 +96,27 @@ public:
                 }
             }
 
-            std::cout << "\nA new weak classifier was chosen. Will update the distribution." << std::endl;
-
             //Now we must choose the weak hypothesis that produces the smallest weighted error
             //this is the final weighted_error we'll get from the best weak hypothesis found in this iteration
             const WeightVector::iterator lowest_weighted_error =
                 std::min_element(hypothesis_weighted_errors.begin(), hypothesis_weighted_errors.end());
             const weight_type weighted_error = *lowest_weighted_error;
 
-            //does the best hypothesis conform to the weak learning assumption?
-            const weight_type maximum_weighted_error = 0.5f;
-            if (weighted_error > maximum_weighted_error)
-            {
-                std::cout << "Weak classifier " << t
-                          << " fails to comply to the weak learning assumption with error "
-                          << weighted_error << std::endl;
-            }
+            //set alpha(t)
+            weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
 
-            //At last, we have a reference to the best weak hypothesis
+            std::cout << "\nA new weak classifier was chosen. Will update the distribution." << std::endl;
+            std::cout << "Weak classifier idx : " << lowest_weighted_error - hypothesis_weighted_errors.begin() << std::endl;
+            std::cout << "Best weighted error : " << weighted_error;
+            if (weighted_error > 0.5f)
+            {
+                std::cout << " (violates weak learning assumption)";
+            }
+            std::cout << "\nAlpha value         : " << alpha << std::endl;
+
+            //Get a reference to the best weak hypothesis
             const WeakHypothesisType weak_hypothesis =
                     hypothesis[lowest_weighted_error - hypothesis_weighted_errors.begin()];
-
-            //set alpha(t)
-            const weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
 
             //update the distribution
             //Since we're unable to hold the results for the selected weak hypothesis, we need to iterate
@@ -124,7 +124,9 @@ public:
             {
                 training_set.reset();
 
-                weight_type normalizationFactor = 0;
+                unsigned int count_correct_classification = 0;
+
+                weight_type normalizationFactor = .0f;
 
                 WeightVector::size_type i = 0;
                 while ( training_set.loadNext() )
@@ -134,14 +136,28 @@ public:
                     {
                         const Classification c = weak_hypothesis.classify(it->example);
 
+                        if (c == it->label)
+                        {
+                            ++count_correct_classification;
+                        }
+
                         weight_distribution[i] *= std::exp(-alpha * it->label * c);
                         normalizationFactor += weight_distribution[i];
                     }
                 }
 
+                /*
+                std::transform(weight_distribution.begin(), weight_distribution.end(),
+                               weight_distribution.begin(),
+                               std::bind1st(std::divides<weight_type>(), normalizationFactor));
+                */
+
                 for (WeightVector::size_type i = 0; i < weight_distribution.size(); i++) {
                     weight_distribution[i] /= normalizationFactor;
                 }
+
+                std::cout << "Normalization factor: " << normalizationFactor << std::endl;
+                std::cout << "Detection rate      : " << 100 * (double) count_correct_classification / training_set.size() << std::endl;
             }
 
             //update the final hypothesis
