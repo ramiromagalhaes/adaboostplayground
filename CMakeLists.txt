@@ -7,7 +7,6 @@ set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -D_DEBUG -Wextra -Wa
 set(CMAKE_CSS_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
-find_package( Boost REQUIRED COMPONENTS filesystem system )
 
 # Setting the main program
 set(source_files

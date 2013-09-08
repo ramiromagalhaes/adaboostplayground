@@ -1,7 +1,6 @@
 #include <vector>
 #include <iostream>
 #include <opencv2/core/core.hpp>
-#include <boost/filesystem.hpp>
 
 #include "Haarwavelet.h"
 #include "Common.h"
