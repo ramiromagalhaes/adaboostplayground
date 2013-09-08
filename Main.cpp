@@ -126,7 +126,6 @@ int main(int, char **argv) {
     const unsigned int maximum_iterations = 40;
 
     StrongHypothesis<HaarClassifier> strongHypothesis("/mnt/strongHypothesis.txt");
-    std::cout << "Strong hypothesis ready." << std::endl;
 
     std::vector<HaarClassifier> hypothesis;
     {
@@ -138,7 +137,6 @@ int main(int, char **argv) {
     std::cout << "Data provider has " << provider.size() << " samples." << std::endl;
 
     Adaboost<HaarClassifier> boosting;
-    std::cout << "Boosting object created." << std::endl;
 
     try {
         boosting.train(provider,
