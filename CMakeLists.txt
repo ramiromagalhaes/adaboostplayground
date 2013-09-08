@@ -13,13 +13,11 @@ find_package( Boost REQUIRED COMPONENTS filesystem system )
 set(source_files
     Common.h
     StrongHypothesis.h
-    WeakLearner.h ResamplingWeakLearner.h ReweightingWeakLearner.h
     Adaboost.h
     Main.cpp
     Haarwavelet.h Haarwavelet.cpp
     Detector.h Detector.cpp
     Haarwaveletutilities.h Haarwaveletutilities.cpp
-    dataprovider.h dataprovider.cpp
-)
+    dataprovider.h dataprovider.cpp )
 add_executable( adaboostplayground ${source_files} )
 target_link_libraries( adaboostplayground ${OpenCV_LIBS} ${Boost_LIBRARIES} )
