@@ -48,7 +48,7 @@ public:
 
 
     StrongHypothesis(std::string path) {
-        data.open( path.c_str() );
+        data.open( path.c_str(), std::ios::trunc );
         if (!data.is_open())
         {
             throw 220;
