@@ -1,5 +1,5 @@
 #include "Haarwavelet.h"
-#include <assert.h>
+#include <cassert>
 #include <climits>
 
 
