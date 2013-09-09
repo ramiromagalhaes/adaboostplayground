@@ -17,17 +17,20 @@ public:
     float theta;
     HaarWavelet * wavelet;
 
-    cv::Mat integralSum;
-    cv::Mat integralSquare;
+    cv::Mat * lastSample;   //Holds a pointer to the last sample provided to the classifier.
+    cv::Mat integralSum;    //If lastSample changes, we'll need another integralSum...
+    cv::Mat integralSquare; //...and another integralSquare.
 
     HaarClassifier() : p(1),
                        theta(.0f),
+                       lastSample(0),
                        integralSum(21, 21, CV_64F),
                        integralSquare(21, 21, CV_64F),
                        wavelet(0) { }
 
     HaarClassifier(HaarWavelet * w) : p(1),
                                       theta(.0f),
+                                      lastSample(0),
                                       integralSum(21, 21, CV_64F),
                                       integralSquare(21, 21, CV_64F),
                                       wavelet(w)
@@ -40,6 +43,7 @@ public:
 
     HaarClassifier(const HaarClassifier & h) : p(h.p),
                                                theta(h.theta),
+                                               lastSample(0),
                                                integralSum(21, 21, CV_64F),
                                                integralSquare(21, 21, CV_64F),
                                                wavelet(h.wavelet)
@@ -54,6 +58,7 @@ public:
         p = h.p;
         theta = h.theta;
         wavelet = h.wavelet;
+        lastSample = h.lastSample;
         integralSum = h.integralSum;
         integralSquare = h.integralSquare;
         wavelet->setIntegralImages(&integralSum, &integralSquare);
@@ -74,8 +79,11 @@ public:
     {
         //TODO who should pass the data to the wavelet?
         //TODO how should I produce the the integral image? In here? Out of here? If out, then what parameter should I pass?
-        //TODO this is a temporary stupid solution for testing purposes.
-        cv::integral(sample, integralSum, integralSquare, CV_64F);
+        //TODO this is a temporary solution for testing purposes.
+        if ( lastSample != &sample )
+        {
+            cv::integral(sample, integralSum, integralSquare, CV_64F);
+        }
 
         if (p > 0)
         {
