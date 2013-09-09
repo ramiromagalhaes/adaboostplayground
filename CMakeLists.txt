@@ -8,6 +8,10 @@ set(CMAKE_CSS_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
 
+# Depends on OpenImageIO
+include_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/include)
+link_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/lib)
+
 # Setting the main program
 set(source_files
     Common.h
