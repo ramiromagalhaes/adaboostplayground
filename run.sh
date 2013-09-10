@@ -1,2 +1,3 @@
 #!/bin/sh
-./adaboostplayground /mnt/faces.txt /mnt/fundo.txt /mnt/haarwavelets.txt /mnt/strongHypothesis.txt 40 1000000
+./adaboostplayground /mnt/faces.txt /mnt/fundo.txt /mnt/haarwavelets.txt /mnt/strongHypothesis.txt 1
+
