@@ -23,17 +23,17 @@ public:
 
     HaarClassifier() : p(1),
                        theta(.0f),
+                       wavelet(0),
                        lastSample(0),
                        integralSum(21, 21, CV_64F),
-                       integralSquare(21, 21, CV_64F),
-                       wavelet(0) { }
+                       integralSquare(21, 21, CV_64F) { }
 
     HaarClassifier(HaarWavelet * w) : p(1),
                                       theta(.0f),
+                                      wavelet(w),
                                       lastSample(0),
                                       integralSum(21, 21, CV_64F),
-                                      integralSquare(21, 21, CV_64F),
-                                      wavelet(w)
+                                      integralSquare(21, 21, CV_64F)
     {
         wavelet->setIntegralImages(&integralSum, &integralSquare);
     }
@@ -43,10 +43,10 @@ public:
 
     HaarClassifier(const HaarClassifier & h) : p(h.p),
                                                theta(h.theta),
-                                               lastSample(0),
+                                               wavelet(h.wavelet),
+                                               lastSample(h.lastSample),
                                                integralSum(21, 21, CV_64F),
-                                               integralSquare(21, 21, CV_64F),
-                                               wavelet(h.wavelet)
+                                               integralSquare(21, 21, CV_64F)
     {
         wavelet->setIntegralImages(&integralSum, &integralSquare);
     }
