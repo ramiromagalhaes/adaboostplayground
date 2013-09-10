@@ -4,6 +4,9 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+
+#include <opencv2/core/core.hpp>
+
 #include "Common.h"
 #include "StrongHypothesis.h"
 #include "dataprovider.h"
@@ -15,7 +18,8 @@ class Adaboost {
     //TODO devise means to implement some flexible stop criteria
 
 protected:
-    unsigned int t; /** iteration (epoch) counter */
+    /** iteration (epoch) counter */
+    unsigned int t;
 
 
 
@@ -71,15 +75,19 @@ public:
 
             { //in this block we pick the best weak classifier
                 training_set.reset();
-                LabeledExample sample;
+                LabeledExample sample; //TODO should probably move this integralSum calculation to the LabeledExample class
+                cv::Mat integralSum(21, 21, CV_64F);
+                cv::Mat integralSquare(21, 21, CV_64F);
+                cv::integral(sample.example, integralSum, integralSquare, CV_64F);
+
                 for(WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
                 {
                     for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
                     {
-                        if( hypothesis[j].classify(sample.example) != sample.label )
-                        {
-                            hypothesis_weighted_errors[j] += weight_distribution[i];
-                        }
+                        //Might be faster than an if thanks to branch prediction
+                        //See: http://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster-than-an-unsorted-array
+                        hypothesis_weighted_errors[j] += weight_distribution[i]
+                                * (hypothesis[j].classify(integralSum, integralSquare) != sample.label);
 
                         const unsigned long currentProgress = 100 * (double)count / (double)totalIterations;
                         if (currentProgress != progress)
@@ -126,14 +134,14 @@ public:
                 weight_type normalizationFactor = .0f;
 
                 LabeledExample sample;
+                cv::Mat integralSum(21, 21, CV_64F);
+                cv::Mat integralSquare(21, 21, CV_64F);
+                cv::integral(sample.example, integralSum, integralSquare, CV_64F);
+
                 for( WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
                 {
-                    const Classification c = weak_hypothesis.classify(sample.example);
-
-                    if (c == sample.label)
-                    {
-                        ++count_correct_classification;
-                    }
+                    const Classification c = weak_hypothesis.classify(integralSum, integralSquare);
+                    count_correct_classification += (c == sample.label); //increment if correctly classified
 
                     weight_distribution[i] *= std::exp(-alpha * sample.label * c);
                     normalizationFactor += weight_distribution[i];

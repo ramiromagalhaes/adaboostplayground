@@ -17,39 +17,20 @@ public:
     float theta;
     HaarWavelet * wavelet;
 
-    cv::Mat * lastSample;   //Holds a pointer to the last sample provided to the classifier.
-    cv::Mat integralSum;    //If lastSample changes, we'll need another integralSum...
-    cv::Mat integralSquare; //...and another integralSquare.
-
     HaarClassifier() : p(1),
                        theta(.0f),
-                       wavelet(0),
-                       lastSample(0),
-                       integralSum(21, 21, CV_64F),
-                       integralSquare(21, 21, CV_64F) { }
+                       wavelet(0) { }
 
     HaarClassifier(HaarWavelet * w) : p(1),
                                       theta(.0f),
-                                      wavelet(w),
-                                      lastSample(0),
-                                      integralSum(21, 21, CV_64F),
-                                      integralSquare(21, 21, CV_64F)
-    {
-        wavelet->setIntegralImages(&integralSum, &integralSquare);
-    }
+                                      wavelet(w) {}
 
     //http://pages.cs.wisc.edu/~hasti/cs368/CppTutorial/NOTES/CLASSES-PTRS.html#destructor
     //http://stackoverflow.com/questions/6435404/c-error-double-free-or-corruption-fasttop
 
     HaarClassifier(const HaarClassifier & h) : p(h.p),
                                                theta(h.theta),
-                                               wavelet(h.wavelet),
-                                               lastSample(h.lastSample),
-                                               integralSum(21, 21, CV_64F),
-                                               integralSquare(21, 21, CV_64F)
-    {
-        wavelet->setIntegralImages(&integralSum, &integralSquare);
-    }
+                                               wavelet(h.wavelet) {}
 
 
 
@@ -58,10 +39,6 @@ public:
         p = h.p;
         theta = h.theta;
         wavelet = h.wavelet;
-        lastSample = h.lastSample;
-        integralSum = h.integralSum;
-        integralSquare = h.integralSquare;
-        wavelet->setIntegralImages(&integralSum, &integralSquare);
         return *this;
     }
 
@@ -75,16 +52,12 @@ public:
         */
     }
 
-    Classification classify(const cv::Mat & sample) const
+    //TODO who should pass the data to the wavelet?
+    //TODO how should I produce the the integral image? In here? Out of here? If out, then what parameter should I pass?
+    //TODO this is a temporary solution for testing purposes.
+    Classification classify(cv::Mat & integralSum, cv::Mat & integralSquare) const
     {
-        //TODO who should pass the data to the wavelet?
-        //TODO how should I produce the the integral image? In here? Out of here? If out, then what parameter should I pass?
-        //TODO this is a temporary solution for testing purposes.
-        //if ( lastSample != &sample )
-        {
-            cv::integral(sample, integralSum, integralSquare, CV_64F);
-        }
-
+        wavelet->setIntegralImages(&integralSum, &integralSquare);
         if (p > 0)
         {
             return wavelet->value() > theta ? yes : no;
