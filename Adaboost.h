@@ -69,19 +69,16 @@ public:
             unsigned long count = 0;
             unsigned long progress = -1;
 
-            training_set.reset();
-
-            while ( training_set.loadNext() )
-            {
-                LEContainer const * const samples = training_set.getCurrentBuffer();
-
-                for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j)
+            { //in this block we pick the best weak classifier
+                training_set.reset();
+                LabeledExample sample;
+                for(WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
                 {
-                    for(LEContainer::const_iterator it = samples->begin(); it != samples->end(); ++it)
+                    for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
                     {
-                        if( hypothesis[j].classify(it->example) != it->label )
+                        if( hypothesis[j].classify(sample.example) != sample.label )
                         {
-                            hypothesis_weighted_errors[j] += weight_distribution[it - samples->begin()];
+                            hypothesis_weighted_errors[j] += weight_distribution[i];
                         }
 
                         const unsigned long currentProgress = 100 * (double)count / (double)totalIterations;
@@ -128,22 +125,18 @@ public:
 
                 weight_type normalizationFactor = .0f;
 
-                WeightVector::size_type i = 0;
-                while ( training_set.loadNext() )
+                LabeledExample sample;
+                for( WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
                 {
-                    LEContainer const * const samples = training_set.getCurrentBuffer();
-                    for(LEContainer::const_iterator it = samples->begin(); it != samples->end(); ++it, ++i)
+                    const Classification c = weak_hypothesis.classify(sample.example);
+
+                    if (c == sample.label)
                     {
-                        const Classification c = weak_hypothesis.classify(it->example);
-
-                        if (c == it->label)
-                        {
-                            ++count_correct_classification;
-                        }
-
-                        weight_distribution[i] *= std::exp(-alpha * it->label * c);
-                        normalizationFactor += weight_distribution[i];
+                        ++count_correct_classification;
                     }
+
+                    weight_distribution[i] *= std::exp(-alpha * sample.label * c);
+                    normalizationFactor += weight_distribution[i];
                 }
 
                 /*

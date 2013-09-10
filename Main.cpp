@@ -139,7 +139,6 @@ int main(int, char **argv) {
     const std::string waveletsFile = argv[3];
     const std::string strongHypothesisFile = argv[4];
     const unsigned int maximum_iterations = strtol(argv[5], 0, 10);
-    const unsigned int buffer_size = strtol(argv[6], 0, 10);
 
     StrongHypothesis<HaarClassifier> strongHypothesis(strongHypothesisFile);
 
@@ -149,7 +148,7 @@ int main(int, char **argv) {
         std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 
-    DataProvider provider(positivesFile, negativesFile, buffer_size);
+    DataProvider provider(positivesFile, negativesFile);
     std::cout << "Total samples to load " << provider.size() << "." << std::endl;
 
     Adaboost<HaarClassifier> boosting;

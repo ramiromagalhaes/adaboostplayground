@@ -1,129 +1,85 @@
 #include "dataprovider.h"
+
 #include <iostream>
+#include <fstream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+
+
 DataProvider::DataProvider(const std::string & pathIndexPositives,
-                           const std::string & pathIndexNegatives,
-                           const unsigned int maxObjectsInBuffer_)
+                           const std::string & pathIndexNegatives)
 {
-    initBuffers(maxObjectsInBuffer_);
+    cache = oiio::ImageCache::create();
+    cache->attribute ("max_memory_MB", 40000.0); //40GB default
 
-    streamPositives.open(pathIndexPositives.c_str());
-    streamNegatives.open(pathIndexNegatives.c_str());
-
-    if ( !streamPositives.is_open() || !streamNegatives.is_open() )
+    if (parseIndexFile(pathIndexPositives, positiveFiles, cache, totalPositives) &&
+            parseIndexFile(pathIndexNegatives, negativeFiles, cache, totalNegatives) )
     {
-        throw 100;
+        //TODO Throw a nice exception
+        throw 200;
     }
-
-    //assuming the positive set can fit in memory, we load and store them
-    load(streamPositives, 0, 0, positives, yes);
-    streamPositives.close();
-
-    //then we count how many images we have
-    totalPositives = positives.size();
-
-    //we count the negatives counting the newlines
-    totalNegatives = std::count(std::istreambuf_iterator<char>(streamNegatives),
-                                std::istreambuf_iterator<char>(), '\n');
-    streamNegatives.clear();
-    streamNegatives.seekg(0, std::ios::beg);
 }
 
 
 DataProvider::~DataProvider()
 {
-    positives.clear();
-    samples.clear();
-    streamPositives.close();
-    streamNegatives.close();
+    oiio::ImageCache::destroy(cache);
 }
 
 
-/**
- * Loads a chunk of the data into the buffer. The amount loaded varies.
- */
-bool DataProvider::loadNext()
+void DataProvider::reset()
 {
-    unsigned int positives_loaded = 0;
-    if (nextIndexToLoad < positives.size()) //this assumes that the positive sizes are smaller than the buffer
+    currentSource = &positiveFiles;
+    currentImage = 0;
+    currentX = 0;
+}
+
+
+bool DataProvider::nextSample(LabeledExample & sample) //TODO assert the Mat sizes
+{
+    oiio::ImageSpec currentSpec;
+    oiio::ustring currentImageName(currentSource->at(currentImage));
+    if( cache->get_imagespec(currentImageName, currentSpec) ) //TODO check "at" function
     {
-        samples.assign(positives.begin(), positives.end());
-        positives_loaded = positives.size();
+        throw 20;
     }
 
-    unsigned int totalLoaded = positives_loaded + load(streamNegatives,
-                                                       positives_loaded,
-                                                       maxObjectsInBuffer - positives_loaded,
-                                                       samples, no);
-    nextIndexToLoad += totalLoaded;
-
-    if (!totalLoaded)
+    if (currentX >= currentSpec.width) //TODO check if 20 divides spec.width somewhere
     {
-        return false;
+        if ( currentImage >= currentSource->size() - 1)
+        {
+            if ( currentSource == &positiveFiles )
+            {
+                currentSource = &negativeFiles;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            ++currentImage;
+            currentX = 0;
+        }
     }
 
-    if (totalLoaded != maxObjectsInBuffer)
-    {
-        samples.resize(totalLoaded);
-    }
+    sample.label = currentSource == &positiveFiles ? yes : no;
+    cache->get_pixels( currentImageName,          //the file
+                       0, 0,                      //subimage and texture or whatever
+                       currentX, currentX+ 20,    //x
+                       0, 20,                     //y
+                       0, 1, 0, 1,                //z and channels
+                       oiio::TypeDesc::UCHAR,           //the type of data found in the cv::Mat object
+                       sample.example.data );     //the pixels of the image are written into the matrix
+
+    currentX += SAMPLE_WIDTH;
 
     return true;
 }
 
-unsigned int DataProvider::load(std::ifstream & stream,
-                       const unsigned int offset,
-                       const unsigned int amount,
-                       LEContainer & target,
-                       const Classification classification)
-{
-    unsigned int i = 0;
-    for (;; ++i)
-    {
-        std::string imagePathString;
-        std::getline(stream, imagePathString);
 
-        if ( stream.eof() )
-        {
-            break;
-        }
-
-        if ( amount > 0 ? i > amount : false )
-        {
-            break;
-        }
-
-        cv::Mat img = cv::imread(imagePathString, cv::IMREAD_GRAYSCALE);
-        if (img.data == 0)
-        {
-            std::cerr << "File " << imagePathString << " failed to load. Replacing with dummy.\n";
-            img = cv::Mat(20, 20, CV_8U); //TODO fixed size dummy could be variable
-        }
-
-        //since I only reserved the memory, I need to decide between push_back or direct vector insertion
-        if (offset + i >= target.size())
-        {
-            target.push_back(LabeledExample(img, classification));
-        }
-        else
-        {
-            //AFAIK, there is no need to worry about previously loaded images
-            target[offset + i] = LabeledExample(img, classification);
-        }
-    }
-
-    return i;
-}
-
-void DataProvider::reset()
-{
-    streamNegatives.clear();
-    streamNegatives.seekg(0, std::ios::beg);
-    nextIndexToLoad = 0;
-
-    samples.reserve(maxObjectsInBuffer);
-}
 
 LEContainer::size_type DataProvider::size()
 {
@@ -140,29 +96,38 @@ LEContainer::size_type DataProvider::sizeNegatives()
     return totalNegatives;
 }
 
-LEContainer const * const DataProvider::getCurrentBuffer()
-{
-    return &samples;
-}
 
-void DataProvider::initBuffers(int maxBuffer)
-{
-    maxObjectsInBuffer = maxBuffer;
-    samples.reserve(maxObjectsInBuffer);
 
-    nextIndexToLoad = 0;
-}
-
-void DataProvider::pushIntoSample(LEContainer::size_type index, const LabeledExample &s)
+bool DataProvider::parseIndexFile(const std::string & indexPath,
+                               std::vector<std::string> & imagesPaths,
+                               oiio::ImageCache * const cache,
+                               unsigned int & total)
 {
-    //since I only reserved the memory, I need to decide between push_back or direct vector insertion
-    if (index >= samples.size())
+    std::ifstream indexStream(indexPath.c_str());
+    if (!indexStream.is_open())
     {
-        samples.push_back(s);
+        return false;
     }
-    else
+
+    oiio::ImageSpec spec;
+    while( !indexStream.eof() )
     {
-        //AFAIK, there is no need to worry about previously loaded images
-        samples[index] = s;
+        std::string imagePathString;
+        std::getline(indexStream, imagePathString);
+
+        if (imagePathString.empty())
+        {
+            break;
+        }
+
+        imagesPaths.push_back(imagePathString);
+
+        oiio::ImageBuf buffer(imagePathString, cache); //insert a buffer in a cache.
+        spec = buffer.spec(); //TODO assuming that a lot of things are alright, this should work
+        total += spec.width / SAMPLE_WIDTH;
     }
+
+    indexStream.close();
+
+    return true;
 }

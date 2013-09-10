@@ -2,26 +2,32 @@
 #define DATAPROVIDER_H
 
 #include "Common.h"
-#include <fstream>
+#include <vector>
+#include <string>
+#include <OpenImageIO/imagebuf.h>
 
 
 
-//TODO if the data provider buffer is bigger than the amount of images, simply retain all of them in memory.
+#define SAMPLE_WIDTH 20
+
+
+namespace oiio = OIIO;
+
+
+
 class DataProvider
 {
 public:
-    DataProvider(const std::string & pathIndexPositives, const std::string & pathIndexNegatives, const unsigned int maxObjectsInBuffer_);
+    DataProvider(const std::string & pathIndexPositives,
+                 const std::string & pathIndexNegatives);
     ~DataProvider();
 
-    /**
-     * @brief Load the next objects in the current buffer.
-     * @return
-     */
-    bool loadNext();
-
-    LEContainer const * const getCurrentBuffer();
-
     void reset();
+
+    /**
+     * Returns the next sample.
+     */
+    bool nextSample(LabeledExample & sample);
 
     /**
      * @brief size Returns the total amount of samples in this collection.
@@ -38,26 +44,19 @@ public:
 
 
 private:
-    unsigned int load(std::ifstream &stream,
-             const unsigned int offset,
-             const unsigned int amount,
-             LEContainer & target,
-             const Classification classification);
+    bool parseIndexFile(const std::string &indexPath, std::vector<std::string> &imagesPaths, oiio::ImageCache * const cache, unsigned int & total);
 
-    void initBuffers(int maxBuffer);
+    std::vector<std::string> positiveFiles;
+    std::vector<std::string> negativeFiles;
 
-    void pushIntoSample(LEContainer::size_type index, const LabeledExample &s);
+    oiio::ImageCache * cache = 0;
 
-    std::ifstream streamPositives,
-                  streamNegatives;
     unsigned int totalPositives,
                  totalNegatives;
 
-    unsigned int maxObjectsInBuffer;
-    unsigned int nextIndexToLoad; //all loading into the buffer should be done from this index on
-
-    LEContainer positives;
-    LEContainer samples;
+    std::vector<std::string> * currentSource;
+    unsigned int currentImage;
+    unsigned int currentX;
 };
 
 #endif // DATAPROVIDER_H
