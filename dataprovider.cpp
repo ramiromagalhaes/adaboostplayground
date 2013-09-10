@@ -68,7 +68,7 @@ bool DataProvider::nextSample(LabeledExample & sample) //TODO assert the Mat siz
         }
     }
 
-    sample.label = currentSource == &positiveFiles ? yes : no;
+    cv::Mat image(20, 20, CV_8UC1);
     //TODO get_pixels returns boolean. probably should use that too.
     cache->get_pixels( currentImageName,          //the file
                        0, 0,                      //subimage and texture or whatever
@@ -76,7 +76,10 @@ bool DataProvider::nextSample(LabeledExample & sample) //TODO assert the Mat siz
                        0, 20,                     //y
                        0, 1, 0, 1,                //z and channels
                        oiio::TypeDesc::UCHAR,           //the type of data found in the cv::Mat object
-                       sample.example.data );     //the pixels of the image are written into the matrix
+                       image.data );     //the pixels of the image are written into the matrix
+
+    sample.updateIntegrals(image);
+    sample.label = currentSource == &positiveFiles ? yes : no;
 
     currentX += SAMPLE_WIDTH;
 

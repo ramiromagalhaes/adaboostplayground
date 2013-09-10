@@ -1,8 +1,7 @@
 #ifndef CLASSIFICATION_H_
 #define CLASSIFICATION_H_
 
-#include <opencv2/core/core.hpp>
-
+#include <opencv2/imgproc/imgproc.hpp>
 
 
 /**
@@ -34,14 +33,25 @@ enum Classification {
  */
 class LabeledExample {
 public:
-    cv::Mat example;
+    cv::Mat integralSum;
+    cv::Mat integralSquare;
     Classification label;
 
-    LabeledExample() : example(20, 20, CV_8UC1),
+    LabeledExample() : integralSum(21, 21, CV_64F),
+                       integralSquare(21, 21, CV_64F),
                        label(no) {}
 
-    LabeledExample (const cv::Mat e, const Classification c) : example(e),
-                                                               label(c) {}
+    LabeledExample (const cv::Mat e, const Classification c) : integralSum(21, 21, CV_64F),
+                                                               integralSquare(21, 21, CV_64F),
+                                                               label(c)
+    {
+        updateIntegrals(e);
+    }
+
+    inline void updateIntegrals(const cv::Mat & image)
+    {
+        cv::integral(image, integralSum, integralSquare, CV_64F);
+    }
 };
 
 
