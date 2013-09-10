@@ -37,12 +37,11 @@ public:
     cv::Mat example;
     Classification label;
 
-    LabeledExample() {
-        label = no;
-    }
+    LabeledExample() : example(20, 20, CV_8UC1),
+                       label(no) {}
 
-    LabeledExample (const cv::Mat e, const Classification c) : example(e), label(c) {
-    }
+    LabeledExample (const cv::Mat e, const Classification c) : example(e),
+                                                               label(c) {}
 };
 
 
