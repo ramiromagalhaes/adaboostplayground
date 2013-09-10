@@ -49,7 +49,7 @@ private:
     std::vector<std::string> positiveFiles;
     std::vector<std::string> negativeFiles;
 
-    oiio::ImageCache * cache = 0;
+    oiio::ImageCache * const cache;
 
     unsigned int totalPositives,
                  totalNegatives;
