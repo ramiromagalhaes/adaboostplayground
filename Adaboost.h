@@ -159,7 +159,7 @@ public:
                 }
 
                 std::cout << "Normalization factor: " << normalizationFactor << std::endl;
-                std::cout << "Detection rate      : " << 100 * (double) count_correct_classification / training_set.size() << std::endl;
+                std::cout << "Detection rate      : " << 100 * (double) count_correct_classification / training_set.size() << '%' << std::endl;
             }
 
             //update the final hypothesis
