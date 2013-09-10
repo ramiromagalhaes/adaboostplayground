@@ -110,35 +110,6 @@ void HaarWavelet::srfs(std::vector<float> &srfsVector) const
 
 
 /**
- * See also constructor that takes a cv::FileNode.
- */
-bool HaarWavelet::write(cv::FileStorage &fs) const
-{
-    if (dimensions() == 0) //won't store a meaningless wavelet
-    {
-        return false;
-    }
-
-    fs << "{";
-    fs << "rects" << dimensions();
-
-    fs << "rect" << "[";
-    for (int i = 0; i < dimensions(); ++i)
-    {
-        fs << rects[i].x
-           << rects[i].y
-           << rects[i].width
-           << rects[i].height
-           << weights[i];
-    }
-    fs << "]";
-
-    fs << "}";
-
-    return true;
-}
-
-/**
  * See also constructor that takes a std::istream.
  */
 bool HaarWavelet::write(std::ostream &output) const
@@ -148,7 +119,7 @@ bool HaarWavelet::write(std::ostream &output) const
         return false;
     }
 
-    output << dimensions() << " ";
+    output << dimensions() << ' ';
 
     bool first = true;
     for (int i = 0; i < dimensions(); i++)
@@ -159,12 +130,12 @@ bool HaarWavelet::write(std::ostream &output) const
         }
         else
         {
-            output << " ";
+            output << ' ';
         }
-        output << rects[i].x << " "
-               << rects[i].y << " "
-               << rects[i].width << " "
-               << rects[i].height << " "
+        output << rects[i].x << ' '
+               << rects[i].y << ' '
+               << rects[i].width << ' '
+               << rects[i].height << ' '
                << weights[i];
     }
 

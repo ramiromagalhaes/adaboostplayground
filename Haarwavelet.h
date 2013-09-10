@@ -54,11 +54,6 @@ public:
     void srfs(std::vector<float> &srfsVector) const;
 
     /**
-     * Writes this Haar wavelet into the given cv::FileStorage.
-     */
-    bool write(cv::FileStorage& fs) const;
-
-    /**
      * Writes this Haar wavelet into the given std::ostream.
      */
     bool write(std::ostream &output) const;
