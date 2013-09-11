@@ -15,6 +15,7 @@ link_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/lib)
 # Setting the main program
 set(source_files
     Common.h
+    LabeledExample.h
     StrongHypothesis.h
     Adaboost.h
     Main.cpp

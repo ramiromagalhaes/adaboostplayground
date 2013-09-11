@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <limits>
 #include <opencv2/core/core.hpp>
 
 #include "Haarwavelet.h"
@@ -59,11 +60,13 @@ public:
     {
         wavelet->setIntegralImages(&example.integralSum, &example.integralSquare);
 
+        //AFAIK, Pavani's classifier only normalized things by the maximum numeric value of each pixel
+
         if (p > 0)
         {
-            return wavelet->value() > theta ? yes : no;
+            return wavelet->value() / std::numeric_limits<unsigned char>::max() > theta ? yes : no;
         }
-        return wavelet->value() < theta ? yes : no;
+        return wavelet->value() / std::numeric_limits<unsigned char>::max() < theta ? yes : no;
     }
 
     bool write(std::ostream & output) const

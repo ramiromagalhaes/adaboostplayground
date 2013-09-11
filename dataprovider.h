@@ -2,6 +2,7 @@
 #define DATAPROVIDER_H
 
 #include "Common.h"
+#include "LabeledExample.h"
 #include <vector>
 #include <string>
 #include <OpenImageIO/imagebuf.h>
