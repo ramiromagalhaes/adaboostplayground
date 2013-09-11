@@ -1,6 +1,6 @@
 #include "Haarwavelet.h"
 #include <cassert>
-#include <climits>
+#include <limits>
 
 
 
@@ -104,7 +104,7 @@ void HaarWavelet::srfs(std::vector<float> &srfsVector) const
         srfsVector[i] = singleRectangleValue(rects[i], *sum);
 
         //SRFS works with normalized means (Pavani et al., 2010, section 2.3).
-        srfsVector[i] /= (rects[i].size().height * rects[i].size().width * UCHAR_MAX);
+        srfsVector[i] /= (rects[i].size().height * rects[i].size().width * std::numeric_limits<unsigned char>::max());
     }
 }
 
