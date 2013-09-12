@@ -5,8 +5,8 @@
 #include <cmath>
 #include <algorithm>
 
-#include "Common.h"
-#include "StrongHypothesis.h"
+#include "common.h"
+#include "stronghypothesis.h"
 #include "dataprovider.h"
 
 template<typename WeakHypothesisType>

@@ -1,4 +1,4 @@
-#include "Haarwavelet.h"
+#include "haarwavelet.h"
 #include <cassert>
 #include <limits>
 

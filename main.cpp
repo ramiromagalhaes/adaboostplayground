@@ -3,11 +3,11 @@
 #include <limits>
 #include <opencv2/core/core.hpp>
 
-#include "Haarwavelet.h"
-#include "Common.h"
+#include "haarwavelet.h"
+#include "common.h"
 #include "dataprovider.h"
-#include "StrongHypothesis.h"
-#include "Adaboost.h"
+#include "stronghypothesis.h"
+#include "adaboost.h"
 
 
 

@@ -1,4 +1,4 @@
-#include "Detector.h"
+#include "detector.h"
 
 
 

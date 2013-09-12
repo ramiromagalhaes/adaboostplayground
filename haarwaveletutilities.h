@@ -1,6 +1,6 @@
 #include <string>
 #include <opencv2/core/core.hpp>
-#include "Haarwavelet.h"
+#include "haarwavelet.h"
 
 bool loadHaarWavelets(cv::Size * const sampleSize, const std::string &filename, std::vector<HaarWavelet *> & wavelets);
 

@@ -1,7 +1,7 @@
 #ifndef DETECTOR_H
 #define DETECTOR_H
 
-#include "Haarwavelet.h"
+#include "haarwavelet.h"
 
 class Detector
 {

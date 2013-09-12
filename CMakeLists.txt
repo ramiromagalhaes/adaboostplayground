@@ -14,14 +14,14 @@ link_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/lib)
 
 # Setting the main program
 set(source_files
-    Common.h
-    LabeledExample.h
-    StrongHypothesis.h
-    Adaboost.h
-    Main.cpp
-    Haarwavelet.h Haarwavelet.cpp
-    Detector.h Detector.cpp
-    Haarwaveletutilities.h Haarwaveletutilities.cpp
+    common.h
+    labeledexample.h
+    stronghypothesis.h
+    adaboost.h
+    main.cpp
+    haarwavelet.h haarwavelet.cpp
+    detector.h detector.cpp
+    haarwaveletutilities.h haarwaveletutilities.cpp
     dataprovider.h dataprovider.cpp )
 add_executable( adaboostplayground ${source_files} )
 target_link_libraries( adaboostplayground ${OpenCV_LIBS} ${Boost_LIBRARIES} OpenImageIO)
