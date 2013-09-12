@@ -140,12 +140,11 @@ public:
                     normalizationFactor += weight_distribution[i];
                 }
 
-                /*
+                /* Supposed to be the same as the loop that normalizes the weights, but yelds weird results
                 std::transform(weight_distribution.begin(), weight_distribution.end(),
                                weight_distribution.begin(),
                                std::bind1st(std::divides<weight_type>(), normalizationFactor));
                 */
-
                 for (WeightVector::size_type i = 0; i < weight_distribution.size(); i++)
                 {
                     weight_distribution[i] /= normalizationFactor;
