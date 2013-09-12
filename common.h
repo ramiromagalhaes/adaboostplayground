@@ -14,6 +14,13 @@ typedef float weight_type;
 
 
 /**
+ * @brief weight_type Holds feature values.
+ */
+typedef float feature_value_type;
+
+
+
+/**
  * @brief WeightVector A vector to hold instances of weight_type.
  */
 typedef std::vector<weight_type> WeightVector;

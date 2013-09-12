@@ -53,9 +53,6 @@ public:
         */
     }
 
-    //TODO who should pass the data to the wavelet?
-    //TODO how should I produce the the integral image? In here? Out of here? If out, then what parameter should I pass?
-    //TODO this is a temporary solution for testing purposes.
     Classification classify(LabeledExample & example) const
     {
         wavelet->setIntegralImages(&example.integralSum, &example.integralSquare);

@@ -76,7 +76,7 @@ public:
 
             { //in this block we pick the best weak classifier
                 training_set.reset();
-                LabeledExample sample; //TODO should probably move this integralSum calculation to the LabeledExample class
+                LabeledExample sample;
                 for(WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
                 {
                     for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
