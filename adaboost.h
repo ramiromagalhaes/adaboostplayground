@@ -11,9 +11,13 @@
 
 
 
-struct ProgressCallback
+struct WeakLearnerProgressCallback
 {
-    virtual void tick (unsigned int iteration, unsigned long current, unsigned long total) =0;
+    virtual void tick (const unsigned int iteration, const unsigned long current, const unsigned long total) =0;
+    virtual void classifierSelected (const weight_type alpha,
+                                     const weight_type normalization_factor,
+                                     const weight_type lowest_classifier_error,
+                                     const unsigned int classifier_idx) =0;
 };
 
 
@@ -28,13 +32,13 @@ protected:
     /** iteration (epoch) counter */
     unsigned int t;
 
-    ProgressCallback * progressCallback;
+    WeakLearnerProgressCallback * progressCallback;
 
 
 public:
     Adaboost() : t(0), progressCallback(0) {}
 
-    Adaboost(ProgressCallback * progressCallback_) : t(0),
+    Adaboost(WeakLearnerProgressCallback * progressCallback_) : t(0),
                                                      progressCallback(progressCallback_) {}
 
     virtual ~Adaboost() {}
@@ -55,39 +59,29 @@ public:
 
         //Vector weight_distribution holds the weights of each data sample.
         //NOTE: in this method we initialize it as proposed by Viola and Jones. The resulting vector is already normalized.
-        //NOTE: the std::fill method bellow is also part of this initialization.
-        WeightVector weight_distribution(training_set.size(),
-                                         0.5f / training_set.sizeNegatives());
-        std::fill(weight_distribution.begin(),
+        WeightVector weight_distribution(training_set.size());
+            std::fill(weight_distribution.begin(),
                   weight_distribution.begin() + training_set.sizePositives(),
                   0.5f / training_set.sizePositives());
+            std::fill(weight_distribution.begin() + training_set.sizePositives(),
+                  weight_distribution.end(),
+                  0.5f / training_set.sizeNegatives());
 
         //this holds the weighted error of each weak classifier
         WeightVector hypothesis_weighted_errors(hypothesis.size());
 
         do {//Main Adaboost loop
+            unsigned long count = 0; //this and totalIterations help track the progress of the weak learner
+            const unsigned long totalIterations = training_set.size() * hypothesis.size();
 
-            //Train weak learner and get weak hypothesis so that it minimalizes the weighted error.
-            //Here, for each image sample, we'll produce a
+            //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
 
-            //but since we have too much data, we'll have to do this in chunks.
-            //Here, the chunks are of data (positive and negative samples), since they are costly to
-            //load and have it in memory. All weak hypothesis will be evaluated against a full chunk
-            //of data, then another chunk will be loaded. Meanwhile, we'll have to know what are each
-            //sample's weighted classification errors.
-
-            //TODO here we could plug a way to do boosting by resampling.
-            //TODO For example: we could here produce the vector we'll effectively use do the training.
-            //TODO This means that the hypothesis_weighted_error vector might need to be resized
+            //TODO here we could plug a way to do boosting by resampling. For example: we could here produce the vector we'll effectively use do the training. This means that the hypothesis_weighted_error vector might need to be resized
 
             std::fill(hypothesis_weighted_errors.begin(),
-                      hypothesis_weighted_errors.end(),
-                      .0f); //clean it prior to calculating the weighted errors
+                      hypothesis_weighted_errors.end(), 0); //clean this prior to calculating the weighted errors
 
-            const unsigned long totalIterations = training_set.size() * hypothesis.size();
-            unsigned long count = 0;
-
-            { //in this block we pick the best weak classifier
+            {//in this block we pick the best weak classifier
                 training_set.reset();
                 LabeledExample sample;
                 for(WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
@@ -108,42 +102,33 @@ public:
                 }
             }
 
-            //Now we must choose the weak hypothesis that produces the smallest weighted error
-            //this is the final weighted_error we'll get from the best weak hypothesis found in this iteration
+
+
+            //Now we must choose the weak hypothesis that produces the smallest weighted error this is
+            //the final weighted_error we'll get from the best weak hypothesis found in this iteration.
             const WeightVector::iterator lowest_weighted_error =
-                std::min_element(hypothesis_weighted_errors.begin(), hypothesis_weighted_errors.end());
+                    std::min_element(hypothesis_weighted_errors.begin(),
+                                     hypothesis_weighted_errors.end());
             const weight_type weighted_error = *lowest_weighted_error;
-
-            //set alpha(t)
-            weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
-
-            std::cout << "\nA new weak classifier was chosen. Will update the distribution." << std::endl;
-            std::cout << "Weak classifier idx : " << lowest_weighted_error - hypothesis_weighted_errors.begin() << std::endl;
-            std::cout << "Best weighted error : " << weighted_error;
-            if (weighted_error > 0.5f)
-            {
-                std::cout << " (violates weak learning assumption)";
-            }
-            std::cout << "\nAlpha value         : " << alpha << std::endl;
 
             //Get a reference to the best weak hypothesis
             const WeakHypothesisType weak_hypothesis =
                     hypothesis[lowest_weighted_error - hypothesis_weighted_errors.begin()];
 
+            //set alpha(t)
+            weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
 
-            {//update the weight distribution of the data
+
+
+            //Now we just have to update the weight distribution of the samples.
+            //Normalization factor is not inside the block because we report it to the progressCallback.
+            weight_type normalizationFactor = 0;
+            {
                 training_set.reset();
-                unsigned int count_correct_classification = 0;
-
-                weight_type normalizationFactor = .0f;
-
                 LabeledExample sample;
                 for( WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
                 {
-                    const Classification c = weak_hypothesis.classify(sample);
-                    count_correct_classification += (c == sample.label); //increment if correctly classified
-
-                    weight_distribution[i] *= std::exp(-alpha * sample.label * c);
+                    weight_distribution[i] *= std::exp(-alpha * sample.label * weak_hypothesis.classify(sample));
                     normalizationFactor += weight_distribution[i];
                 }
 
@@ -156,10 +141,19 @@ public:
                 {
                     weight_distribution[i] /= normalizationFactor;
                 }
-
-                std::cout << "Normalization factor: " << normalizationFactor << std::endl;
-                std::cout << "Detection rate      : " << 100 * (double) count_correct_classification / training_set.size() << '%' << std::endl;
             }
+
+
+
+            if (progressCallback)
+            {
+                progressCallback->classifierSelected(alpha,
+                                                     normalizationFactor,
+                                                     weighted_error,
+                                                     lowest_weighted_error - hypothesis_weighted_errors.begin());
+            }
+
+
 
             //update the final hypothesis
             strong_hypothesis.insert(alpha, weak_hypothesis);

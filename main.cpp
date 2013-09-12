@@ -107,7 +107,7 @@ bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & 
 
 
 
-class MyProgressCallback : public ProgressCallback
+class MyProgressCallback : public WeakLearnerProgressCallback
 {
 private:
     int progress;
@@ -115,7 +115,7 @@ private:
 public:
     MyProgressCallback() : progress(-1) {}
 
-    virtual void tick (unsigned int iteration, unsigned long current, unsigned long total)
+    virtual void tick (const unsigned int iteration, const unsigned long current, const unsigned long total)
     {
         const int currentProgress = (int) (100 * current / total);
         if (currentProgress != progress)
@@ -124,6 +124,22 @@ public:
             std::cout << "Adaboost iteration " << iteration << " in " << progress << "%.\r";
             std::flush(std::cout);
         }
+    }
+
+    virtual void classifierSelected (const weight_type alpha,
+                                     const weight_type normalization_factor,
+                                     const weight_type lowest_classifier_error,
+                                     const unsigned int classifier_idx)
+    {
+        std::cout << "\nA new weak classifier was chosen." << std::endl;
+        std::cout <<   "  Weak classifier idx : " << classifier_idx << std::endl;
+        std::cout <<   "  Best weighted error : " << lowest_classifier_error;
+        if (lowest_classifier_error > 0.5f)
+        {
+            std::cout << " (violates weak learning assumption)";
+        }
+        std::cout << "\n  Alpha value         : " << alpha << std::endl;
+        std::cout << "    Normalization factor: " << normalization_factor << std::endl;
     }
 };
 
