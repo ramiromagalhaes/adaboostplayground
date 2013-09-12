@@ -107,6 +107,28 @@ bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & 
 
 
 
+class MyProgressCallback : public ProgressCallback
+{
+private:
+    int progress;
+
+public:
+    MyProgressCallback() : progress(-1) {}
+
+    virtual void tick (unsigned int iteration, unsigned long current, unsigned long total)
+    {
+        const int currentProgress = (int) (100 * current / total);
+        if (currentProgress != progress)
+        {
+            progress = currentProgress;
+            std::cout << "Adaboost iteration " << iteration << " in " << progress << "%.\r";
+            std::flush(std::cout);
+        }
+    }
+};
+
+
+
 int main(int, char **argv) {
     const std::string positivesFile = argv[1];
     const std::string negativesFile = argv[2];
@@ -125,7 +147,7 @@ int main(int, char **argv) {
     DataProvider provider(positivesFile, negativesFile);
     std::cout << "Total samples to load " << provider.size() << "." << std::endl;
 
-    Adaboost<HaarClassifier> boosting;
+    Adaboost<HaarClassifier> boosting(new MyProgressCallback());
 
     try {
         boosting.train(provider,

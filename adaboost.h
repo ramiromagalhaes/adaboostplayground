@@ -9,6 +9,15 @@
 #include "stronghypothesis.h"
 #include "dataprovider.h"
 
+
+
+struct ProgressCallback
+{
+    virtual void tick (unsigned int iteration, unsigned long current, unsigned long total) =0;
+};
+
+
+
 template<typename WeakHypothesisType>
 class Adaboost {
     //TODO implement means to allow different sampling strategies
@@ -19,13 +28,16 @@ protected:
     /** iteration (epoch) counter */
     unsigned int t;
 
+    ProgressCallback * progressCallback;
 
 
 public:
-    Adaboost() : t(0) {}
+    Adaboost() : t(0), progressCallback(0) {}
 
-    virtual ~Adaboost() {
-    }
+    Adaboost(ProgressCallback * progressCallback_) : t(0),
+                                                     progressCallback(progressCallback_) {}
+
+    virtual ~Adaboost() {}
 
     /**
      * @brief This method trains a strong classifier.
@@ -54,7 +66,9 @@ public:
         WeightVector hypothesis_weighted_errors(hypothesis.size());
 
         do {//Main Adaboost loop
-            //train weak learner and get weak hypothesis so that it minimalizes the weighted error
+
+            //Train weak learner and get weak hypothesis so that it minimalizes the weighted error.
+            //Here, for each image sample, we'll produce a
 
             //but since we have too much data, we'll have to do this in chunks.
             //Here, the chunks are of data (positive and negative samples), since they are costly to
@@ -72,7 +86,6 @@ public:
 
             const unsigned long totalIterations = training_set.size() * hypothesis.size();
             unsigned long count = 0;
-            unsigned long progress = -1;
 
             { //in this block we pick the best weak classifier
                 training_set.reset();
@@ -86,14 +99,11 @@ public:
                         hypothesis_weighted_errors[j] += weight_distribution[i]
                                 * (hypothesis[j].classify(sample) != sample.label);
 
-                        const unsigned long currentProgress = 100 * (double)count / (double)totalIterations;
-                        if (currentProgress != progress)
+                        if (progressCallback)
                         {
-                            progress = currentProgress;
-                            std::cout << "Adaboost iteration " << t << " in " << progress << "%.\r";
-                            std::flush(std::cout);
+                            ++count;
+                            progressCallback->tick(t, count, totalIterations);
                         }
-                        ++count;
                     }
                 }
             }
@@ -120,12 +130,9 @@ public:
             const WeakHypothesisType weak_hypothesis =
                     hypothesis[lowest_weighted_error - hypothesis_weighted_errors.begin()];
 
-            //update the distribution
-            //Since we're unable to hold the results for the selected weak hypothesis, we need to iterate
-            //over the whole dataset again to update the distribution weights
-            {
-                training_set.reset();
 
+            {//update the weight distribution of the data
+                training_set.reset();
                 unsigned int count_correct_classification = 0;
 
                 weight_type normalizationFactor = .0f;
