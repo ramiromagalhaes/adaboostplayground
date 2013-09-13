@@ -93,17 +93,16 @@ float HaarWavelet::value() const
 
 void HaarWavelet::srfs(std::vector<float> &srfsVector) const
 {
-    //TODO convert into exception
-    assert(sum && squareSum);
+    assert(sum && squareSum); //TODO convert into exception?
 
     const int dim = dimensions();
-    srfsVector.resize(dim);
-
     for (int i = 0; i < dim; ++i)
     {
         srfsVector[i] = singleRectangleValue(rects[i], *sum);
 
         //SRFS works with normalized means (Pavani et al., 2010, section 2.3).
+        //AFAIK, Pavani's classifier only normalized things by the maximum numeric value of each pixel.
+        //Viola and Jones perform a variance normalization.
         srfsVector[i] /= (rects[i].size().height * rects[i].size().width * std::numeric_limits<unsigned char>::max());
     }
 }
