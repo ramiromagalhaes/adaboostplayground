@@ -1,9 +1,8 @@
 #include <vector>
 #include <iostream>
-#include <limits>
+
 #include <opencv2/core/core.hpp>
 
-#include "haarwavelet.h"
 #include "common.h"
 #include "dataprovider.h"
 #include "stronghypothesis.h"
@@ -61,7 +60,8 @@ int main(int, char **argv) {
 
     std::vector<HaarClassifier> hypothesis;
     {
-        HaarClassifier::loadClassifiers(waveletsFile, hypothesis);
+        cv::Size * const size = new cv::Size(20, 20);
+        HaarClassifier::loadClassifiers(size, waveletsFile, hypothesis);
         std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 

@@ -34,7 +34,7 @@ public:
 
     Classification classify(LabeledExample & example) const;
 
-    static bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers);
+    static bool loadClassifiers(cv::Size * const size, const std::string &filename, std::vector<HaarClassifier> & classifiers);
 };
 
 #endif // HAARCLASSIFIER_H

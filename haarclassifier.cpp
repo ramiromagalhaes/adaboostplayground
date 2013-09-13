@@ -1,5 +1,7 @@
 #include "haarclassifier.h"
 #include "fstream"
+
+#include <limits>
 #include <opencv2/core/core.hpp>
 
 
@@ -106,10 +108,8 @@ Classification HaarClassifier::classify(LabeledExample & example) const
 
 
 
-bool HaarClassifier::loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers)
+bool HaarClassifier::loadClassifiers(cv::Size * const size, const std::string &filename, std::vector<HaarClassifier> & classifiers)
 {
-    cv::Size * const size = new cv::Size(20, 20); //TODO allow size to be passed as a parameter.
-
     std::ifstream ifs;
     ifs.open(filename.c_str(), std::ifstream::in);
 
