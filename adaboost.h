@@ -15,7 +15,7 @@
  * A callback to report the progress of the Adaboost train method. Just create
  * your implementation and pass an instance of it to the Adaboost constructor.
  */
-struct WeakLearnerProgressCallback
+struct ProgressCallback
 {
     virtual void tick (const unsigned int iteration,
                        const unsigned long current,
@@ -39,13 +39,13 @@ protected:
     /** iteration (epoch) counter */
     unsigned int t;
 
-    WeakLearnerProgressCallback * progressCallback;
+    ProgressCallback * progressCallback;
 
 
 public:
     Adaboost() : t(0), progressCallback(0) {}
 
-    Adaboost(WeakLearnerProgressCallback * progressCallback_) : t(0),
+    Adaboost(ProgressCallback * progressCallback_) : t(0),
                                                      progressCallback(progressCallback_) {}
 
     virtual ~Adaboost() {}

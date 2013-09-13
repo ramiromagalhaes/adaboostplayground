@@ -11,7 +11,7 @@
 
 
 
-class MyProgressCallback : public WeakLearnerProgressCallback
+class MyProgressCallback : public ProgressCallback
 {
 private:
     int progress;
