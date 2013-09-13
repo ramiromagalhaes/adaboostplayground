@@ -20,6 +20,7 @@ set(source_files
     adaboost.h
     main.cpp
     haarwavelet.h haarwavelet.cpp
+    haarclassifier.h haarclassifier.cpp
     detector.h detector.cpp
     haarwaveletutilities.h haarwaveletutilities.cpp
     dataprovider.h dataprovider.cpp )
