@@ -20,11 +20,11 @@ public:
 
     HaarClassifier();
 
+    HaarClassifier(HaarWavelet * w);
+
     HaarClassifier(const HaarClassifier & c);
 
     HaarClassifier & operator=(const HaarClassifier & c);
-
-    HaarClassifier(HaarWavelet * w);
 
     virtual ~HaarClassifier();
 

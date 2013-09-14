@@ -9,7 +9,14 @@
 HaarClassifier::HaarClassifier() : wavelet(0),
                                    mean(2),
                                    stdDev(1),
-                                   q(1) {}
+                                   q(2) {}
+
+
+
+HaarClassifier::HaarClassifier(HaarWavelet *w) : wavelet(w),
+                                                 mean(2),
+                                                 stdDev(1),
+                                                 q(2) {}
 
 
 
@@ -29,13 +36,6 @@ HaarClassifier & HaarClassifier::operator=(const HaarClassifier & c)
 
     return *this;
 }
-
-
-
-HaarClassifier::HaarClassifier(HaarWavelet *w) : wavelet(w),
-                                                 mean(2),
-                                                 stdDev(1),
-                                                 q(1) {}
 
 
 
