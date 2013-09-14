@@ -8,44 +8,8 @@
 #include "stronghypothesis.h"
 #include "adaboost.h"
 #include "haarclassifier.h"
+#include "sampleextractor.h"
 
-
-
-class MyProgressCallback : public ProgressCallback
-{
-private:
-    int progress;
-
-public:
-    MyProgressCallback() : progress(-1) {}
-
-    virtual void tick (const unsigned int iteration, const unsigned long current, const unsigned long total)
-    {
-        const int currentProgress = (int) (100 * current / total);
-        if (currentProgress != progress)
-        {
-            progress = currentProgress;
-            std::cout << "Adaboost iteration " << iteration << " in " << progress << "%.\r";
-            std::flush(std::cout);
-        }
-    }
-
-    virtual void classifierSelected (const weight_type alpha,
-                                     const weight_type normalization_factor,
-                                     const weight_type lowest_classifier_error,
-                                     const unsigned int classifier_idx)
-    {
-        std::cout << "\nA new weak classifier was chosen." << std::endl;
-        std::cout <<   "  Weak classifier idx : " << classifier_idx << std::endl;
-        std::cout <<   "  Best weighted error : " << lowest_classifier_error;
-        if (lowest_classifier_error > 0.5f)
-        {
-            std::cout << " (violates weak learning assumption)";
-        }
-        std::cout << "\n  Alpha value         : " << alpha << std::endl;
-        std::cout << "    Normalization factor: " << normalization_factor << std::endl;
-    }
-};
 
 
 unsigned int charToInt(char * c)
@@ -58,6 +22,17 @@ unsigned int charToInt(char * c)
 }
 
 
+
+/**
+ * Arguments:
+ *     positivesIndexFile
+ *     positivesImageFile
+ *     negativesIndexFile
+ *     negativesImageFile
+ *     waveletsFile
+ *     strongHypothesisOutputFile
+ *     maximumIterations
+ */
 int main(int, char **argv) {
     const std::string positivesFile = argv[1];
     const std::string negativesFile = argv[2];
@@ -67,19 +42,25 @@ int main(int, char **argv) {
 
     StrongHypothesis<HaarClassifier> strongHypothesis(strongHypothesisFile);
 
+    std::vector<LabeledExample> positiveSamples, negativeSamples;
+    {
+        SampleExtractor::fromIndexFile(positivesFile, positiveSamples, yes);
+        SampleExtractor::extractRandomSample(10000, negativesFile, negativeSamples, no);
+        std::cout << "Loaded " << positiveSamples.size() << " positive samples." << std::endl;
+        std::cout << "Loaded " << negativeSamples.size() << " negative samples." << std::endl;
+    }
+
     std::vector<HaarClassifier> hypothesis;
     {
         HaarClassifier::loadClassifiers(waveletsFile, hypothesis);
         std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 
-    DataProvider provider(positivesFile, negativesFile);
-    std::cout << "Total samples to load " << provider.size() << "." << std::endl;
-
-    Adaboost<HaarClassifier> boosting(new MyProgressCallback());
+    Adaboost<HaarClassifier> boosting(new SimpleProgressCallback());
 
     try {
-        boosting.train(provider,
+        boosting.train(positiveSamples,
+                       negativeSamples,
                        strongHypothesis,
                        hypothesis,
                        maximum_iterations);
