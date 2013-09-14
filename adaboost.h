@@ -80,8 +80,13 @@ public:
 
         do {//Main Adaboost loop
 
-            unsigned long count = 0; //this and totalIterations track the progress of the weak learner.
-            const unsigned long totalIterations = training_set.size() * hypothesis.size();
+            unsigned long count = 0; //Counts how many images have already been iterated over. Will be used by the progressCallback.
+            if (progressCallback) //Initial report of the progress.
+            {
+                ++count;
+                progressCallback->tick(t, count, training_set.size());
+            }
+
 
             //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
             std::fill(hypothesis_weighted_errors.begin(),
@@ -96,12 +101,12 @@ public:
                     {
                         hypothesis_weighted_errors[j] += weight_distribution[i]
                                 * (hypothesis[j].classify(sample) != sample.label);
+                    }
 
-                        if (progressCallback)
-                        {
-                            ++count;
-                            progressCallback->tick(t, count, totalIterations);
-                        }
+                    if (progressCallback)
+                    {
+                        ++count;
+                        progressCallback->tick(t, count, training_set.size());
                     }
                 }
             }
