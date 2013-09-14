@@ -5,6 +5,7 @@
 #include <opencv2/core/core.hpp>
 
 #include "common.h"
+#include "labeledexample.h"
 
 
 
@@ -14,9 +15,9 @@ private:
     SampleExtractor();
 
 public:
-    static bool extractRandomSample(const unsigned int sample_size, const std::string & filename, std::vector<cv::Mat> & samples);
+    static bool extractRandomSample(const unsigned int sample_size, const std::string & filename, std::vector<LabeledExample> & samples, Classification c);
 
-    static bool fromIndexFile(const std::string &indexPath, std::vector<cv::Mat> &samples);
+    static bool fromIndexFile(const std::string &indexPath, std::vector<LabeledExample> &samples, Classification c);
 };
 
 #endif // SAMPLEEXTRACTOR_H

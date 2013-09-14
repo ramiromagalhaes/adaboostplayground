@@ -9,7 +9,8 @@ SampleExtractor::SampleExtractor()
 {
 }
 
-bool SampleExtractor::extractRandomSample(const unsigned int sample_size, const std::string &imagePath, std::vector<cv::Mat> &samples)
+//TODO ensure that the same sample won't be chosen again.
+bool SampleExtractor::extractRandomSample(const unsigned int sample_size, const std::string &imagePath, std::vector<LabeledExample> &samples, Classification c)
 {
     std::srand(std::time(0));
 
@@ -22,14 +23,14 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size, const 
         const unsigned int sampleX = (full_image.cols/roiSize.width) * ((float)std::rand() / RAND_MAX);
 
         cv::Rect roi(sampleX * 20, 0, roiSize.width, roiSize.height);
-        cv::Mat sample(full_image, roi);
+        LabeledExample sample(cv::Mat(full_image, roi), c);
         samples.push_back(sample);
     }
 
     return true;
 }
 
-bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<cv::Mat> & samples)
+bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<LabeledExample> &samples, Classification c)
 {
     std::ifstream indexStream(indexPath.c_str());
     if (!indexStream.is_open())
@@ -48,8 +49,8 @@ bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<c
         }
 
         //TODO check if all image sizes comply with a parameter
-        const cv::Mat image = cv::imread(imagePath, cv::DataType<unsigned char>::type);
-        samples.push_back(image);
+        LabeledExample sample(cv::imread(imagePath, cv::DataType<unsigned char>::type), c);
+        samples.push_back(sample);
     }
 
     indexStream.close();
