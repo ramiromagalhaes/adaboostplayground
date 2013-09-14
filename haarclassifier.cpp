@@ -1,5 +1,4 @@
 #include "haarclassifier.h"
-#include "fstream"
 
 #include <limits>
 #include <opencv2/core/core.hpp>
@@ -52,17 +51,27 @@ HaarClassifier::~HaarClassifier()
 
 
 
-bool HaarClassifier::read(std::ifstream & in)
+bool HaarClassifier::read(std::istream & in)
 {
     wavelet = new HaarWavelet(new cv::Size(20, 20), in);
 
-    //TODO
+    mean.resize(wavelet->dimensions());
+
+    for (unsigned int i = 0; i < wavelet->dimensions(); i++)
+    {
+        in >> mean[i];
+    }
+
+    in >> stdDev;
+    float discard_q;
+    in >> discard_q;
+
     return true;
 }
 
 
 
-bool HaarClassifier::write(std::ofstream & out) const
+bool HaarClassifier::write(std::ostream & out) const
 {
     if ( !wavelet->write(out) )
     {
@@ -108,7 +117,7 @@ Classification HaarClassifier::classify(LabeledExample & example) const
 
 
 
-bool HaarClassifier::loadClassifiers(cv::Size * const size, const std::string &filename, std::vector<HaarClassifier> & classifiers)
+bool HaarClassifier::loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers)
 {
     std::ifstream ifs;
     ifs.open(filename.c_str(), std::ifstream::in);
@@ -120,7 +129,8 @@ bool HaarClassifier::loadClassifiers(cv::Size * const size, const std::string &f
 
     do
     {
-        HaarClassifier classifier(new HaarWavelet(size, ifs));
+        HaarClassifier classifier;
+        classifier.read(ifs);
 
         if ( !ifs.eof() )
         {

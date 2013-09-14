@@ -60,8 +60,7 @@ int main(int, char **argv) {
 
     std::vector<HaarClassifier> hypothesis;
     {
-        cv::Size * const size = new cv::Size(20, 20);
-        HaarClassifier::loadClassifiers(size, waveletsFile, hypothesis);
+        HaarClassifier::loadClassifiers(waveletsFile, hypothesis);
         std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 

@@ -5,6 +5,8 @@
 #include "haarwavelet.h"
 #include "labeledexample.h"
 
+#include <fstream>
+
 class HaarClassifier
 {
 private:
@@ -28,13 +30,13 @@ public:
 
     virtual ~HaarClassifier();
 
-    bool read(std::ifstream & in);
+    bool read(std::istream & in);
 
-    bool write(std::ofstream & out) const;
+    bool write(std::ostream & out) const;
 
     Classification classify(LabeledExample & example) const;
 
-    static bool loadClassifiers(cv::Size * const size, const std::string &filename, std::vector<HaarClassifier> & classifiers);
+    static bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers);
 };
 
 #endif // HAARCLASSIFIER_H
