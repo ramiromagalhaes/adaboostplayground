@@ -12,7 +12,7 @@ find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
 include_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/include)
 link_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/lib)
 
-set(dataprovider_files dataprovider.h dataprovider.cpp)
+set(dataprovider_files dataprovider.h dataprovider.cpp sampleextractor.h sampleextractor.cpp)
 add_library( dataprovider STATIC ${dataprovider_files} )
 target_link_libraries( dataprovider ${OpenCV_LIBS} OpenImageIO)
 
