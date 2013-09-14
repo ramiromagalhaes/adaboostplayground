@@ -48,13 +48,22 @@ public:
 };
 
 
+unsigned int charToInt(char * c)
+{
+    std::stringstream ss;
+    ss << c;
+    unsigned int i;
+    ss >> i;
+    return i;
+}
+
 
 int main(int, char **argv) {
     const std::string positivesFile = argv[1];
     const std::string negativesFile = argv[2];
     const std::string waveletsFile = argv[3];
     const std::string strongHypothesisFile = argv[4];
-    const unsigned int maximum_iterations = strtol(argv[5], 0, 10);
+    const unsigned int maximum_iterations = charToInt(argv[5]);
 
     StrongHypothesis<HaarClassifier> strongHypothesis(strongHypothesisFile);
 
