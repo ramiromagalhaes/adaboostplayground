@@ -31,7 +31,7 @@ struct ProgressCallback
 
 template<typename WeakHypothesisType>
 class Adaboost {
-    //TODO implement means to allow different sampling strategies
+    //TODO implement means to allow different weak learner boosting strategies: reweighting and resampling
     //TODO Store errors and historic data gathered through the iterations
     //TODO devise means to implement some flexible stop criteria
 
@@ -55,6 +55,10 @@ public:
      * @param training_set A vector of LabeledExamples that will be used in training.
      * @param strong_hypothesis The object that will hold the strong classifier.
      * @param maximum_iterations The maximum iterations that this training will perform.
+     *
+     * Initializes the weight distribution of the training set using Viola and Jones method,
+     * instead of the original one proposed by Freund and Schapire. The weak learner is boosted
+     * by reweighting, instead of resampling.
      */
     void train(
             DataProvider & training_set,
@@ -65,38 +69,31 @@ public:
         t = 0;
 
         //Vector weight_distribution holds the weights of each data sample.
-        //NOTE: in this method we initialize it as proposed by Viola and Jones. The resulting vector is already normalized.
         WeightVector weight_distribution(training_set.size());
-            std::fill(weight_distribution.begin(),
-                  weight_distribution.begin() + training_set.sizePositives(),
+            std::fill(weight_distribution.begin(),  weight_distribution.begin() + training_set.sizePositives(),
                   0.5f / training_set.sizePositives());
-            std::fill(weight_distribution.begin() + training_set.sizePositives(),
-                  weight_distribution.end(),
+            std::fill(weight_distribution.begin() + training_set.sizePositives(), weight_distribution.end(),
                   0.5f / training_set.sizeNegatives());
 
         //This holds the weighted error of each weak classifier.
         WeightVector hypothesis_weighted_errors(hypothesis.size());
 
         do {//Main Adaboost loop
-            unsigned long count = 0; //this and totalIterations help track the progress of the weak learner
+
+            unsigned long count = 0; //this and totalIterations track the progress of the weak learner.
             const unsigned long totalIterations = training_set.size() * hypothesis.size();
 
             //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
-
-            //TODO here we could plug a way to do boosting by resampling. For example: we could here produce the vector we'll effectively use do the training. This means that the hypothesis_weighted_error vector might need to be resized
-
             std::fill(hypothesis_weighted_errors.begin(),
                       hypothesis_weighted_errors.end(), 0); //clean this prior to calculating the weighted errors
 
-            {//in this block we pick the best weak classifier
+            {//In this block we calculate the weighted errors of each weak classifier with respect to the weights of each instance
                 training_set.reset();
                 LabeledExample sample;
                 for(WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
                 {
                     for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
                     {
-                        //Might be faster than an if thanks to branch prediction
-                        //See: http://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster-than-an-unsorted-array
                         hypothesis_weighted_errors[j] += weight_distribution[i]
                                 * (hypothesis[j].classify(sample) != sample.label);
 
@@ -111,8 +108,7 @@ public:
 
 
 
-            //Now we must choose the weak hypothesis that produces the smallest weighted error this is
-            //the final weighted_error we'll get from the best weak hypothesis found in this iteration.
+            //Now we choose the weak hypothesis with the smallest weighted.
             const WeightVector::iterator lowest_weighted_error =
                     std::min_element(hypothesis_weighted_errors.begin(),
                                      hypothesis_weighted_errors.end());
@@ -122,7 +118,7 @@ public:
             const WeakHypothesisType weak_hypothesis =
                     hypothesis[lowest_weighted_error - hypothesis_weighted_errors.begin()];
 
-            //set alpha(t)
+            //Set alpha for this iteration
             weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
 
 
@@ -133,7 +129,7 @@ public:
             {
                 training_set.reset();
                 LabeledExample sample;
-                for( WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
+                for( WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the weight of the samples
                 {
                     weight_distribution[i] *= std::exp(-alpha * sample.label * weak_hypothesis.classify(sample));
                     normalizationFactor += weight_distribution[i];
@@ -141,9 +137,9 @@ public:
 
                 std::transform(weight_distribution.begin(), weight_distribution.end(),
                                weight_distribution.begin(),
-                               std::bind2nd(std::divides<weight_type>(), normalizationFactor)); // bind2nd makes normalizationFactor the divisor. see also bind1st.
+                               std::bind2nd(std::divides<weight_type>(), normalizationFactor)); //bind2nd makes normalizationFactor the divisor.
+                                                                                                //see also bind1st.
             }
-
 
 
             if (progressCallback)
@@ -153,7 +149,6 @@ public:
                                                      weighted_error,
                                                      lowest_weighted_error - hypothesis_weighted_errors.begin());
             }
-
 
 
             //update the final hypothesis
