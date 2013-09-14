@@ -30,7 +30,7 @@ public:
     /**
      * Amount of rectangles this Haar wavelet has
      */
-    int dimensions() const;
+    unsigned int dimensions() const;
 
     //void setDetector(Detector * d_);
     //bool setPosition(cv::Point * pt);

@@ -53,7 +53,7 @@ HaarWavelet::HaarWavelet(cv::Size * const detectorSize_,
 
 }
 
-int HaarWavelet::dimensions() const
+unsigned int HaarWavelet::dimensions() const
 {
     return (int)rects.size();
 }
