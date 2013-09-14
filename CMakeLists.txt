@@ -12,6 +12,10 @@ find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
 include_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/include)
 link_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/lib)
 
+set(dataprovider_files dataprovider.h dataprovider.cpp)
+add_library( dataprovider STATIC ${dataprovider_files} )
+target_link_libraries( dataprovider ${OpenCV_LIBS} OpenImageIO)
+
 # Setting the main program
 set(source_files
     common.h
@@ -22,7 +26,6 @@ set(source_files
     haarwavelet.h haarwavelet.cpp
     haarclassifier.h haarclassifier.cpp
     detector.h detector.cpp
-    haarwaveletutilities.h haarwaveletutilities.cpp
-    dataprovider.h dataprovider.cpp )
+    haarwaveletutilities.h haarwaveletutilities.cpp )
 add_executable( adaboostplayground ${source_files} )
-target_link_libraries( adaboostplayground ${OpenCV_LIBS} ${Boost_LIBRARIES} OpenImageIO)
+target_link_libraries( adaboostplayground dataprovider ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
