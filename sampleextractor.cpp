@@ -1,0 +1,58 @@
+#include "sampleextractor.h"
+
+#include <cmath>
+#include <ctime>
+#include <opencv2/highgui/highgui.hpp>
+#include <fstream>
+
+SampleExtractor::SampleExtractor()
+{
+}
+
+bool SampleExtractor::extractRandomSample(const unsigned int sample_size, const std::string &imagePath, std::vector<cv::Mat> &samples)
+{
+    std::srand(std::time(0));
+
+    const cv::Size roiSize(20 ,20);
+    const cv::Mat full_image = cv::imread(imagePath, cv::DataType<unsigned char>::type);
+
+
+    for (unsigned int i = 0; i < sample_size; ++i)
+    {
+        const unsigned int sampleX = (full_image.cols/roiSize.width) * ((float)std::rand() / RAND_MAX);
+
+        cv::Rect roi(sampleX * 20, 0, roiSize.width, roiSize.height);
+        cv::Mat sample(full_image, roi);
+        samples.push_back(sample);
+    }
+
+    return true;
+}
+
+bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<cv::Mat> & samples)
+{
+    std::ifstream indexStream(indexPath.c_str());
+    if (!indexStream.is_open())
+    {
+        return false;
+    }
+
+    while( !indexStream.eof() )
+    {
+        std::string imagePath;
+        std::getline(indexStream, imagePath);
+
+        if (imagePath.empty())
+        {
+            break;
+        }
+
+        //TODO check if all image sizes comply with a parameter
+        const cv::Mat image = cv::imread(imagePath, cv::DataType<unsigned char>::type);
+        samples.push_back(image);
+    }
+
+    indexStream.close();
+
+    return true;
+}
