@@ -18,9 +18,9 @@
  */
 struct ProgressCallback
 {
-    virtual void tick (const unsigned int iteration,
-                       const unsigned long current,
-                       const unsigned long total) =0;
+    virtual void beginAdaboostIteration(const unsigned int iteration) =0;
+
+    virtual void tick (const unsigned long current, const unsigned long total) =0;
 
     virtual void classifierSelected (const weight_type alpha,
                                      const weight_type normalization_factor,
@@ -39,13 +39,18 @@ private:
 public:
     SimpleProgressCallback() : progress(-1) {}
 
-    virtual void tick (const unsigned int iteration, const unsigned long current, const unsigned long total)
+    virtual void beginAdaboostIteration(const unsigned int iteration)
+    {
+        std::cout << "Adaboost iteration " << iteration << ".\n";
+    }
+
+    virtual void tick (const unsigned long current, const unsigned long total)
     {
         const int currentProgress = (int) (100 * current / total);
         if (currentProgress != progress)
         {
             progress = currentProgress;
-            std::cout << "Adaboost iteration " << iteration << " in " << progress << "%.\r";
+            std::cout << "Progress: " << progress << "%.\r";
             std::flush(std::cout);
         }
     }
@@ -55,7 +60,7 @@ public:
                                      const weight_type lowest_classifier_error,
                                      const unsigned int classifier_idx)
     {
-        std::cout << "\nA new weak classifier was chosen." << std::endl;
+        std::cout << "\rA new a weak classifier was chosen." << std::endl;
         std::cout <<   "  Weak classifier idx : " << classifier_idx << std::endl;
         std::cout <<   "  Best weighted error : " << lowest_classifier_error;
         if (lowest_classifier_error > 0.5f)
@@ -100,6 +105,59 @@ protected:
 
 
 
+    /**
+     * The weak learner used in this Adaboost implementation.
+     */
+    struct WeakLearner
+    {
+        //This holds the weighted error of each weak classifier.
+        WeightVector hypothesis_weighted_errors;
+
+        void operator()( const std::vector<LabeledExample *> & allSamples,
+                         const std::vector <WeakHypothesisType> & hypothesis,
+                         const WeightVector & weight_distribution,
+                         weight_type & selected_weak_hypothesis_weighted_error,
+                         unsigned int & selected_weak_hypothesis_index,
+                         ProgressCallback * const progressCallback = 0)
+        {
+            unsigned long count = 0; //Counts how many images have already been iterated over. Will be used by the progressCallback.
+
+            hypothesis_weighted_errors.resize(hypothesis.size());//it should be effectivelly resizes only once
+            std::fill(hypothesis_weighted_errors.begin(),
+                      hypothesis_weighted_errors.end(), 0); //clean this prior to calculating the weighted errors
+
+            //Now we calculate the weighted errors of each weak classifier with respect to the weights of each instance
+            for(WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the samples
+            {
+                LabeledExample * const sample = allSamples[i];
+                for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
+                {
+                    hypothesis_weighted_errors[j] += weight_distribution[i]
+                            * (hypothesis[j].classify(*sample) != sample->label);
+                }
+
+                if (progressCallback)
+                {
+                    ++count;
+                    progressCallback->tick(count, allSamples.size());
+                }
+            }
+
+            //Now we choose the weak hypothesis with the smallest weighted.
+            const WeightVector::iterator lowest_weighted_error =
+                    std::min_element(hypothesis_weighted_errors.begin(),
+                                     hypothesis_weighted_errors.end());
+
+            //This will hold the weighted error of the best weak classifier found by the weak learner
+            selected_weak_hypothesis_weighted_error = *lowest_weighted_error;
+
+            //This will hold a reference to the best weak hypothesis found by the weak learner
+            selected_weak_hypothesis_index = lowest_weighted_error - hypothesis_weighted_errors.begin();
+        }
+    };
+
+
+
 public:
     Adaboost() : t(0), progressCallback(0) {}
 
@@ -118,8 +176,8 @@ public:
         t = 0;
 
 
-        const unsigned int total_samples = positiveSamples.size() + negativeSamples.size();
-        std::vector<LabeledExample *> allSamples(total_samples);//TODO make this pointer constant might be a good idea
+        //Collects into allSamples pointers to both positive and negative LabeledExamples
+        std::vector<LabeledExample *> allSamples(total_samples);//TODO make the LabeledExample pointer constant?
         std::transform(positiveSamples.begin(), positiveSamples.end(),
                        allSamples.begin(),
                        ToPointer());
@@ -129,59 +187,36 @@ public:
 
 
         //Vector weight_distribution holds the weights of each data sample.
-        WeightVector weight_distribution(total_samples);
+        WeightVector weight_distribution(allSamples.size());
         std::fill(weight_distribution.begin(),  weight_distribution.begin() + positiveSamples.size(),
                   0.5f / positiveSamples.size());
         std::fill(weight_distribution.begin() + positiveSamples.size(), weight_distribution.end(),
                   0.5f / negativeSamples.size());
 
 
-        //This holds the weighted error of each weak classifier.
-        WeightVector hypothesis_weighted_errors(hypothesis.size());
+        //Initialize the weak learner
+        Adaboost::WeakLearner weakLearner;
 
 
         do {//Main Adaboost loop
-
-            {//Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
-                unsigned long count = 0; //Counts how many images have already been iterated over. Will be used by the progressCallback.
-                if (progressCallback) //Initial report of the progress.
-                {
-                    ++count;
-                    progressCallback->tick(t, count, total_samples);
-                }
-
-                std::fill(hypothesis_weighted_errors.begin(),
-                          hypothesis_weighted_errors.end(), 0); //clean this prior to calculating the weighted errors
-
-                //In this block we calculate the weighted errors of each weak classifier with respect to the weights of each instance
-                for(WeightVector::size_type i = 0; i < total_samples; ++i ) //i refers to the samples
-                {
-                    LabeledExample * const sample = allSamples[i];
-                    for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
-                    {
-                        hypothesis_weighted_errors[j] += weight_distribution[i]
-                                * (hypothesis[j].classify(*sample) != sample->label);
-                    }
-
-                    if (progressCallback)
-                    {
-                        ++count;
-                        progressCallback->tick(t, count, total_samples);
-                    }
-                }
+            if(progressCallback)
+            {
+                progressCallback->beginAdaboostIteration(t);
             }
 
+            //This holds the weighted error of the best weak classifier. The weak lerner sets it.
+            weight_type weighted_error = 0;
 
+            //This holds the index of the best weak hypothesis. The weak lerner sets it.
+            unsigned int weak_hypothesis_index = 0;
 
-            //Now we choose the weak hypothesis with the smallest weighted.
-            const WeightVector::iterator lowest_weighted_error =
-                    std::min_element(hypothesis_weighted_errors.begin(),
-                                     hypothesis_weighted_errors.end());
-            const weight_type weighted_error = *lowest_weighted_error;
-
-            //Get a reference to the best weak hypothesis
-            const WeakHypothesisType weak_hypothesis =
-                    hypothesis[lowest_weighted_error - hypothesis_weighted_errors.begin()];
+            //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
+            weakLearner(allSamples,
+                        hypothesis,
+                        weight_distribution,
+                        weighted_error,
+                        weak_hypothesis_index,
+                        progressCallback);
 
             //Set alpha for this iteration
             weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
@@ -192,11 +227,11 @@ public:
             //Normalization factor is not inside the block because we report it to the progressCallback.
             weight_type normalizationFactor = 0;
             {
-                for( WeightVector::size_type i = 0; i < total_samples; ++i ) //i refers to the weight of the samples
+                for( WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the weight of the samples
                 {
                     LabeledExample * const sample = allSamples[i];
 
-                    weight_distribution[i] *= std::exp(-alpha * sample->label * weak_hypothesis.classify(*sample));
+                    weight_distribution[i] *= std::exp(-alpha * sample->label * hypothesis[weak_hypothesis_index].classify(*sample));
                     normalizationFactor += weight_distribution[i];
                 }
 
@@ -212,12 +247,12 @@ public:
                 progressCallback->classifierSelected(alpha,
                                                      normalizationFactor,
                                                      weighted_error,
-                                                     lowest_weighted_error - hypothesis_weighted_errors.begin());
+                                                     weak_hypothesis_index);
             }
 
 
             //update the final hypothesis
-            strong_hypothesis.insert(alpha, weak_hypothesis);
+            strong_hypothesis.insert(alpha, hypothesis[weak_hypothesis_index]);
 
             t++; //next training iteration
         } while (t < maximum_iterations);
@@ -259,7 +294,7 @@ public:
             if (progressCallback) //Initial report of the progress.
             {
                 ++count;
-                progressCallback->tick(t, count, training_set.size());
+                progressCallback->tick(count, training_set.size());
             }
 
 
@@ -281,7 +316,7 @@ public:
                     if (progressCallback)
                     {
                         ++count;
-                        progressCallback->tick(t, count, training_set.size());
+                        progressCallback->tick(count, training_set.size());
                     }
                 }
             }
