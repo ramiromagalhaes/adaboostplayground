@@ -93,6 +93,34 @@ protected:
 
 
     /**
+     * Returns the normalization factor so it can be displayed to the user.
+     */
+    weight_type updateWeightDistribution( const std::vector<LabeledExample *> & allSamples,
+                                          const weight_type alpha,
+                                          const WeakHypothesisType & selected_hypothesis,
+                                          WeightVector & weight_distribution )
+    {
+        weight_type normalizationFactor = 0;
+
+        for( WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the weight of the samples
+        {
+            LabeledExample * const sample = allSamples[i];
+
+            weight_distribution[i] *= std::exp(-alpha * sample->label * selected_hypothesis.classify(*sample));
+            normalizationFactor += weight_distribution[i];
+        }
+
+        std::transform(weight_distribution.begin(), weight_distribution.end(),
+                       weight_distribution.begin(),
+                       std::bind2nd(std::divides<weight_type>(), normalizationFactor)); //bind2nd makes normalizationFactor the divisor.
+                                                                                        //see also bind1st.
+
+        return normalizationFactor;
+    }
+
+
+
+    /**
      * Used to produce a pointer from an object.
      */
     struct ToPointer
@@ -114,7 +142,7 @@ protected:
         WeightVector hypothesis_weighted_errors;
 
         void operator()( const std::vector<LabeledExample *> & allSamples,
-                         const std::vector <WeakHypothesisType> & hypothesis,
+                         const std::vector<WeakHypothesisType> & hypothesis,
                          const WeightVector & weight_distribution,
                          weight_type & selected_weak_hypothesis_weighted_error,
                          unsigned int & selected_weak_hypothesis_index,
@@ -127,13 +155,12 @@ protected:
                       hypothesis_weighted_errors.end(), 0); //But should be cleaned at all times.
 
             //Now we calculate the weighted errors of each weak classifier with respect to the weights of each instance
-            for(WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the samples
+            for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
             {
-                LabeledExample * const sample = allSamples[i];
-                for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
+                for(WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the samples
                 {
                     hypothesis_weighted_errors[j] += weight_distribution[i]
-                            * (hypothesis[j].classify(*sample) != sample->label);
+                            * (hypothesis[j].classify(*(allSamples[i])) != allSamples[i]->label);
                 }
 
                 if (progressCallback)
@@ -194,7 +221,8 @@ public:
                   0.5f / negativeSamples.size());
 
 
-        //Initialize the weak learner
+        //Initialize the weak learner.
+        //TODO Provide the WeakLearner to Adaboost
         Adaboost::WeakLearner weakLearner;
 
 
@@ -218,29 +246,18 @@ public:
                         weak_hypothesis_index,
                         progressCallback);
 
-            //Set alpha for this iteration
-            weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
 
+            //Set alpha for this iteration
+            const weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
 
 
             //Now we just have to update the weight distribution of the samples.
             //Normalization factor is not inside the block because we report it to the progressCallback.
-            weight_type normalizationFactor = 0;
-            {
-                for( WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the weight of the samples
-                {
-                    LabeledExample * const sample = allSamples[i];
-
-                    weight_distribution[i] *= std::exp(-alpha * sample->label * hypothesis[weak_hypothesis_index].classify(*sample));
-                    normalizationFactor += weight_distribution[i];
-                }
-
-                std::transform(weight_distribution.begin(), weight_distribution.end(),
-                               weight_distribution.begin(),
-                               std::bind2nd(std::divides<weight_type>(), normalizationFactor)); //bind2nd makes normalizationFactor the divisor.
-                                                                                                //see also bind1st.
-            }
-
+            weight_type normalizationFactor =
+                    updateWeightDistribution( allSamples,
+                                              alpha,
+                                              hypothesis[weak_hypothesis_index],
+                                              weight_distribution );
 
             if (progressCallback)
             {
@@ -257,122 +274,6 @@ public:
             t++; //next training iteration
         } while (t < maximum_iterations);
     }
-
-
-
-    /**
-     * @brief This method trains a strong classifier.
-     * @param training_set A vector of LabeledExamples that will be used in training.
-     * @param strong_hypothesis The object that will hold the strong classifier.
-     * @param maximum_iterations The maximum iterations that this training will perform.
-     *
-     * Initializes the weight distribution of the training set using Viola and Jones method,
-     * instead of the original one proposed by Freund and Schapire. The weak learner is boosted
-     * by reweighting, instead of resampling.
-     */
-    void train(
-            DataProvider & training_set,
-            StrongHypothesis <WeakHypothesisType> & strong_hypothesis,
-            const std::vector <WeakHypothesisType> & hypothesis,
-            const unsigned int maximum_iterations)
-    {
-        t = 0;
-
-        //Vector weight_distribution holds the weights of each data sample.
-        WeightVector weight_distribution(training_set.size());
-            std::fill(weight_distribution.begin(),  weight_distribution.begin() + training_set.sizePositives(),
-                  0.5f / training_set.sizePositives());
-            std::fill(weight_distribution.begin() + training_set.sizePositives(), weight_distribution.end(),
-                  0.5f / training_set.sizeNegatives());
-
-        //This holds the weighted error of each weak classifier.
-        WeightVector hypothesis_weighted_errors(hypothesis.size());
-
-        do {//Main Adaboost loop
-
-            unsigned long count = 0; //Counts how many images have already been iterated over. Will be used by the progressCallback.
-            if (progressCallback) //Initial report of the progress.
-            {
-                ++count;
-                progressCallback->tick(count, training_set.size());
-            }
-
-
-            //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
-            std::fill(hypothesis_weighted_errors.begin(),
-                      hypothesis_weighted_errors.end(), 0); //clean this prior to calculating the weighted errors
-
-            {//In this block we calculate the weighted errors of each weak classifier with respect to the weights of each instance
-                training_set.reset();
-                LabeledExample sample;
-                for(WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the samples
-                {
-                    for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
-                    {
-                        hypothesis_weighted_errors[j] += weight_distribution[i]
-                                * (hypothesis[j].classify(sample) != sample.label);
-                    }
-
-                    if (progressCallback)
-                    {
-                        ++count;
-                        progressCallback->tick(count, training_set.size());
-                    }
-                }
-            }
-
-
-
-            //Now we choose the weak hypothesis with the smallest weighted.
-            const WeightVector::iterator lowest_weighted_error =
-                    std::min_element(hypothesis_weighted_errors.begin(),
-                                     hypothesis_weighted_errors.end());
-            const weight_type weighted_error = *lowest_weighted_error;
-
-            //Get a reference to the best weak hypothesis
-            const WeakHypothesisType weak_hypothesis =
-                    hypothesis[lowest_weighted_error - hypothesis_weighted_errors.begin()];
-
-            //Set alpha for this iteration
-            weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
-
-
-
-            //Now we just have to update the weight distribution of the samples.
-            //Normalization factor is not inside the block because we report it to the progressCallback.
-            weight_type normalizationFactor = 0;
-            {
-                training_set.reset();
-                LabeledExample sample;
-                for( WeightVector::size_type i = 0; training_set.nextSample(sample); ++i ) //i refers to the weight of the samples
-                {
-                    weight_distribution[i] *= std::exp(-alpha * sample.label * weak_hypothesis.classify(sample));
-                    normalizationFactor += weight_distribution[i];
-                }
-
-                std::transform(weight_distribution.begin(), weight_distribution.end(),
-                               weight_distribution.begin(),
-                               std::bind2nd(std::divides<weight_type>(), normalizationFactor)); //bind2nd makes normalizationFactor the divisor.
-                                                                                                //see also bind1st.
-            }
-
-
-            if (progressCallback)
-            {
-                progressCallback->classifierSelected(alpha,
-                                                     normalizationFactor,
-                                                     weighted_error,
-                                                     lowest_weighted_error - hypothesis_weighted_errors.begin());
-            }
-
-
-            //update the final hypothesis
-            strong_hypothesis.insert(alpha, weak_hypothesis);
-
-            t++; //next training iteration
-        } while (t < maximum_iterations);
-    }
-
 };
 
 #endif /* ADABOOST_H_ */
