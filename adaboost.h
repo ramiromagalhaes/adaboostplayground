@@ -160,7 +160,7 @@ protected:
                          unsigned int & selected_weak_hypothesis_index,
                          ProgressCallback * const progressCallback = 0)
         {
-            unsigned long count = 0; //Counts how many images have already been iterated over. Will be used by the progressCallback.
+            unsigned long count = 0; //Counts how many weak classifiers have already been iterated over. progressCallback uses it.
 
             selected_weak_hypothesis_weighted_error = std::numeric_limits<float>::max();
 
@@ -227,7 +227,7 @@ protected:
                 if (progressCallback)
                 {
                     ++count;
-                    progressCallback->tick(count, allSamples.size());
+                    progressCallback->tick(count, hypothesis.size());
                 }
             }
         }
