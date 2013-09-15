@@ -259,6 +259,7 @@ public:
                                               hypothesis[weak_hypothesis_index],
                                               weight_distribution );
 
+
             if (progressCallback)
             {
                 progressCallback->classifierSelected(alpha,
