@@ -214,10 +214,9 @@ protected:
                         c1 = total_w_1_n < total_w_1_p ? yes : no;
                     }
                 }
+                //Ok... That was what's in the book. Give me back the controls now.
 
-                //Ok... That's what's in the book. Back to me in control.
-                hypothesis[j].setQ(v);
-                //If we had a hypothesis[j].setP() (Viola and Jones's polarity), we could provide set it with c0.
+                hypothesis[j].setQ(v); //If we had a hypothesis[j].setP() (Viola and Jones's polarity), we could provide set it with c0.
 
                 if (best_error < selected_weak_hypothesis_weighted_error)
                 {
