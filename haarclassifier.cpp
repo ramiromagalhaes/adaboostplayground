@@ -92,6 +92,14 @@ bool HaarClassifier::write(std::ostream & out) const
 
 
 
+float HaarClassifier::featureValue(LabeledExample &example) const
+{
+    wavelet->setIntegralImages(&(example.integralSum), &(example.integralSquare));
+    return wavelet->value();
+}
+
+
+
 Classification HaarClassifier::classify(LabeledExample & example) const
 {
     wavelet->setIntegralImages(&example.integralSum, &example.integralSquare);
@@ -113,6 +121,13 @@ Classification HaarClassifier::classify(LabeledExample & example) const
     }
 
     return no;
+}
+
+
+
+void HaarClassifier::setQ(const float q_)
+{
+    q = q_;
 }
 
 

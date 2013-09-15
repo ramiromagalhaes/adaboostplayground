@@ -142,15 +142,19 @@ protected:
         {
             float feature;
             weight_type weight;
+            Classification label;
         };
 
-        bool compare_feature(feature_and_weight & lh, feature_and_weight &rh)
+        struct compare_feature
         {
-            return lh.feature > rh.feature;
-        }
+            bool operator()(feature_and_weight & lh, feature_and_weight &rh)
+            {
+                return lh.feature > rh.feature;
+            }
+        };
 
         void operator()( const std::vector<LabeledExample *> & allSamples,
-                         const std::vector<WeakHypothesisType> & hypothesis,
+                         std::vector<WeakHypothesisType> & hypothesis,
                          const WeightVector & weight_distribution,
                          weight_type & selected_weak_hypothesis_weighted_error,
                          unsigned int & selected_weak_hypothesis_index,
@@ -158,39 +162,68 @@ protected:
         {
             unsigned long count = 0; //Counts how many images have already been iterated over. Will be used by the progressCallback.
 
+            selected_weak_hypothesis_weighted_error = std::numeric_limits<float>::max();
+
             //Now we calculate the weighted errors of each weak classifier with respect to the weights of each instance
             for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
             {
-                //Feature values and respective weight
+                //Feature values and respective weight and label
                 std::vector<feature_and_weight> feature_values(allSamples.size());
 
-                weight_type total_error_positive = 0;
-                weight_type total_error_negative = 0;
-                for(WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the samples
+                //For a nice explanation about what is going on bellow, refer to Schapire and Freund's Boosting book, section 3.4.2
+                weight_type total_w_1_p = 0;
+                weight_type total_w_1_n = 0;
+                for(WeightVector::size_type i = 0; i < feature_values.size(); ++i ) //i refers to the samples
                 {
-                    feature_values[i].feature = hypothesis[j].wavelet.value();
+                    feature_values[i].feature = hypothesis[j].featureValue(*(allSamples[i]));
+                    feature_values[i].label = allSamples[i]->label;
                     feature_values[i].weight = weight_distribution[i];
 
-                    total_error_positive += weight_distribution[i] * (allSamples[i] == yes);
+                    total_w_1_p += weight_distribution[i] * (allSamples[i]->label == yes);
+                    total_w_1_n += weight_distribution[i] * (allSamples[i]->label == no);
                 }
-                total_error_negative = 1.0f - total_error_positive; //after all, the weighted errors are a distribution
 
-                std::sort(hypothesis_weighted_errors.begin(), hypothesis_weighted_errors.end(), WeakLearner::compare_feature);
+                std::sort( feature_values.begin(), feature_values.end(), compare_feature() );
 
-                float best_threshold = std::min(total_error_negative, total_error_positive);
-                for(WeightVector::size_type i = 0; i < allSamples.size(); ++i )
+                weight_type total_w_0_p = 0;
+                weight_type total_w_0_n = 0;
+
+                float best_error = std::min(total_w_1_n, total_w_1_p);
+
+                float v = feature_values[0].feature;
+                Classification c0 = total_w_0_n < total_w_0_p ? yes : no;
+                Classification c1 = total_w_1_n < total_w_1_p ? yes : no;
+
+                for(WeightVector::size_type k = 0; k < feature_values.size(); ++k )
                 {
+                    total_w_0_p += feature_values[k].weight * (feature_values[k].label == yes);
+                    total_w_0_n += feature_values[k].weight * (feature_values[k].label == no);
 
+                    total_w_1_p -= feature_values[k].weight * (feature_values[k].label == yes);
+                    total_w_1_n -= feature_values[k].weight * (feature_values[k].label == no);
+
+                    const float error = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p);
+
+                    if (error < best_error)
+                    {
+                        best_error = error;
+
+                        v = feature_values[k].feature;
+
+                        c0 = total_w_0_n < total_w_0_p ? yes : no;
+                        c1 = total_w_1_n < total_w_1_p ? yes : no;
+                    }
                 }
 
+                //Ok... That's what's in the book. Back to me in control.
+                hypothesis[j].setQ(v);
+                //If we had a hypothesis[j].setP() (Viola and Jones's polarity), we could provide set it with c0.
 
-
-                /*
-                hypothesis_weighted_errors[i] = weight_distribution[i]
-                        * ( hypothesis[j].classify(*(allSamples[i])) != allSamples[i]->label );
-                */
-
-
+                if (best_error < selected_weak_hypothesis_weighted_error)
+                {
+                    selected_weak_hypothesis_weighted_error = best_error;
+                    selected_weak_hypothesis_index = j;
+                }
 
                 if (progressCallback)
                 {
@@ -198,17 +231,6 @@ protected:
                     progressCallback->tick(count, allSamples.size());
                 }
             }
-
-            //Now we choose the weak hypothesis with the smallest weighted.
-            const WeightVector::iterator lowest_weighted_error =
-                    std::min_element(hypothesis_weighted_errors.begin(),
-                                     hypothesis_weighted_errors.end());
-
-            //This will hold the weighted error of the best weak classifier found by the weak learner
-            selected_weak_hypothesis_weighted_error = *lowest_weighted_error;
-
-            //This will hold a reference to the best weak hypothesis found by the weak learner
-            selected_weak_hypothesis_index = lowest_weighted_error - hypothesis_weighted_errors.begin();
         }
     };
 
@@ -226,7 +248,7 @@ public:
             std::vector<LabeledExample> positiveSamples,
             std::vector<LabeledExample> negativeSamples,
             StrongHypothesis <WeakHypothesisType> & strong_hypothesis,
-            const std::vector <WeakHypothesisType> & hypothesis,
+            std::vector <WeakHypothesisType> & hypothesis,
             const unsigned int maximum_iterations)
     {
         t = 0;
