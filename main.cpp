@@ -45,8 +45,8 @@ int main(int, char **argv) {
     std::vector<LabeledExample> positiveSamples, negativeSamples;
     {
         SampleExtractor::fromIndexFile(positivesFile, positiveSamples, yes);
-        SampleExtractor::extractRandomSample(10000, negativesFile, negativeSamples, no);
         std::cout << "Loaded " << positiveSamples.size() << " positive samples." << std::endl;
+        SampleExtractor::extractRandomSample(10000, negativesFile, negativeSamples, no);
         std::cout << "Loaded " << negativeSamples.size() << " negative samples." << std::endl;
     }
 
