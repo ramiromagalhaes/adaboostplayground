@@ -138,8 +138,16 @@ protected:
      */
     struct WeakLearner
     {
-        //This holds the weighted error of each weak classifier.
-        WeightVector hypothesis_weighted_errors;
+        struct feature_and_weight //use std::pair???
+        {
+            float feature;
+            weight_type weight;
+        };
+
+        bool compare_feature(feature_and_weight & lh, feature_and_weight &rh)
+        {
+            return lh.feature > rh.feature;
+        }
 
         void operator()( const std::vector<LabeledExample *> & allSamples,
                          const std::vector<WeakHypothesisType> & hypothesis,
@@ -150,18 +158,39 @@ protected:
         {
             unsigned long count = 0; //Counts how many images have already been iterated over. Will be used by the progressCallback.
 
-            hypothesis_weighted_errors.resize(hypothesis.size());//It should be effectivelly resized only once
-            std::fill(hypothesis_weighted_errors.begin(),
-                      hypothesis_weighted_errors.end(), 0); //But should be cleaned at all times.
-
             //Now we calculate the weighted errors of each weak classifier with respect to the weights of each instance
             for (typename std::vector <WeakHypothesisType>::size_type j = 0; j < hypothesis.size(); ++j) //j refers to the classifiers
             {
+                //Feature values and respective weight
+                std::vector<feature_and_weight> feature_values(allSamples.size());
+
+                weight_type total_error_positive = 0;
+                weight_type total_error_negative = 0;
                 for(WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the samples
                 {
-                    hypothesis_weighted_errors[j] += weight_distribution[i]
-                            * (hypothesis[j].classify(*(allSamples[i])) != allSamples[i]->label);
+                    feature_values[i].feature = hypothesis[j].wavelet.value();
+                    feature_values[i].weight = weight_distribution[i];
+
+                    total_error_positive += weight_distribution[i] * (allSamples[i] == yes);
                 }
+                total_error_negative = 1.0f - total_error_positive; //after all, the weighted errors are a distribution
+
+                std::sort(hypothesis_weighted_errors.begin(), hypothesis_weighted_errors.end(), WeakLearner::compare_feature);
+
+                float best_threshold = std::min(total_error_negative, total_error_positive);
+                for(WeightVector::size_type i = 0; i < allSamples.size(); ++i )
+                {
+
+                }
+
+
+
+                /*
+                hypothesis_weighted_errors[i] = weight_distribution[i]
+                        * ( hypothesis[j].classify(*(allSamples[i])) != allSamples[i]->label );
+                */
+
+
 
                 if (progressCallback)
                 {
