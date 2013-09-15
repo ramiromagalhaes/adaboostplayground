@@ -23,7 +23,13 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size, const 
         const unsigned int sampleX = (full_image.cols/roiSize.width) * ((float)std::rand() / RAND_MAX);
 
         cv::Rect roi(sampleX * 20, 0, roiSize.width, roiSize.height);
-        LabeledExample sample(cv::Mat(full_image, roi), c);
+
+        cv::Mat image = cv::Mat(full_image, roi);
+        if ( !image.data )
+        {
+            return false;
+        }
+        LabeledExample sample(image, c);
         samples.push_back(sample);
     }
 
@@ -49,7 +55,13 @@ bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<L
         }
 
         //TODO check if all image sizes comply with a parameter
-        LabeledExample sample(cv::imread(imagePath, cv::DataType<unsigned char>::type), c);
+        cv::Mat image = cv::imread(imagePath, cv::DataType<unsigned char>::type);
+        if ( !image.data )
+        {
+            return false;
+        }
+
+        LabeledExample sample(image, c);
         samples.push_back(sample);
     }
 
