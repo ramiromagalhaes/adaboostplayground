@@ -65,7 +65,7 @@ public:
             std::cout << " (violates weak learning assumption)";
         }
         std::cout << "\n  Alpha value         : " << alpha << std::endl;
-        std::cout << "    Normalization factor: " << normalization_factor << std::endl;
+        std::cout <<   "  Normalization factor: " << normalization_factor << std::endl;
     }
 };
 
