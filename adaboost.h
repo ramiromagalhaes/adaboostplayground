@@ -147,7 +147,7 @@ protected:
 
         struct compare_feature
         {
-            bool operator()(feature_and_weight & lh, feature_and_weight &rh)
+            bool operator()(const feature_and_weight & lh, const feature_and_weight &rh) const
             {
                 return lh.feature > rh.feature;
             }
