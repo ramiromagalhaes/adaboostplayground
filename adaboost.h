@@ -28,8 +28,6 @@ struct ProgressCallback
                                      const unsigned int classifier_idx) =0;
 };
 
-
-
 /**
  * A simple implementation of a ProgressCallback.
  */
@@ -71,6 +69,9 @@ public:
 
 
 
+/**
+ * Implementation of the Adaboost algorithm.
+ */
 template<typename WeakHypothesisType>
 class Adaboost {
     //TODO implement means to allow different weak learner boosting strategies: reweighting and resampling
@@ -81,7 +82,21 @@ protected:
     /** iteration (epoch) counter */
     unsigned int t;
 
+    /** Its methods will be invoked to report the algorithm progress */
     ProgressCallback * progressCallback;
+
+
+
+    /**
+     * Used to produce a pointer from an object.
+     */
+    struct ToPointer
+    {
+        inline LabeledExample * operator()(LabeledExample & ex)
+        {
+            return &ex;
+        }
+    };
 
 
 
@@ -104,33 +119,21 @@ public:
 
 
         const unsigned int total_samples = positiveSamples.size() + negativeSamples.size();
-        std::vector<LabeledExample *> allSamples(total_samples); //TODO make this pointer constant might be a good idea
-        {//I'm pretty sure there is a better way to do this. I even tried std::transform with a functor of my own. Did not work, so back to basics.
-            unsigned int i = 0;
-            for (; i < positiveSamples.size(); ++i)
-            {
-                allSamples[i] = &(positiveSamples[i]);
-            }
-            for (; i - positiveSamples.size() < negativeSamples.size(); ++i)
-            {
-                allSamples[i] = &(negativeSamples[i - positiveSamples.size()]);
-            }
-        }
-        for (int i = 0; i < allSamples.size(); ++i)
-        {
-            if ( !allSamples[i] )
-            {
-                std::cout << i << ' ';
-            }
-        }
+        std::vector<LabeledExample *> allSamples(total_samples);//TODO make this pointer constant might be a good idea
+        std::transform(positiveSamples.begin(), positiveSamples.end(),
+                       allSamples.begin(),
+                       ToPointer());
+        std::transform(negativeSamples.begin(), negativeSamples.end(),
+                       allSamples.begin() + positiveSamples.size(),
+                       ToPointer());
 
 
         //Vector weight_distribution holds the weights of each data sample.
         WeightVector weight_distribution(total_samples);
         std::fill(weight_distribution.begin(),  weight_distribution.begin() + positiveSamples.size(),
-              0.5f / positiveSamples.size());
+                  0.5f / positiveSamples.size());
         std::fill(weight_distribution.begin() + positiveSamples.size(), weight_distribution.end(),
-              0.5f / negativeSamples.size());
+                  0.5f / negativeSamples.size());
 
 
         //This holds the weighted error of each weak classifier.
