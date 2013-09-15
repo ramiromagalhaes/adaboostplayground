@@ -122,9 +122,9 @@ protected:
         {
             unsigned long count = 0; //Counts how many images have already been iterated over. Will be used by the progressCallback.
 
-            hypothesis_weighted_errors.resize(hypothesis.size());//it should be effectivelly resizes only once
+            hypothesis_weighted_errors.resize(hypothesis.size());//It should be effectivelly resized only once
             std::fill(hypothesis_weighted_errors.begin(),
-                      hypothesis_weighted_errors.end(), 0); //clean this prior to calculating the weighted errors
+                      hypothesis_weighted_errors.end(), 0); //But should be cleaned at all times.
 
             //Now we calculate the weighted errors of each weak classifier with respect to the weights of each instance
             for(WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the samples
