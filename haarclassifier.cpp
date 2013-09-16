@@ -40,7 +40,7 @@ HaarClassifier & HaarClassifier::operator=(const HaarClassifier & c)
 
 HaarClassifier::~HaarClassifier()
 {
-    /* TODO properly delete the reference to wavelet. It is currently not working
+    /* TODO properly delete the reference to wavelet. This is currently not working. No idea why.
     if (wavelet != 0)
     {
         delete wavelet;
@@ -92,6 +92,13 @@ bool HaarClassifier::write(std::ostream & out) const
 
 
 
+void HaarClassifier::setThreshold(const float q_)
+{
+    q = q_;
+}
+
+
+
 float HaarClassifier::featureValue(LabeledExample &example) const
 {
     wavelet->setIntegralImages(&(example.integralSum), &(example.integralSquare));
@@ -115,19 +122,12 @@ Classification HaarClassifier::classify(LabeledExample & example) const
     }
     distance = std::sqrt(distance);
 
-    if (distance < stdDev)
+    if (distance < q)
     {
         return yes;
     }
 
     return no;
-}
-
-
-
-void HaarClassifier::setQ(const float q_)
-{
-    q = q_;
 }
 
 

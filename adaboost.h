@@ -216,7 +216,7 @@ protected:
                 }
                 //Ok... That was what's in the book. Give me back the controls now.
 
-                hypothesis[j].setQ(v); //If we had a hypothesis[j].setP() (Viola and Jones's polarity), we could provide set it with c0.
+                hypothesis[j].setThreshold(v); //If we had a hypothesis[j].setP() (Viola and Jones's polarity), we could provide set it with c0.
 
                 if (best_error < selected_weak_hypothesis_weighted_error)
                 {

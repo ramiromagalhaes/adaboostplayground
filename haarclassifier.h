@@ -12,7 +12,7 @@ class HaarClassifier
 private:
     HaarWavelet * wavelet;
     std::vector<float> mean;
-    float stdDev;
+    float stdDev; //TODO Not used. Will soon drop it.
     float q;
 
 public:
@@ -34,11 +34,11 @@ public:
 
     bool write(std::ostream & out) const;
 
+    void setThreshold(const float q_);
+
     float featureValue(LabeledExample & example) const;
 
     Classification classify(LabeledExample & example) const;
-
-    void setQ(const float q_);
 
     static bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers);
 };
