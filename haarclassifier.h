@@ -1,11 +1,11 @@
 #ifndef HAARCLASSIFIER_H
 #define HAARCLASSIFIER_H
 
+#include <fstream>
+
 #include "common.h"
 #include "haarwavelet.h"
 #include "labeledexample.h"
-
-#include <fstream>
 
 class HaarClassifier
 {

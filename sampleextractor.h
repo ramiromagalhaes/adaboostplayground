@@ -2,7 +2,6 @@
 #define SAMPLEEXTRACTOR_H
 
 #include <string>
-#include <opencv2/core/core.hpp>
 
 #include "common.h"
 #include "labeledexample.h"

@@ -1,9 +1,9 @@
 #include "sampleextractor.h"
 
+#include <fstream>
 #include <cmath>
 #include <ctime>
 #include <opencv2/highgui/highgui.hpp>
-#include <fstream>
 
 SampleExtractor::SampleExtractor()
 {

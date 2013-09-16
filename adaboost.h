@@ -1,6 +1,7 @@
 #ifndef ADABOOST_H_
 #define ADABOOST_H_
 
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include <algorithm>
@@ -333,7 +334,6 @@ public:
 
             //Set alpha for this iteration
             const weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
-
 
             //Now we just have to update the weight distribution of the samples.
             //Normalization factor is not inside the block because we report it to the progressCallback.
