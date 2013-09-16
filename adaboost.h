@@ -184,6 +184,7 @@ protected:
          */
         void operator()(tbb::blocked_range< unsigned int > & range) const
         {
+            //TODO Must handle with alpha becoming really small and make normalization factor become infinity or NAN
             //Calculate the weighted errors of each weak classifier with respect to the weights of each instance
             for (unsigned int j = range.begin(); j < range.end(); ++j) //j refers to the classifiers
             {
