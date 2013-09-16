@@ -1,6 +1,5 @@
 #include "haarclassifier.h"
 
-#include <limits>
 #include <opencv2/core/core.hpp>
 
 
