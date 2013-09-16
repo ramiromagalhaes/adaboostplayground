@@ -8,9 +8,11 @@ set(CMAKE_CSS_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
 
-# Depends on OpenImageIO
-include_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/include /home/ramiro/workspace/haarcommon/)
-link_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/lib /home/ramiro/workspace/haarcommon-build/)
+# Depends on OpenImageIO and on my haarcommon library
+include_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/include
+                    /home/ramiro/workspace/haarcommon/ )
+link_directories(/home/ramiro/workspace/oiio/dist/linux64.debug/lib
+                 /home/ramiro/workspace/haarcommon-build/)
 
 set(dataprovider_files dataprovider.h dataprovider.cpp sampleextractor.h sampleextractor.cpp)
 add_library( dataprovider STATIC ${dataprovider_files} )
