@@ -243,12 +243,15 @@ public:
 
     virtual ~Adaboost() {}
 
-    void train(
-            std::vector<LabeledExample> positiveSamples,
-            std::vector<LabeledExample> negativeSamples,
-            StrongHypothesis <WeakHypothesisType> & strong_hypothesis,
-            std::vector <WeakHypothesisType> & hypothesis,
-            const unsigned int maximum_iterations)
+    /**
+     *
+     * @return true if reached maximum_iterations when returning, of false otherwise.
+     */
+    bool train(std::vector<LabeledExample> positiveSamples,
+               std::vector<LabeledExample> negativeSamples,
+               StrongHypothesis <WeakHypothesisType> & strong_hypothesis,
+               std::vector <WeakHypothesisType> & hypothesis,
+               const unsigned int maximum_iterations)
     {
         t = 0;
 
@@ -299,6 +302,12 @@ public:
 
             //Set alpha for this iteration
             const weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
+            if ( std::isnan(alpha) || std::isinf(alpha) )
+            {
+                std::cout << "Exiting trainning loop since alpha is infinity or not a number." << std::endl;
+                return false;
+            }
+
 
             //Now we just have to update the weight distribution of the samples.
             //Normalization factor is not inside the block because we report it to the progressCallback.
@@ -323,6 +332,8 @@ public:
 
             t++; //next training iteration
         } while (t < maximum_iterations);
+
+        return true;
     }
 };
 
