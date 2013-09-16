@@ -85,9 +85,6 @@ class Adaboost {
     //TODO devise means to implement some flexible stop criteria
 
 protected:
-    /** iteration (epoch) counter */
-    unsigned int t;
-
     /** Its methods will be invoked to report the algorithm progress */
     ProgressCallback * progressCallback;
 
@@ -269,10 +266,9 @@ protected:
 
 
 public:
-    Adaboost() : t(0), progressCallback(0) {}
+    Adaboost() : progressCallback(0) {}
 
-    Adaboost(ProgressCallback * progressCallback_) : t(0),
-                                                     progressCallback(progressCallback_) {}
+    Adaboost(ProgressCallback * progressCallback_) : progressCallback(progressCallback_) {}
 
     virtual ~Adaboost() {}
 
@@ -286,7 +282,7 @@ public:
                std::vector <WeakHypothesisType> & hypothesis,
                const unsigned int maximum_iterations)
     {
-        t = 0;
+        unsigned int t = 0;
 
 
         //Collects into allSamples pointers to both positive and negative LabeledExamples
