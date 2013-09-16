@@ -41,7 +41,7 @@ public:
 
     virtual void beginAdaboostIteration(const unsigned int iteration)
     {
-        std::cout << "Adaboost iteration " << iteration << ".\n";
+        std::cout << "Adaboost iteration " << iteration << std::endl;
     }
 
     virtual void tick (const unsigned long current, const unsigned long total)
@@ -60,15 +60,15 @@ public:
                                      const weight_type lowest_classifier_error,
                                      const unsigned int classifier_idx)
     {
-        std::cout << "\rA new a weak classifier was chosen." << std::endl;
-        std::cout <<   "  Weak classifier idx : " << classifier_idx << std::endl;
-        std::cout <<   "  Best weighted error : " << lowest_classifier_error;
+        std::cout << "\rA new a weak classifier was chosen.";
+        std::cout << "\n  Weak classifier idx : " << classifier_idx;
+        std::cout << "\n  Best weighted error : " << lowest_classifier_error;
         if (lowest_classifier_error > 0.5f)
         {
             std::cout << " (violates weak learning assumption)";
         }
-        std::cout << "\n  Alpha value         : " << alpha << std::endl;
-        std::cout <<   "  Normalization factor: " << normalization_factor << std::endl;
+        std::cout << "\n  Alpha value         : " << alpha;
+        std::cout << "\n  Normalization factor: " << normalization_factor << std::endl;
     }
 };
 
@@ -138,7 +138,7 @@ protected:
      */
     struct ParallelWeakLearner
     {
-        struct feature_and_weight //use std::pair???
+        struct feature_and_weight
         {
             float feature;
             weight_type weight;
