@@ -8,7 +8,6 @@
 #include "labeledexample.h"
 #include "common.h"
 #include "stronghypothesis.h"
-#include "dataprovider.h"
 
 
 

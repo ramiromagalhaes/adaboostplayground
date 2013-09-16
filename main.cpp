@@ -4,7 +4,6 @@
 #include <opencv2/core/core.hpp>
 
 #include "common.h"
-#include "dataprovider.h"
 #include "stronghypothesis.h"
 #include "adaboost.h"
 #include "haarclassifier.h"
