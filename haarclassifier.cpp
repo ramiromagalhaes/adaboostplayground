@@ -95,12 +95,29 @@ void HaarClassifier::setThreshold(const float q_)
     q = q_;
 }
 
+void HaarClassifier::setPolarity(const float p_)
+{
+    p = p_;
+}
 
 
+
+//This is supposed to be used only during trainning
 float HaarClassifier::featureValue(LabeledExample &example) const
 {
     wavelet->setIntegralImages(&(example.integralSum), &(example.integralSquare));
-    return wavelet->value();
+
+    std::vector<float> s(wavelet->dimensions());
+    wavelet->srfs(s);
+
+    float distance = 0;
+    for(unsigned int i = 0; i < s.size(); ++i)
+    {
+        const float v = s[i] - mean[i];
+        distance += v * v;
+    }
+
+    return std::sqrt(distance);
 }
 
 
