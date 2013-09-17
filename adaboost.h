@@ -206,6 +206,11 @@ protected:
                     total_w_1_p -= feature_values[k].weight * (feature_values[k].label == yes);
                     total_w_1_n -= feature_values[k].weight * (feature_values[k].label == no);
 
+                    if ( k < feature_values.size() - 1 && feature_values[k].feature == feature_values[k+1].feature )
+                    {
+                        continue;
+                    }
+
                     const float error = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p);
 
                     if (error < best_error)
