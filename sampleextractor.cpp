@@ -3,7 +3,10 @@
 #include <fstream>
 #include <cmath>
 #include <ctime>
+#include <utility>
 #include <opencv2/highgui/highgui.hpp>
+#include <boost/unordered_set.hpp>
+
 
 SampleExtractor::SampleExtractor()
 {
@@ -16,6 +19,8 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size,
                                           Classification c,
                                           std::vector<unsigned int > *sampleIndexes)
 {
+    boost::unordered_set<unsigned int> selectedIndexes;
+
     std::srand(std::time(0));
 
     const cv::Size roiSize(20 ,20);
@@ -24,7 +29,14 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size,
 
     for (unsigned int i = 0; i < sample_size; ++i)
     {
-        const unsigned int sampleX = (full_image.cols/roiSize.width) * ((float)std::rand() / RAND_MAX);
+        unsigned int sampleX = 0;
+        bool did_insert = false;
+        do
+        {
+            sampleX = (full_image.cols/roiSize.width) * ((float)std::rand() / RAND_MAX);
+            did_insert = selectedIndexes.insert(sampleX).second;
+        } while ( !did_insert );
+
         if (sampleIndexes)
         {
             sampleIndexes->push_back(sampleX);
