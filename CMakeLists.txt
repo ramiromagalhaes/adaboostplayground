@@ -12,6 +12,15 @@ find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
 include_directories( /home/ramiro/workspace/haarcommon/ )
 link_directories( /home/ramiro/workspace/haarcommon-build/ )
 
+# Reference to external lib
+# You can define two import-locations: one for debug and one for release.
+add_library( haarcommon-release SHARED IMPORTED )
+set_target_properties( haarcommon-release PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build/libhaarcommon.a )
+add_library( haarcommon-debug SHARED IMPORTED )
+set_target_properties( haarcommon-debug PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build-debug/libhaarcommon.a )
+
+
+
 # Setting the main program
 set(common_source_files
     common.h
@@ -23,7 +32,8 @@ set(common_source_files
     sampleextractor.h
     sampleextractor.cpp)
 add_executable( trainclassifier trainclassifier.cpp ${common_source_files} )
-target_link_libraries( trainclassifier haarcommon ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+target_link_libraries( trainclassifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+target_link_libraries( trainclassifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 
 add_executable( testclassifier testclassifier.cpp ${common_source_files} )
 target_link_libraries( testclassifier haarcommon ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
