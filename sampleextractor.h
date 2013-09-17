@@ -14,7 +14,11 @@ private:
     SampleExtractor();
 
 public:
-    static bool extractRandomSample(const unsigned int sample_size, const std::string & filename, std::vector<LabeledExample> & samples, Classification c);
+    static bool extractRandomSample(const unsigned int sample_size,
+                                    const std::string & filename,
+                                    std::vector<LabeledExample> & samples,
+                                    Classification c,
+                                    std::vector<unsigned int> *sampleIndexes = 0);
 
     static bool fromIndexFile(const std::string &indexPath, std::vector<LabeledExample> &samples, Classification c);
 };
