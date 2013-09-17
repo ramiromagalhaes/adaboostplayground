@@ -188,8 +188,8 @@ protected:
                 float best_error = std::min(total_w_1_n, total_w_1_p);
 
                 float v = feature_values[0].feature;
-                Classification c0 = total_w_0_n < total_w_0_p ? yes : no;
-                Classification c1 = total_w_1_n < total_w_1_p ? yes : no;
+                Classification c0 = total_w_0_n <= total_w_0_p ? yes : no;
+                Classification c1 = total_w_1_n <= total_w_1_p ? yes : no;
 
                 for(WeightVector::size_type k = 0; k < feature_values.size(); ++k )
                 {
@@ -207,8 +207,8 @@ protected:
 
                         v = feature_values[k].feature;
 
-                        c0 = total_w_0_n < total_w_0_p ? yes : no;
-                        c1 = total_w_1_n < total_w_1_p ? yes : no;
+                        c0 = total_w_0_n <= total_w_0_p ? yes : no;
+                        c1 = total_w_1_n <= total_w_1_p ? yes : no;
                     }
                 }
                 //Ok... That was what's in the book. Give me back the controls now.
