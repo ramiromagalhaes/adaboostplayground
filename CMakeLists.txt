@@ -13,15 +13,17 @@ include_directories( /home/ramiro/workspace/haarcommon/ )
 link_directories( /home/ramiro/workspace/haarcommon-build/ )
 
 # Setting the main program
-set(source_files
+set(common_source_files
     common.h
     labeledexample.h
     stronghypothesis.h
     adaboost.h
-    main.cpp
     haarclassifier.h
     haarclassifier.cpp
     sampleextractor.h
     sampleextractor.cpp)
-add_executable( adaboostplayground ${source_files} )
-target_link_libraries( adaboostplayground haarcommon ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+add_executable( trainclassifier trainclassifier.cpp ${common_source_files} )
+target_link_libraries( trainclassifier haarcommon ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+
+add_executable( testclassifier testclassifier.cpp ${common_source_files} )
+target_link_libraries( testclassifier haarcommon ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
