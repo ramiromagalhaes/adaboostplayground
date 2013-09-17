@@ -62,8 +62,7 @@ bool HaarClassifier::read(std::istream & in)
     }
 
     in >> stdDev;
-    float discard_q;
-    in >> discard_q;
+    in >> q;
 
     return true;
 }
