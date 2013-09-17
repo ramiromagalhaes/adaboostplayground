@@ -16,12 +16,12 @@ public:
     cv::Mat integralSquare;
     Classification label;
 
-    LabeledExample() : integralSum(21, 21, CV_64F),
-                       integralSquare(21, 21, CV_64F),
+    LabeledExample() : integralSum(21, 21, cv::DataType<double>::type),
+                       integralSquare(21, 21, cv::DataType<double>::type),
                        label(no) {}
 
-    LabeledExample (const cv::Mat e, const Classification c) : integralSum(21, 21, CV_64F),
-                                                               integralSquare(21, 21, CV_64F),
+    LabeledExample (const cv::Mat e, const Classification c) : integralSum(21, 21, cv::DataType<double>::type),
+                                                               integralSquare(21, 21, cv::DataType<double>::type),
                                                                label(c)
     {
         updateIntegrals(e);
@@ -29,7 +29,11 @@ public:
 
     inline void updateIntegrals(const cv::Mat & image)
     {
-        cv::integral(image, integralSum, integralSquare, CV_64F);
+        cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
+        if (!integralSum.data || !integralSquare.data)
+        {
+            throw 137;
+        }
     }
 };
 
