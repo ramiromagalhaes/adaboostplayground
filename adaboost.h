@@ -104,6 +104,13 @@ protected:
         {
             LabeledExample * const sample = allSamples[i];
 
+            /*
+            if ( sample->label ==  selected_hypothesis.classify(*sample) )
+            {
+                weight_distribution[i] *= std::exp(-2.0f * alpha);
+            }
+            */
+            //this is the original Adaboost weight update
             weight_distribution[i] *= std::exp(-alpha * sample->label * selected_hypothesis.classify(*sample));
             normalizationFactor += weight_distribution[i];
         }
@@ -302,8 +309,6 @@ public:
         std::fill(weight_distribution.begin() + positiveSamples.size(), weight_distribution.end(),
                   0.5f / negativeSamples.size());
 
-
-        //Initialize the weak learner.
 
         do {//Main Adaboost loop
             if(progressCallback)
