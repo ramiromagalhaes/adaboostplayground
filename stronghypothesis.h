@@ -50,7 +50,15 @@ public:
      */
     StrongHypothesis(std::string path_) : threshold(0),
                                           writeToStreamOnInsert(true),
-                                          path(path_) {} //TODO probably a friend method would be a better choice
+                                          path(path_)
+    {
+        std::ofstream out( path.c_str(), std::ios::trunc );
+        if ( !out.is_open() )
+        {
+            throw 219;
+        }
+        out.close();
+    }
 
     ~StrongHypothesis()
     {
@@ -70,6 +78,7 @@ public:
                 throw 220;
             }
             write(out);
+            out.close();
         }
     }
 
