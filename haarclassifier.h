@@ -16,6 +16,7 @@ private:
     std::vector<float> mean;
     float stdDev; //TODO Not used. Will soon drop it.
     float q;
+    float p;
 
     Classification do_classify() const;
 
@@ -39,6 +40,8 @@ public:
     bool write(std::ostream & out) const;
 
     void setThreshold(const float q_);
+
+    void setPolarity(const float p_);
 
     float featureValue(LabeledExample & example) const;
 
