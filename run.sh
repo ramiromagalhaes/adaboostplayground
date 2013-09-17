@@ -1,3 +1,2 @@
 #!/bin/sh
-./adaboostplayground /mnt/faces.txt /mnt/fundo.txt /mnt/haarwavelets.txt /mnt/strongHypothesis.txt 1
-
+./adaboosttrain /mnt/faces.txt /mnt/fundo/0.pgm /mnt/srfs/haarclassifiers.txt /mnt/strongHypothesis.txt 200
