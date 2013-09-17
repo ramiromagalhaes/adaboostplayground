@@ -1,2 +1,2 @@
 #!/bin/sh
-./adaboosttrain /mnt/faces.txt /mnt/fundo/0.pgm /mnt/srfs/haarclassifiers.txt /mnt/strongHypothesis.txt 200
+./trainclassifier /mnt/faces.txt /mnt/fundo/0.pgm /mnt/srfs/haarclassifiers.txt /mnt/strongHypothesis.txt 200
