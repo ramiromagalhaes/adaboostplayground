@@ -153,7 +153,7 @@ protected:
         {
             bool operator()(const feature_and_weight & lh, const feature_and_weight &rh) const
             {
-                return lh.feature > rh.feature;
+                return lh.feature < rh.feature;
             }
         };
 
