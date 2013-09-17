@@ -10,7 +10,11 @@ SampleExtractor::SampleExtractor()
 }
 
 //TODO ensure that the same sample won't be chosen again.
-bool SampleExtractor::extractRandomSample(const unsigned int sample_size, const std::string &imagePath, std::vector<LabeledExample> &samples, Classification c)
+bool SampleExtractor::extractRandomSample(const unsigned int sample_size,
+                                          const std::string &imagePath,
+                                          std::vector<LabeledExample> &samples,
+                                          Classification c,
+                                          std::vector<unsigned int > *sampleIndexes)
 {
     std::srand(std::time(0));
 
@@ -21,6 +25,10 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size, const 
     for (unsigned int i = 0; i < sample_size; ++i)
     {
         const unsigned int sampleX = (full_image.cols/roiSize.width) * ((float)std::rand() / RAND_MAX);
+        if (sampleIndexes)
+        {
+            sampleIndexes->push_back(sampleX);
+        }
 
         cv::Rect roi(sampleX * 20, 0, roiSize.width, roiSize.height);
 
@@ -29,6 +37,7 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size, const 
         {
             return false;
         }
+
         LabeledExample sample(image, c);
         samples.push_back(sample);
     }
