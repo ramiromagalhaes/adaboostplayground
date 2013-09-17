@@ -3,6 +3,8 @@
 
 #include <fstream>
 
+#include <opencv2/core/core.hpp>
+
 #include "common.h"
 #include "haarwavelet.h"
 #include "labeledexample.h"
@@ -14,6 +16,8 @@ private:
     std::vector<float> mean;
     float stdDev; //TODO Not used. Will soon drop it.
     float q;
+
+    Classification do_classify() const;
 
 public:
     //About those constructors and operator=, see the links below:
@@ -39,6 +43,8 @@ public:
     float featureValue(LabeledExample & example) const;
 
     Classification classify(LabeledExample & example) const;
+
+    Classification classify(cv::Mat & example) const;
 
     static bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers);
 };

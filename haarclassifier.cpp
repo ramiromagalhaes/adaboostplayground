@@ -104,11 +104,24 @@ float HaarClassifier::featureValue(LabeledExample &example) const
 }
 
 
-
 Classification HaarClassifier::classify(LabeledExample & example) const
 {
     wavelet->setIntegralImages(&example.integralSum, &example.integralSquare);
+    return do_classify();
+}
 
+Classification HaarClassifier::classify(cv::Mat &example) const
+{
+    cv::Mat integralSum(example.cols + 1, example.rows + 1, cv::DataType<unsigned char>::type);
+    cv::Mat integralSquare(example.cols + 1, example.rows + 1, cv::DataType<unsigned char>::type);
+    cv::integral(example, integralSum, integralSquare);
+    wavelet->setIntegralImages(&integralSum, &integralSquare);
+
+    return do_classify();
+}
+
+Classification HaarClassifier::do_classify() const
+{
     std::vector<float> s(wavelet->dimensions());
     wavelet->srfs(s);
 
