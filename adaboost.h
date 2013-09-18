@@ -103,31 +103,27 @@ struct ParallelWeakLearner
         }
     };
 
-    const std::vector<LabeledExample *> * allSamples;
-    std::vector<HaarClassifier> * hypothesis;
-    const WeightVector * weight_distribution;
-    weight_type * selected_weak_hypothesis_weighted_error;
-    unsigned int * selected_weak_hypothesis_index;
-    unsigned long * count;
+    const std::vector<LabeledExample *> * const allSamples;
+    std::vector<HaarClassifier> * const hypothesis;
+    const WeightVector * const weight_distribution;
+    weight_type * const selected_weak_hypothesis_weighted_error;
+    unsigned int * const selected_weak_hypothesis_index;
+    unsigned long * const count;
     ProgressCallback * const progressCallback;
 
-    ParallelWeakLearner(const std::vector<LabeledExample *> * allSamples_,
-                        std::vector<HaarClassifier> * hypothesis_,
-                        const WeightVector * weight_distribution_,
-                        weight_type * selected_weak_hypothesis_weighted_error_,
-                        unsigned int * selected_weak_hypothesis_index_,
-                        unsigned long * count_,
+    ParallelWeakLearner(const std::vector<LabeledExample *> * const allSamples_,
+                        std::vector<HaarClassifier> * const hypothesis_,
+                        const WeightVector * const weight_distribution_,
+                        weight_type * const selected_weak_hypothesis_weighted_error_,
+                        unsigned int * const selected_weak_hypothesis_index_,
+                        unsigned long * const count_,
                         ProgressCallback * const progressCallback_) : allSamples(allSamples_),
                                                                       hypothesis(hypothesis_),
                                                                       weight_distribution(weight_distribution_),
                                                                       selected_weak_hypothesis_weighted_error(selected_weak_hypothesis_weighted_error_),
                                                                       selected_weak_hypothesis_index(selected_weak_hypothesis_index_),
                                                                       count(count_),
-                                                                      progressCallback(progressCallback_)
-    {
-        *selected_weak_hypothesis_weighted_error = std::numeric_limits<float>::max();
-        *count = 0;
-    }
+                                                                      progressCallback(progressCallback_) {}
 
     /**
      * The main loop will run over the hypothesis vector.
@@ -165,6 +161,8 @@ struct ParallelWeakLearner
             Classification c0 = total_w_0_n <= total_w_0_p ? yes : no;
             Classification c1 = total_w_1_n <= total_w_1_p ? yes : no;
 
+            const unsigned int total_features_minus_1 = feature_values.size() - 1;
+
             for(WeightVector::size_type k = 0; k < feature_values.size(); ++k )
             {
                 total_w_0_p += feature_values[k].weight * (feature_values[k].label == yes);
@@ -172,6 +170,12 @@ struct ParallelWeakLearner
 
                 total_w_1_p -= feature_values[k].weight * (feature_values[k].label == yes);
                 total_w_1_n -= feature_values[k].weight * (feature_values[k].label == no);
+
+                if ( k < total_features_minus_1
+                     && feature_values[k].feature == feature_values[k+1].feature )
+                {
+                    continue;
+                }
 
                 const float error = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p);
 
@@ -188,10 +192,10 @@ struct ParallelWeakLearner
             //Ok... That was what's in the book. Give me back the controls now.
             //========= END WTF ZONE =========
 
-            (*hypothesis)[j].setThreshold(v); //If we had a hypothesis[j].setP() (Viola and Jones's polarity), we could provide set it with c0.
+            (*hypothesis)[j].setThreshold(v);//If we had a hypothesis[j].setP() (Viola and Jones's polarity), we could provide set it with c0.
 
             {
-                //this must be synchonized way
+                //this must be synchonized
                 tbb::queuing_mutex::scoped_lock lock(parallel_weak_learner_mutex);
                 if (best_error < *selected_weak_hypothesis_weighted_error)
                 {
@@ -214,6 +218,9 @@ struct ParallelWeakLearner
 };
 
 WeakLearnerMutex ParallelWeakLearner::parallel_weak_learner_mutex = WeakLearnerMutex();
+
+//This is usefull for certain debugging tasks. Uncomment if needed.
+//tbb::task_scheduler_init init(1);
 
 
 
@@ -245,10 +252,11 @@ protected:
         for( WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the weight of the samples
         {
             LabeledExample * const sample = allSamples[i];
+            Classification c = selected_hypothesis.classify(*sample);
 
             //This is the original Adaboost weight update. Viola and Jones report a slightly different equation,
             //but their starting weights are a little different too.
-            weight_distribution[i] *= std::exp(-alpha * sample->label * selected_hypothesis.classify(*sample));
+            weight_distribution[i] = weight_distribution[i] * std::exp(-1.0f * alpha * sample->label * c);
             normalizationFactor += weight_distribution[i];
         }
 
@@ -319,14 +327,14 @@ public:
                 progressCallback->beginAdaboostIteration(t);
             }
 
-            //This holds the weighted error of the best weak classifier. The weak lerner sets it.
-            weight_type weighted_error = 0;
+            //Holds the weighted error of the best weak classifier selected this boosting round. The weak lerner sets it.
+            weight_type weighted_error = std::numeric_limits<weight_type>::max();
 
-            //This holds the index of the best weak hypothesis. The weak lerner sets it.
+            //Holds the index of the best weak hypothesis. The weak lerner sets it.
             unsigned int weak_hypothesis_index = 0;
 
             //A progress counter
-            unsigned long count;
+            unsigned long count = 0;
 
             //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
             tbb::parallel_for( tbb::blocked_range< unsigned int >(0, hypothesis.size()),
@@ -339,13 +347,12 @@ public:
                                                    progressCallback) );
 
             //Set alpha for this iteration
-            const weight_type alpha = (weight_type)std::log( (1.0f - weighted_error)/weighted_error ) / 2.0f;
+            const weight_type alpha = 0.5f * std::log( (1.0f - weighted_error) / weighted_error );
             if ( std::isnan(alpha) || std::isinf(alpha) )
             {
                 std::cout << "Exiting trainning loop since alpha is infinity or not a number." << std::endl;
                 return false;
             }
-
 
             //Now we just have to update the weight distribution of the samples.
             //Normalization factor is not inside the block because we report it to the progressCallback.
@@ -354,7 +361,6 @@ public:
                                               alpha,
                                               hypothesis[weak_hypothesis_index],
                                               weight_distribution );
-
 
             if (progressCallback)
             {
