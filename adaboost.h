@@ -195,8 +195,6 @@ struct ParallelWeakLearner
                 tbb::queuing_mutex::scoped_lock lock(parallel_weak_learner_mutex);
                 if (best_error < *selected_weak_hypothesis_weighted_error)
                 {
-                    std::cout << "New best error! From: " << *selected_weak_hypothesis_weighted_error << " | To: " << best_error << '\n';
-                    std::cout.flush();
                     *selected_weak_hypothesis_weighted_error = best_error;
                     *selected_weak_hypothesis_index = j;
                 }
