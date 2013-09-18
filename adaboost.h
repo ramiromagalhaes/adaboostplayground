@@ -104,13 +104,8 @@ protected:
         {
             LabeledExample * const sample = allSamples[i];
 
-            /*
-            if ( sample->label ==  selected_hypothesis.classify(*sample) )
-            {
-                weight_distribution[i] *= std::exp(-2.0f * alpha);
-            }
-            */
-            //this is the original Adaboost weight update
+            //This is the original Adaboost weight update. Viola and Jones report a slightly different equation,
+            //but their starting weights are a little different too.
             weight_distribution[i] *= std::exp(-alpha * sample->label * selected_hypothesis.classify(*sample));
             normalizationFactor += weight_distribution[i];
         }
@@ -251,6 +246,7 @@ protected:
                     tbb::queuing_mutex::scoped_lock lock(selected_weak_hypothesis_mutex);
                     if (best_error < *selected_weak_hypothesis_weighted_error)
                     {
+                        std::cout << "New best error! From: " << *selected_weak_hypothesis_weighted_error << " | To: " << best_error << std::endl;
                         *selected_weak_hypothesis_weighted_error = best_error;
                         *selected_weak_hypothesis_index = j;
                     }
