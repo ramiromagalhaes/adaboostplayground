@@ -43,14 +43,14 @@ int main(int, char **argv) {
 
     std::vector<LabeledExample> positiveSamples, negativeSamples;
     {
-        if ( !SampleExtractor::fromIndexFile(positivesFile, positiveSamples, yes) )
+        if ( !SampleExtractor::fromImageFile(positivesFile, positiveSamples, yes) )
         {
             return 13;
         }
         std::cout << "Loaded " << positiveSamples.size() << " positive samples." << std::endl;
 
         //Viola and Jones state they used "6000 such non-face sub-windows" while building the cascade (2004, section 5.2).
-        if ( !SampleExtractor::extractRandomSample(10000, negativesFile, negativeSamples, no) )
+        if ( !SampleExtractor::extractRandomSample(6000, negativesFile, negativeSamples, no) )
         {
             return 17;
         }

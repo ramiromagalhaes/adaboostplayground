@@ -21,6 +21,8 @@ public:
                                     std::vector<unsigned int> *sampleIndexes = 0);
 
     static bool fromIndexFile(const std::string &indexPath, std::vector<LabeledExample> &samples, Classification c);
+
+    static bool fromImageFile(const std::string &imagePath, std::vector<LabeledExample> &samples, Classification c);
 };
 
 #endif // SAMPLEEXTRACTOR_H

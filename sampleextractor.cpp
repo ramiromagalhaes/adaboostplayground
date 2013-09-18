@@ -90,3 +90,26 @@ bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<L
 
     return true;
 }
+
+bool SampleExtractor::fromImageFile(const std::string &imagePath, std::vector<LabeledExample> &samples, Classification c)
+{
+    const cv::Size roiSize(20 ,20);
+    const cv::Mat full_image = cv::imread(imagePath, cv::DataType<unsigned char>::type);
+
+    unsigned int total_images = full_image.cols / roiSize.width;
+    samples.resize(total_images);
+    for (unsigned int i = 0; i < total_images; ++i)
+    {
+        cv::Rect roi(i * 20, 0, roiSize.width, roiSize.height);
+
+        cv::Mat image = cv::Mat(full_image, roi);
+        if ( !image.data )
+        {
+            return false;
+        }
+
+        samples[i] = LabeledExample(image, c);
+    }
+
+    return true;
+}
