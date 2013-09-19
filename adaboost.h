@@ -155,13 +155,11 @@ struct ParallelWeakLearner
             weight_type total_w_0_p = 0;
             weight_type total_w_0_n = 0;
 
-            float best_error = std::min(total_w_1_n, total_w_1_p);
+            weight_type best_error = std::min(total_w_1_n, total_w_1_p);
 
             float v = feature_values[0].feature;
             Classification c0 = total_w_0_n <= total_w_0_p ? yes : no;
             Classification c1 = total_w_1_n <= total_w_1_p ? yes : no;
-
-            const unsigned int total_features_minus_1 = feature_values.size() - 1;
 
             for(WeightVector::size_type k = 0; k < feature_values.size(); ++k )
             {
@@ -171,13 +169,13 @@ struct ParallelWeakLearner
                 total_w_1_p -= feature_values[k].weight * (feature_values[k].label == yes);
                 total_w_1_n -= feature_values[k].weight * (feature_values[k].label == no);
 
-                if ( k < total_features_minus_1
+                if ( k < feature_values.size() - 1
                      && feature_values[k].feature == feature_values[k+1].feature )
                 {
                     continue;
                 }
 
-                const float error = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p);
+                const weight_type error = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p);
 
                 if (error < best_error)
                 {
@@ -192,7 +190,8 @@ struct ParallelWeakLearner
             //Ok... That was what's in the book. Give me back the controls now.
             //========= END WTF ZONE =========
 
-            (*hypothesis)[j].setThreshold(v);//If we had a hypothesis[j].setP() (Viola and Jones's polarity), we could provide set it with c0.
+            (*hypothesis)[j].setThreshold(v);
+            (*hypothesis)[j].setPolarity(c0);
 
             {
                 //this must be synchonized
@@ -251,12 +250,11 @@ protected:
 
         for( WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the weight of the samples
         {
-            LabeledExample * const sample = allSamples[i];
-            Classification c = selected_hypothesis.classify(*sample);
+            Classification c = selected_hypothesis.classify( *(allSamples[i]) );
 
             //This is the original Adaboost weight update. Viola and Jones report a slightly different equation,
             //but their starting weights are a little different too.
-            weight_distribution[i] = weight_distribution[i] * std::exp(-1.0f * alpha * sample->label * c);
+            weight_distribution[i] = weight_distribution[i] * std::exp(-1.0f * alpha * (allSamples[i]->label) * c);
             normalizationFactor += weight_distribution[i];
         }
 
