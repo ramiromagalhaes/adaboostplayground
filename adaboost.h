@@ -93,13 +93,10 @@ struct ParallelWeakLearner
         float feature;
         weight_type weight;
         Classification label;
-    };
 
-    struct compare_feature
-    {
-        bool operator()(const feature_and_weight & lh, const feature_and_weight &rh) const
+        bool operator < (const feature_and_weight & f) const
         {
-            return lh.feature < rh.feature;
+            return feature < f.feature;
         }
     };
 
@@ -150,7 +147,7 @@ struct ParallelWeakLearner
                 total_w_1_n += feature_values[i].weight * (feature_values[i].label == no);
             }
 
-            std::sort( feature_values.begin(), feature_values.end(), compare_feature() );
+            std::sort( feature_values.begin(), feature_values.end() );
 
             weight_type total_w_0_p = 0;
             weight_type total_w_0_n = 0;
