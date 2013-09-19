@@ -130,12 +130,12 @@ struct ParallelWeakLearner
      */
     void operator()(tbb::blocked_range< unsigned int > & range) const
     {
+        //Feature values and respective weight and label
+        std::vector<feature_and_weight> feature_values(allSamples->size());
+
         //Calculate the weighted errors of each weak classifier with respect to the weights of each instance
         for (unsigned int j = range.begin(); j < range.end(); ++j) //j refers to the classifiers
         {
-            //Feature values and respective weight and label
-            std::vector<feature_and_weight> feature_values(allSamples->size());
-
             //========= BEGIN WTF ZONE =========
             //For a nice explanation about what is going on bellow, refer to Schapire and Freund's Boosting book, section 3.4.2
             weight_type total_w_1_p = 0;
@@ -144,7 +144,7 @@ struct ParallelWeakLearner
             {
                 feature_values[i].feature = hypothesis->operator[](j).featureValue( *(allSamples->operator[](i)) );
                 feature_values[i].label   = allSamples->operator[](i)->label;
-                feature_values[i].weight  = weight_distribution->operator [](i);
+                feature_values[i].weight  = weight_distribution->operator[](i);
 
                 total_w_1_p += feature_values[i].weight * (feature_values[i].label == yes);
                 total_w_1_n += feature_values[i].weight * (feature_values[i].label == no);
@@ -190,8 +190,8 @@ struct ParallelWeakLearner
             //Ok... That was what's in the book. Give me back the controls now.
             //========= END WTF ZONE =========
 
-            hypothesis->operator [](j).setThreshold(v);
-            hypothesis->operator [](j).setPolarity(c0);
+            hypothesis->operator[](j).setThreshold(v);
+            hypothesis->operator[](j).setPolarity(c0);
 
             {
                 //this must be synchonized
