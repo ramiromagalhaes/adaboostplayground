@@ -253,7 +253,7 @@ protected:
 
             //This is the original Adaboost weight update. Viola and Jones report a slightly different equation,
             //but their starting weights are a little different too.
-            weight_distribution[i] = weight_distribution[i] * std::exp(-1.0f * alpha * (allSamples[i]->getLabel()) * c);
+            weight_distribution[i] = weight_distribution[i] * std::exp(-alpha * (allSamples[i]->getLabel()) * c);
             normalizationFactor += weight_distribution[i];
         }
 

@@ -116,7 +116,7 @@ Classification HaarClassifier::classify(const LabeledExample &example) const
 Classification HaarClassifier::do_classify(const float f) const
 {
 
-    return f * p >= theta * p ? yes : no;
+    return f * p <= theta * p ? yes : no;
 }
 
 
