@@ -50,8 +50,7 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size,
             return false;
         }
 
-        LabeledExample sample(image, c);
-        samples.push_back(sample);
+        samples.push_back(LabeledExample(image, c));
     }
 
     return true;
@@ -82,8 +81,7 @@ bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<L
             return false;
         }
 
-        LabeledExample sample(image, c);
-        samples.push_back(sample);
+        samples.push_back(LabeledExample(image, c));
     }
 
     indexStream.close();
