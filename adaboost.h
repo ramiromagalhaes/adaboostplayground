@@ -104,12 +104,12 @@ struct ParallelWeakLearner
     };
 
     const std::vector<LabeledExample *> * const allSamples;
-    std::vector<HaarClassifier> * const hypothesis;
-    const WeightVector * const weight_distribution;
-    weight_type * const selected_weak_hypothesis_weighted_error;
-    unsigned int * const selected_weak_hypothesis_index;
-    unsigned long * const count;
-    ProgressCallback * const progressCallback;
+            std::vector<HaarClassifier> * const hypothesis;
+                     const WeightVector * const weight_distribution;
+                            weight_type * const selected_weak_hypothesis_weighted_error;
+                           unsigned int * const selected_weak_hypothesis_index;
+                          unsigned long * const count;
+                       ProgressCallback * const progressCallback;
 
     ParallelWeakLearner(const std::vector<LabeledExample *> * const allSamples_,
                         std::vector<HaarClassifier> * const hypothesis_,
@@ -142,12 +142,12 @@ struct ParallelWeakLearner
             weight_type total_w_1_n = 0;
             for(WeightVector::size_type i = 0; i < feature_values.size(); ++i ) //i refers to the samples
             {
-                feature_values[i].feature = (*hypothesis)[j].featureValue( *( (*allSamples)[i] ) );
-                feature_values[i].label = (*allSamples)[i]->label;
-                feature_values[i].weight = (*weight_distribution)[i];
+                feature_values[i].feature = hypothesis->operator[](j).featureValue( *(allSamples->operator[](i)) );
+                feature_values[i].label   = allSamples->operator[](i)->label;
+                feature_values[i].weight  = weight_distribution->operator [](i);
 
-                total_w_1_p += (*weight_distribution)[i] * ((*allSamples)[i]->label == yes);
-                total_w_1_n += (*weight_distribution)[i] * ((*allSamples)[i]->label == no);
+                total_w_1_p += feature_values[i].weight * (feature_values[i].label == yes);
+                total_w_1_n += feature_values[i].weight * (feature_values[i].label == no);
             }
 
             std::sort( feature_values.begin(), feature_values.end(), compare_feature() );
@@ -190,8 +190,8 @@ struct ParallelWeakLearner
             //Ok... That was what's in the book. Give me back the controls now.
             //========= END WTF ZONE =========
 
-            (*hypothesis)[j].setThreshold(v);
-            (*hypothesis)[j].setPolarity(c0);
+            hypothesis->operator [](j).setThreshold(v);
+            hypothesis->operator [](j).setPolarity(c0);
 
             {
                 //this must be synchonized
