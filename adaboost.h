@@ -133,14 +133,10 @@ struct ParallelWeakLearner
         //Calculate the weighted errors of each weak classifier with respect to the weights of each instance
         for (unsigned int j = range.begin(); j < range.end(); ++j) //j refers to the classifiers
         {
-            if (j == 123403)
-            {
-                int asdasdsadasdasi = 1;
-            }
             //========= BEGIN WTF ZONE =========
-            //For a nice explanation about what is going on bellow, refer to Schapire and Freund's Boosting book, section 3.4.2
-            weight_type total_w_1_p = 0; //remaining true positives for feature_values above k
-            weight_type total_w_1_n = 0; //remaining false positives for feature_values above k
+            //For an explanation about what is going on bellow, refer to Schapire and Freund's Boosting book, chapter 3.4.2
+            weight_type total_w_1_p = 0; //remaining true positives for feature_values above k. This is Viola and Jones' (T+ - S+), as seen in section 3.1.
+            weight_type total_w_1_n = 0; //remaining false positives for feature_values above k. This is Viola and Jones' (T- - S-).
             for(WeightVector::size_type i = 0; i < feature_values.size(); ++i ) //i refers to the samples
             {
                 feature_values[i].feature = hypothesis->operator[](j).featureValue( *(allSamples->operator[](i)) );
@@ -153,8 +149,8 @@ struct ParallelWeakLearner
 
             std::sort( feature_values.begin(), feature_values.end() );
 
-            weight_type total_w_0_p = 0; //sum of false negatives up to k
-            weight_type total_w_0_n = 0; //sum of true negatives up to k
+            weight_type total_w_0_p = 0; //sum of false negatives up to k. This is Viola and Jones' S+.
+            weight_type total_w_0_n = 0; //sum of true negatives up to k.  This is Viola and Jones' S-.
 
             weight_type best_error = std::min(total_w_1_n, total_w_1_p);
 
@@ -176,7 +172,9 @@ struct ParallelWeakLearner
                     continue;
                 }
 
-                const weight_type error = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p);
+                //const weight_type error_o = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p); //Same as Viola and Jones'
+                const weight_type error = std::min(total_w_0_p + total_w_1_n,
+                                                   total_w_0_n + total_w_1_p); //Viola and Jones' version.
 
                 if (error < best_error)
                 {
@@ -249,7 +247,7 @@ protected:
     {
         weight_type normalizationFactor = 0;
 
-        for( WeightVector::size_type i = 0; i < allSamples.size(); ++i ) //i refers to the weight of the samples
+        for( WeightVector::size_type i = 0; i < allSamples.size(); ++i )
         {
             Classification c = selected_hypothesis.classify( *(allSamples[i]) );
 
@@ -274,7 +272,7 @@ protected:
      */
     struct ToPointer
     {
-        inline LabeledExample * const operator()(LabeledExample & ex) const
+        inline LabeledExample * operator()(LabeledExample & ex) const
         {
             return &ex;
         }
@@ -353,13 +351,36 @@ public:
                 return false;
             }
 
+
+            /*
+#define DIRTY_DEBUG
+#include <sstream>
+            std::stringstream oss;
+            oss << "file-" << t << ".csv";
+            std::ofstream debugFile(oss.str().c_str());
+            std::vector<weight_type> old(weight_distribution.size());
+            std::copy(weight_distribution.begin(), weight_distribution.end(), old.begin());
+#define DIRTY_DEBUG_END
+            */
+
             //Now we just have to update the weight distribution of the samples.
             //Normalization factor is not inside the block because we report it to the progressCallback.
-            weight_type normalizationFactor =
+            const weight_type normalizationFactor =
                     updateWeightDistribution( allSamples,
                                               alpha,
                                               hypothesis[weak_hypothesis_index],
                                               weight_distribution );
+
+            /*
+#define DIRTY_DEBUG_2
+            for( WeightVector::size_type i = 0; i < allSamples.size(); ++i )
+            {
+                debugFile << old[i] << ' ' << hypothesis[weak_hypothesis_index].classify( *(allSamples[i]) ) << ' ' << allSamples[i]->getLabel() << ' ' << weight_distribution[i] << std::endl;
+            }
+            debugFile.close();
+#define DIRTY_DEBUG_2_END
+            */
+
 
             if (progressCallback)
             {
