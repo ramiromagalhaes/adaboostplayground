@@ -30,9 +30,9 @@ public:
                        integralSquare(21, 21, cv::DataType<double>::type),
                        label(no) {}
 
-    LabeledExample (const cv::Mat e, const Classification c) : integralSum(21, 21, cv::DataType<double>::type),
-                                                               integralSquare(21, 21, cv::DataType<double>::type),
-                                                               label(c)
+    LabeledExample (const cv::Mat & e, const Classification c) : integralSum(21, 21, cv::DataType<double>::type),
+                                                                 integralSquare(21, 21, cv::DataType<double>::type),
+                                                                 label(c)
     {
         updateIntegrals(e);
     }
