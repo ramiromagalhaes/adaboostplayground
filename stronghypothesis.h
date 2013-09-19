@@ -26,7 +26,7 @@ private:
         HaarClassifier weakHypothesis;
 
         entry() : alpha(0),
-                  weakHypothesis(0) {}
+                  weakHypothesis() {}
 
         entry(weight_type a, HaarClassifier h) : alpha(a),
                                                      weakHypothesis(h) {}

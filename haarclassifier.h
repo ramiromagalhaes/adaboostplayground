@@ -12,13 +12,11 @@
 class HaarClassifier
 {
 private:
-    HaarWavelet * wavelet;
-    std::vector<float> mean;
-    float stdDev; //TODO Not used. Will soon drop it.
-    float q;
+    HaarWavelet wavelet;
+    float theta;
     float p;
 
-    Classification do_classify() const;
+    Classification do_classify(const float f) const;
 
 public:
     //About those constructors and operator=, see the links below:
@@ -27,7 +25,7 @@ public:
 
     HaarClassifier();
 
-    HaarClassifier(HaarWavelet * w);
+    HaarClassifier(HaarWavelet w);
 
     HaarClassifier(const HaarClassifier & c);
 
@@ -46,8 +44,6 @@ public:
     float featureValue(LabeledExample & example) const;
 
     Classification classify(LabeledExample & example) const;
-
-    Classification classify(cv::Mat & example) const;
 
     static bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers);
 };

@@ -1,36 +1,32 @@
 #include "haarclassifier.h"
 
+#include <numeric>
 #include <opencv2/core/core.hpp>
 
 
-
-HaarClassifier::HaarClassifier() : wavelet(0),
-                                   mean(2),
-                                   stdDev(1),
-                                   q(2) {}
+HaarClassifier::HaarClassifier() : wavelet(),
+                                   theta(0),
+                                   p(1) {}
 
 
 
-HaarClassifier::HaarClassifier(HaarWavelet *w) : wavelet(w),
-                                                 mean(2),
-                                                 stdDev(1),
-                                                 q(2) {}
+HaarClassifier::HaarClassifier(HaarWavelet w) : wavelet(w),
+                                                theta(0),
+                                                p(1) {}
 
 
 
 HaarClassifier::HaarClassifier(const HaarClassifier & c) : wavelet(c.wavelet),
-                                                           mean(c.mean),
-                                                           stdDev(c.stdDev),
-                                                           q(c.q) {}
+                                                           theta(c.theta),
+                                                           p(c.p) {}
 
 
 
 HaarClassifier & HaarClassifier::operator=(const HaarClassifier & c)
 {
     wavelet = c.wavelet;
-    mean = c.mean;
-    stdDev = c.stdDev;
-    q = c.q;
+    theta = c.theta;
+    p = c.p;
 
     return *this;
 }
@@ -52,15 +48,17 @@ HaarClassifier::~HaarClassifier()
 
 bool HaarClassifier::read(std::istream & in)
 {
-    wavelet = new HaarWavelet(new cv::Size(20, 20), in);
+    //whatever's not about the HaarWavelet will be discarded
+    wavelet.read(in);
 
-    mean.resize(wavelet->dimensions());
+    std::vector<float> mean(wavelet.dimensions());
 
-    for (unsigned int i = 0; i < wavelet->dimensions(); i++)
+    for (unsigned int i = 0; i < wavelet.dimensions(); i++)
     {
         in >> mean[i];
     }
 
+    float stdDev, q;
     in >> stdDev;
     in >> q;
 
@@ -71,28 +69,29 @@ bool HaarClassifier::read(std::istream & in)
 
 bool HaarClassifier::write(std::ostream & out) const
 {
-    if ( !wavelet->write(out) )
+    //whatever's not about the HaarWavelet won't be written
+    if ( !wavelet.write(out) )
     {
         return false;
     }
 
-    for (unsigned int i = 0; i < mean.size(); i++)
+    for (unsigned int i = 0; i < wavelet.dimensions(); i++)
     {
-        out << ' ' << mean[i];
+        out << ' ' << 0;
     }
 
     out << ' '
-        << stdDev << ' '
-        << q;
+        << p << ' '
+        << theta;
 
     return true;
 }
 
 
 
-void HaarClassifier::setThreshold(const float q_)
+void HaarClassifier::setThreshold(const float theta_)
 {
-    q = q_;
+    theta = theta_;
 }
 
 void HaarClassifier::setPolarity(const float p_)
@@ -105,57 +104,19 @@ void HaarClassifier::setPolarity(const float p_)
 //This is supposed to be used only during trainning
 float HaarClassifier::featureValue(LabeledExample &example) const
 {
-    wavelet->setIntegralImages(&(example.integralSum), &(example.integralSquare));
-
-    std::vector<float> s(wavelet->dimensions());
-    wavelet->srfs(s);
-
-    float distance = 0;
-    for(unsigned int i = 0; i < s.size(); ++i)
-    {
-        const float v = s[i] - mean[i];
-        distance += v * v;
-    }
-
-    return std::sqrt(distance);
+    return wavelet.value(example.getIntegralSum(), example.getIntegralSquare());
 }
 
 
 Classification HaarClassifier::classify(LabeledExample & example) const
 {
-    wavelet->setIntegralImages(&example.integralSum, &example.integralSquare);
-    return do_classify();
+    return do_classify( wavelet.value(example.getIntegralSum(), example.getIntegralSquare()) );
 }
 
-Classification HaarClassifier::classify(cv::Mat &example) const
+Classification HaarClassifier::do_classify(const float f) const
 {
-    cv::Mat integralSum(example.cols + 1, example.rows + 1, cv::DataType<unsigned char>::type);
-    cv::Mat integralSquare(example.cols + 1, example.rows + 1, cv::DataType<unsigned char>::type);
-    cv::integral(example, integralSum, integralSquare);
-    wavelet->setIntegralImages(&integralSum, &integralSquare);
 
-    return do_classify();
-}
-
-Classification HaarClassifier::do_classify() const
-{
-    std::vector<float> s(wavelet->dimensions());
-    wavelet->srfs(s);
-
-    float distance = 0;
-    for(unsigned int i = 0; i < s.size(); ++i)
-    {
-        const float v = s[i] - mean[i];
-        distance += v * v;
-    }
-    distance = std::sqrt(distance);
-
-    if (distance < q)
-    {
-        return yes;
-    }
-
-    return no;
+    return f * p >= theta * p ? yes : no;
 }
 
 

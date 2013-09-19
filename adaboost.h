@@ -133,14 +133,18 @@ struct ParallelWeakLearner
         //Calculate the weighted errors of each weak classifier with respect to the weights of each instance
         for (unsigned int j = range.begin(); j < range.end(); ++j) //j refers to the classifiers
         {
+            if (j == 123403)
+            {
+                int asdasdsadasdasi = 1;
+            }
             //========= BEGIN WTF ZONE =========
             //For a nice explanation about what is going on bellow, refer to Schapire and Freund's Boosting book, section 3.4.2
-            weight_type total_w_1_p = 0;
-            weight_type total_w_1_n = 0;
+            weight_type total_w_1_p = 0; //remaining true positives for feature_values above k
+            weight_type total_w_1_n = 0; //remaining false positives for feature_values above k
             for(WeightVector::size_type i = 0; i < feature_values.size(); ++i ) //i refers to the samples
             {
                 feature_values[i].feature = hypothesis->operator[](j).featureValue( *(allSamples->operator[](i)) );
-                feature_values[i].label   = allSamples->operator[](i)->label;
+                feature_values[i].label   = allSamples->operator[](i)->getLabel();
                 feature_values[i].weight  = weight_distribution->operator[](i);
 
                 total_w_1_p += feature_values[i].weight * (feature_values[i].label == yes);
@@ -149,8 +153,8 @@ struct ParallelWeakLearner
 
             std::sort( feature_values.begin(), feature_values.end() );
 
-            weight_type total_w_0_p = 0;
-            weight_type total_w_0_n = 0;
+            weight_type total_w_0_p = 0; //sum of false negatives up to k
+            weight_type total_w_0_n = 0; //sum of true negatives up to k
 
             weight_type best_error = std::min(total_w_1_n, total_w_1_p);
 
@@ -251,7 +255,7 @@ protected:
 
             //This is the original Adaboost weight update. Viola and Jones report a slightly different equation,
             //but their starting weights are a little different too.
-            weight_distribution[i] = weight_distribution[i] * std::exp(-1.0f * alpha * (allSamples[i]->label) * c);
+            weight_distribution[i] = weight_distribution[i] * std::exp(-1.0f * alpha * (allSamples[i]->getLabel()) * c);
             normalizationFactor += weight_distribution[i];
         }
 

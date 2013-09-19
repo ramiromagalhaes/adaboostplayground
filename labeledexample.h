@@ -11,11 +11,21 @@
  * Holds the sample and its classification.
  */
 class LabeledExample {
-public:
+private:
     cv::Mat integralSum;
     cv::Mat integralSquare;
     Classification label;
 
+    void updateIntegrals(const cv::Mat & image)
+    {
+        cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
+        if (!integralSum.data || !integralSquare.data)
+        {
+            throw 137;
+        }
+    }
+
+public:
     LabeledExample() : integralSum(21, 21, cv::DataType<double>::type),
                        integralSquare(21, 21, cv::DataType<double>::type),
                        label(no) {}
@@ -27,13 +37,19 @@ public:
         updateIntegrals(e);
     }
 
-    inline void updateIntegrals(const cv::Mat & image)
+    cv::Mat getIntegralSum() const
     {
-        cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
-        if (!integralSum.data || !integralSquare.data)
-        {
-            throw 137;
-        }
+        return integralSum;
+    }
+
+    cv::Mat getIntegralSquare() const
+    {
+        return integralSquare;
+    }
+
+    Classification getLabel() const
+    {
+        return label;
     }
 };
 

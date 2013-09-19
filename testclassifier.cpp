@@ -84,8 +84,8 @@ int main(int, char **argv) {
         for (unsigned int j = 0; j < samples.size(); ++j)
         {
             float classVal = strongHypothesis.classificationValue(samples[j]);
-            records[i].truePositives  += (classVal >= records[i].value) && (samples[j].label == yes);
-            records[i].falsePositives += (classVal >= records[i].value) && (samples[j].label == no);
+            records[i].truePositives  += (classVal >= records[i].value) && (samples[j].getLabel() == yes);
+            records[i].falsePositives += (classVal >= records[i].value) && (samples[j].getLabel() == no);
         }
     }
     std::sort(records.begin(), records.end(), rocRecordCompare);
