@@ -50,6 +50,7 @@ int main(int, char **argv) {
         std::cout << "Loaded " << positiveSamples.size() << " positive samples." << std::endl;
 
         //Viola and Jones state they used "6000 such non-face sub-windows" while building the cascade (2004, section 5.2).
+        //On section 4.2 they show a different "simple experiment".
         if ( !SampleExtractor::extractRandomSample(6000, negativesFile, negativeSamples, no) )
         {
             return 17;
