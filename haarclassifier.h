@@ -41,9 +41,9 @@ public:
 
     void setPolarity(const float p_);
 
-    float featureValue(LabeledExample & example) const;
+    float featureValue(const LabeledExample & example) const;
 
-    Classification classify(LabeledExample & example) const;
+    Classification classify(const LabeledExample & example) const;
 
     static bool loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers);
 };

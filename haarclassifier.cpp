@@ -102,13 +102,13 @@ void HaarClassifier::setPolarity(const float p_)
 
 
 //This is supposed to be used only during trainning
-float HaarClassifier::featureValue(LabeledExample &example) const
+float HaarClassifier::featureValue(const LabeledExample &example) const
 {
     return wavelet.value(example.getIntegralSum(), example.getIntegralSquare());
 }
 
 
-Classification HaarClassifier::classify(LabeledExample & example) const
+Classification HaarClassifier::classify(const LabeledExample &example) const
 {
     return do_classify( wavelet.value(example.getIntegralSum(), example.getIntegralSquare()) );
 }

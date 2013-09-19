@@ -100,23 +100,23 @@ struct ParallelWeakLearner
         }
     };
 
-    const std::vector<LabeledExample *> * const allSamples;
-            std::vector<HaarClassifier> * const hypothesis;
-                     const WeightVector * const weight_distribution;
-                            weight_type * const selected_weak_hypothesis_weighted_error;
-                           unsigned int * const selected_weak_hypothesis_index;
-                          unsigned long * const count;
-                       ProgressCallback * const progressCallback;
+    const std::vector<const LabeledExample *> * const allSamples;
+                           const WeightVector * const weight_distribution;
+                  std::vector<HaarClassifier> * const hypothesis;
+                                  weight_type * const selected_weak_hypothesis_weighted_error;
+                                 unsigned int * const selected_weak_hypothesis_index;
+                                unsigned long * const count;
+                             ProgressCallback * const progressCallback;
 
-    ParallelWeakLearner(const std::vector<LabeledExample *> * const allSamples_,
-                        std::vector<HaarClassifier> * const hypothesis_,
+    ParallelWeakLearner(const std::vector<const LabeledExample *> * const allSamples_,
                         const WeightVector * const weight_distribution_,
+                        std::vector<HaarClassifier> * const hypothesis_,
                         weight_type * const selected_weak_hypothesis_weighted_error_,
                         unsigned int * const selected_weak_hypothesis_index_,
                         unsigned long * const count_,
                         ProgressCallback * const progressCallback_) : allSamples(allSamples_),
-                                                                      hypothesis(hypothesis_),
                                                                       weight_distribution(weight_distribution_),
+                                                                      hypothesis(hypothesis_),
                                                                       selected_weak_hypothesis_weighted_error(selected_weak_hypothesis_weighted_error_),
                                                                       selected_weak_hypothesis_index(selected_weak_hypothesis_index_),
                                                                       count(count_),
@@ -242,7 +242,7 @@ protected:
     /**
      * Returns the normalization factor so it can be displayed to the user.
      */
-    weight_type updateWeightDistribution( const std::vector<LabeledExample *> & allSamples,
+    weight_type updateWeightDistribution( const std::vector<const LabeledExample *> & allSamples,
                                           const weight_type alpha,
                                           const WeakHypothesisType & selected_hypothesis,
                                           WeightVector & weight_distribution )
@@ -274,7 +274,7 @@ protected:
      */
     struct ToPointer
     {
-        inline LabeledExample * operator()(LabeledExample & ex)
+        inline LabeledExample * const operator()(LabeledExample & ex) const
         {
             return &ex;
         }
@@ -303,7 +303,7 @@ public:
 
 
         //Collects into allSamples pointers to both positive and negative LabeledExamples
-        std::vector<LabeledExample *> allSamples(positiveSamples.size() + negativeSamples.size());//TODO make the LabeledExample pointer constant?
+        std::vector<const LabeledExample *> allSamples(positiveSamples.size() + negativeSamples.size());//TODO make the LabeledExample pointer constant?
         std::transform(positiveSamples.begin(), positiveSamples.end(),
                        allSamples.begin(),
                        ToPointer());
@@ -338,8 +338,8 @@ public:
             //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
             tbb::parallel_for( tbb::blocked_range< unsigned int >(0, hypothesis.size()),
                                ParallelWeakLearner(&allSamples,
-                                                   &hypothesis,
                                                    &weight_distribution,
+                                                   &hypothesis,
                                                    &weighted_error,
                                                    &weak_hypothesis_index,
                                                    &count,
