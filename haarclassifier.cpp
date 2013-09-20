@@ -119,6 +119,8 @@ MyHaarClassifier &MyHaarClassifier::operator=(const MyHaarClassifier &c)
 
 MyHaarClassifier::~MyHaarClassifier() {}
 
+
+
 bool MyHaarClassifier::read(std::istream &in)
 {
     if ( !HaarClassifier::read(in) )
@@ -149,6 +151,8 @@ bool MyHaarClassifier::write(std::ostream &out) const
 
     return true;
 }
+
+
 
 float MyHaarClassifier::featureValue(const LabeledExample &example) const
 {
