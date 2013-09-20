@@ -30,7 +30,8 @@ set(common_source_files
     haarclassifier.h
     haarclassifier.cpp
     sampleextractor.h
-    sampleextractor.cpp)
+    sampleextractor.cpp
+    prototype_trainclassifier.h)
 add_executable( trainclassifier trainclassifier.cpp ${common_source_files} )
 target_link_libraries( trainclassifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( trainclassifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)

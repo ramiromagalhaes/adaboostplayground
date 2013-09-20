@@ -1,26 +1,4 @@
-#include <vector>
-#include <iostream>
-
-#include <opencv2/core/core.hpp>
-
-#include "common.h"
-#include "stronghypothesis.h"
-#include "adaboost.h"
-#include "haarclassifier.h"
-#include "sampleextractor.h"
-
-
-
-unsigned int charToInt(char * c)
-{
-    std::stringstream ss;
-    ss << c;
-    unsigned int i;
-    ss >> i;
-    return i;
-}
-
-
+#include "prototype_trainclassifier.h"
 
 /**
  * Arguments:
@@ -39,42 +17,10 @@ int main(int, char **argv) {
     const std::string strongHypothesisFile = argv[4];
     const unsigned int maximum_iterations = charToInt(argv[5]);
 
-    StrongHypothesis strongHypothesis(strongHypothesisFile);
-
-    std::vector<LabeledExample> positiveSamples, negativeSamples;
-    {
-        if ( !SampleExtractor::fromImageFile(positivesFile, positiveSamples, yes) )
-        {
-            return 13;
-        }
-        std::cout << "Loaded " << positiveSamples.size() << " positive samples." << std::endl;
-
-        //Viola and Jones state they used "6000 such non-face sub-windows" while building the cascade (2004, section 5.2).
-        //On section 4.2 they show a different "simple experiment".
-        if ( !SampleExtractor::extractRandomSample(6000, negativesFile, negativeSamples, no) )
-        {
-            return 17;
-        }
-        std::cout << "Loaded " << negativeSamples.size() << " negative samples." << std::endl;
-    }
-
-    std::vector<HaarClassifier> hypothesis;
-    {
-        HaarClassifier::loadClassifiers(waveletsFile, hypothesis);
-        std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
-    }
-
-    Adaboost<HaarClassifier> boosting(new SimpleProgressCallback());
-
-    try {
-        boosting.train(positiveSamples,
-                       negativeSamples,
-                       strongHypothesis,
-                       hypothesis,
-                       maximum_iterations);
-    } catch (int e) {
-        std::cout << "Erro durante a execução do treinamento. Número do erro: " << e << std::endl;
-    }
-
-    return 0;
+    ___main<HaarClassifier>(
+                positivesFile,
+                negativesFile,
+                waveletsFile,
+                strongHypothesisFile,
+                maximum_iterations);
 }
