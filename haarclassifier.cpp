@@ -164,3 +164,21 @@ float MyHaarClassifier::featureValue(const LabeledExample &example) const
 
     return std::sqrt(distance);
 }
+
+Classification MyHaarClassifier::classify(const LabeledExample &example) const
+{
+    const float f = featureValue(example);
+
+    if (p == 1)
+    {
+        return  theta <= f && f <= theta ? yes : no;
+    }
+    else if (p == -1)
+    {
+        return  theta <= f && f <= theta ? no : yes;
+    }
+    else
+    {
+        throw 201; //p is supposed to be +1 or -1
+    }
+}

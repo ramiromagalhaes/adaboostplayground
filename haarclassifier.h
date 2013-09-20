@@ -100,6 +100,8 @@ public:
 
     virtual float featureValue(const LabeledExample & example) const;
 
+    virtual Classification classify(const LabeledExample & example) const;
+
 protected:
     std::vector<float> means;
     //Here the theta (threshold) will be used as the distance.
