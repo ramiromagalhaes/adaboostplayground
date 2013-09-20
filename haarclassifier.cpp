@@ -175,11 +175,11 @@ Classification MyHaarClassifier::classify(const LabeledExample &example) const
 
     if (p == 1)
     {
-        return  theta <= f && f <= theta ? yes : no;
+        return  -theta <= f && f <= theta ? yes : no;
     }
     else if (p == -1)
     {
-        return  theta <= f && f <= theta ? no : yes;
+        return  -theta <= f && f <= theta ? no : yes;
     }
     else
     {
