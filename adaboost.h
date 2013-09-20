@@ -13,6 +13,11 @@
 
 
 
+//This is usefull for certain debugging tasks. Uncomment if needed.
+//tbb::task_scheduler_init init(1);
+
+
+
 /**
  * A callback to report the progress of the Adaboost train method. Just create
  * your implementation and pass an instance of it to the Adaboost constructor.
@@ -77,151 +82,6 @@ public:
 
 
 
-typedef tbb::queuing_mutex WeakLearnerMutex;
-
-
-
-/**
- * The weak learner used in this Adaboost implementation.
- */
-struct ParallelWeakLearner
-{
-    static WeakLearnerMutex parallel_weak_learner_mutex;
-
-    struct feature_and_weight
-    {
-        float feature;
-        weight_type weight;
-        Classification label;
-
-        bool operator < (const feature_and_weight & f) const
-        {
-            return feature < f.feature;
-        }
-    };
-
-    const std::vector<const LabeledExample *> * const allSamples;
-                           const WeightVector * const weight_distribution;
-                  std::vector<HaarClassifier> * const hypothesis;
-                                  weight_type * const selected_weak_hypothesis_weighted_error;
-                                 unsigned int * const selected_weak_hypothesis_index;
-                                unsigned long * const count;
-                             ProgressCallback * const progressCallback;
-
-    ParallelWeakLearner(const std::vector<const LabeledExample *> * const allSamples_,
-                        const WeightVector * const weight_distribution_,
-                        std::vector<HaarClassifier> * const hypothesis_,
-                        weight_type * const selected_weak_hypothesis_weighted_error_,
-                        unsigned int * const selected_weak_hypothesis_index_,
-                        unsigned long * const count_,
-                        ProgressCallback * const progressCallback_) : allSamples(allSamples_),
-                                                                      weight_distribution(weight_distribution_),
-                                                                      hypothesis(hypothesis_),
-                                                                      selected_weak_hypothesis_weighted_error(selected_weak_hypothesis_weighted_error_),
-                                                                      selected_weak_hypothesis_index(selected_weak_hypothesis_index_),
-                                                                      count(count_),
-                                                                      progressCallback(progressCallback_) {}
-
-    /**
-     * The main loop will run over the hypothesis vector.
-     */
-    void operator()(tbb::blocked_range< unsigned int > & range) const
-    {
-        //Feature values and respective weight and label
-        std::vector<feature_and_weight> feature_values(allSamples->size());
-
-        //Calculate the weighted errors of each weak classifier with respect to the weights of each instance
-        for (unsigned int j = range.begin(); j < range.end(); ++j) //j refers to the classifiers
-        {
-            //========= BEGIN WTF ZONE =========
-            //For an explanation about what is going on bellow, refer to Schapire and Freund's Boosting book, chapter 3.4.2
-            weight_type total_w_1_p = 0; //remaining true positives for feature_values above k. This is Viola and Jones' (T+ - S+), as seen in section 3.1.
-            weight_type total_w_1_n = 0; //remaining false positives for feature_values above k. This is Viola and Jones' (T- - S-).
-            for(WeightVector::size_type i = 0; i < feature_values.size(); ++i ) //i refers to the samples
-            {
-                feature_values[i].feature = hypothesis->operator[](j).featureValue( *(allSamples->operator[](i)) );
-                feature_values[i].label   = allSamples->operator[](i)->getLabel();
-                feature_values[i].weight  = weight_distribution->operator[](i);
-
-                total_w_1_p += feature_values[i].weight * (feature_values[i].label == yes);
-                total_w_1_n += feature_values[i].weight * (feature_values[i].label == no);
-            }
-
-            std::sort( feature_values.begin(), feature_values.end() );
-
-            weight_type total_w_0_p = 0; //sum of false negatives up to k. This is Viola and Jones' S+.
-            weight_type total_w_0_n = 0; //sum of true negatives up to k.  This is Viola and Jones' S-.
-
-            weight_type best_error = std::min(total_w_1_n, total_w_1_p);
-
-            float v = feature_values[0].feature;
-            Classification c0 = total_w_0_n <= total_w_0_p ? yes : no;
-            Classification c1 = total_w_1_n <= total_w_1_p ? yes : no;
-
-            for(WeightVector::size_type k = 0; k < feature_values.size(); ++k )
-            {
-                total_w_0_p += feature_values[k].weight * (feature_values[k].label == yes);
-                total_w_0_n += feature_values[k].weight * (feature_values[k].label == no);
-
-                total_w_1_p -= feature_values[k].weight * (feature_values[k].label == yes);
-                total_w_1_n -= feature_values[k].weight * (feature_values[k].label == no);
-
-                if ( k < feature_values.size() - 1
-                     && feature_values[k].feature == feature_values[k+1].feature )
-                {
-                    continue;
-                }
-
-                //const weight_type error_o = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p); //Same as Viola and Jones'
-                const weight_type error = std::min(total_w_0_p + total_w_1_n,
-                                                   total_w_0_n + total_w_1_p); //Viola and Jones' version.
-
-                if (error < best_error)
-                {
-                    best_error = error;
-
-                    v = feature_values[k].feature;
-
-                    c0 = total_w_0_n <= total_w_0_p ? yes : no;
-                    c1 = total_w_1_n <= total_w_1_p ? yes : no;
-                }
-            }
-            //Ok... That was what's in the book. Give me back the controls now.
-            //========= END WTF ZONE =========
-
-            hypothesis->operator[](j).setThreshold(v);
-            hypothesis->operator[](j).setPolarity(c0);
-
-            {
-                //this must be synchonized
-                tbb::queuing_mutex::scoped_lock lock(parallel_weak_learner_mutex);
-                if (best_error < *selected_weak_hypothesis_weighted_error)
-                {
-                    *selected_weak_hypothesis_weighted_error = best_error;
-                    *selected_weak_hypothesis_index = j;
-                }
-                lock.release();
-            }
-
-            //synchronization should happen INSIDE the if
-            if (progressCallback)
-            {
-                tbb::queuing_mutex::scoped_lock lock(parallel_weak_learner_mutex);
-                ++(*count);
-                progressCallback->tick(*count, hypothesis->size());
-                lock.release();
-            }
-        }
-    }
-};
-
-WeakLearnerMutex ParallelWeakLearner::parallel_weak_learner_mutex = WeakLearnerMutex();
-
-//This is usefull for certain debugging tasks. Uncomment if needed.
-//tbb::task_scheduler_init init(1);
-
-
-
 /**
  * Implementation of the Adaboost algorithm.
  */
@@ -234,6 +94,149 @@ class Adaboost {
 protected:
     /** Its methods will be invoked to report the algorithm progress */
     ProgressCallback * progressCallback;
+
+
+
+    /**
+     * Defines the mutex type the Weak Learner will use.
+     */
+    typedef tbb::queuing_mutex WeakLearnerMutex;
+    WeakLearnerMutex weak_learner_mutex;
+
+    /**
+     * Implements a weak learner which weak classifiers are decision stumps.
+     */
+    struct DecisionStumpWeakLearner
+    {
+        struct feature_and_weight
+        {
+            float feature;
+            weight_type weight;
+            Classification label;
+
+            bool operator < (const feature_and_weight & f) const
+            {
+                return feature < f.feature;
+            }
+        };
+
+                                 WeakLearnerMutex * const mutex;
+        const std::vector<const LabeledExample *> * const allSamples;
+                               const WeightVector * const weight_distribution;
+                  std::vector<WeakHypothesisType> * const hypothesis;
+                                      weight_type * const selected_weak_hypothesis_weighted_error;
+                                     unsigned int * const selected_weak_hypothesis_index;
+                                    unsigned long * const count;
+                                 ProgressCallback * const progressCallback;
+
+         DecisionStumpWeakLearner(WeakLearnerMutex * const mutex_,
+         const std::vector<const LabeledExample *> * const allSamples_,
+                                const WeightVector * const weight_distribution_,
+                   std::vector<WeakHypothesisType> * const hypothesis_,
+                                       weight_type * const selected_weak_hypothesis_weighted_error_,
+                                      unsigned int * const selected_weak_hypothesis_index_,
+                                     unsigned long * const count_,
+                                  ProgressCallback * const progressCallback_) : mutex(mutex_),
+                                                                                allSamples(allSamples_),
+                                                                                weight_distribution(weight_distribution_),
+                                                                                hypothesis(hypothesis_),
+                                                                                selected_weak_hypothesis_weighted_error(selected_weak_hypothesis_weighted_error_),
+                                                                                selected_weak_hypothesis_index(selected_weak_hypothesis_index_),
+                                                                                count(count_),
+                                                                                progressCallback(progressCallback_) {}
+
+        /**
+         * The main loop will run over the hypothesis vector.
+         */
+        void operator()(tbb::blocked_range< unsigned int > & range) const
+        {
+            //Feature values and respective weight and label
+            std::vector<feature_and_weight> feature_values(allSamples->size());
+
+            //Calculate the weighted errors of each weak classifier with respect to the weights of each instance
+            for (unsigned int j = range.begin(); j < range.end(); ++j) //j refers to the classifiers
+            {
+                //========= BEGIN WTF ZONE =========
+                //For an explanation about what is going on bellow, refer to Schapire and Freund's Boosting book, chapter 3.4.2
+                weight_type total_w_1_p = 0; //remaining true positives for feature_values above k. This is Viola and Jones' (T+ - S+), as seen in section 3.1.
+                weight_type total_w_1_n = 0; //remaining false positives for feature_values above k. This is Viola and Jones' (T- - S-).
+                for(WeightVector::size_type i = 0; i < feature_values.size(); ++i ) //i refers to the samples
+                {
+                    feature_values[i].feature = hypothesis->operator[](j).featureValue( *(allSamples->operator[](i)) );
+                    feature_values[i].label   = allSamples->operator[](i)->getLabel();
+                    feature_values[i].weight  = weight_distribution->operator[](i);
+
+                    total_w_1_p += feature_values[i].weight * (feature_values[i].label == yes);
+                    total_w_1_n += feature_values[i].weight * (feature_values[i].label == no);
+                }
+
+                std::sort( feature_values.begin(), feature_values.end() );
+
+                weight_type total_w_0_p = 0; //sum of false negatives up to k. This is Viola and Jones' S+.
+                weight_type total_w_0_n = 0; //sum of true negatives up to k.  This is Viola and Jones' S-.
+
+                weight_type best_error = std::min(total_w_1_n, total_w_1_p);
+
+                float v = feature_values[0].feature;
+                Classification c0 = total_w_0_n <= total_w_0_p ? yes : no;
+                Classification c1 = total_w_1_n <= total_w_1_p ? yes : no;
+
+                for(WeightVector::size_type k = 0; k < feature_values.size(); ++k )
+                {
+                    total_w_0_p += feature_values[k].weight * (feature_values[k].label == yes);
+                    total_w_0_n += feature_values[k].weight * (feature_values[k].label == no);
+
+                    total_w_1_p -= feature_values[k].weight * (feature_values[k].label == yes);
+                    total_w_1_n -= feature_values[k].weight * (feature_values[k].label == no);
+
+                    if ( k < feature_values.size() - 1
+                         && feature_values[k].feature == feature_values[k+1].feature )
+                    {
+                        continue;
+                    }
+
+                    //const weight_type error_o = std::min(total_w_0_n, total_w_0_p) + std::min(total_w_1_n, total_w_1_p); //Same as Viola and Jones'
+                    const weight_type error = std::min(total_w_0_p + total_w_1_n,
+                                                       total_w_0_n + total_w_1_p); //Viola and Jones' version.
+
+                    if (error < best_error)
+                    {
+                        best_error = error;
+
+                        v = feature_values[k].feature;
+
+                        c0 = total_w_0_n <= total_w_0_p ? yes : no;
+                        c1 = total_w_1_n <= total_w_1_p ? yes : no;
+                    }
+                }
+                //Ok... That was what's in the book. Give me back the controls now.
+                //========= END WTF ZONE =========
+
+                hypothesis->operator[](j).setThreshold(v);
+                hypothesis->operator[](j).setPolarity(c0);
+
+                {
+                    //this must be synchonized
+                    tbb::queuing_mutex::scoped_lock lock(*mutex);
+                    if (best_error < *selected_weak_hypothesis_weighted_error)
+                    {
+                        *selected_weak_hypothesis_weighted_error = best_error;
+                        *selected_weak_hypothesis_index = j;
+                    }
+                    lock.release();
+                }
+
+                //synchronization should happen INSIDE the if
+                if (progressCallback)
+                {
+                    tbb::queuing_mutex::scoped_lock lock(*mutex);
+                    ++(*count);
+                    progressCallback->tick(*count, hypothesis->size());
+                    lock.release();
+                }
+            }
+        }
+    };
 
 
 
@@ -281,9 +284,11 @@ protected:
 
 
 public:
-    Adaboost() : progressCallback(0) {}
+    Adaboost() : progressCallback(0),
+                 weak_learner_mutex() {}
 
-    Adaboost(ProgressCallback * progressCallback_) : progressCallback(progressCallback_) {}
+    Adaboost(ProgressCallback * progressCallback_) : progressCallback(progressCallback_),
+                                                     weak_learner_mutex() {}
 
     virtual ~Adaboost() {}
 
@@ -335,13 +340,14 @@ public:
 
             //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
             tbb::parallel_for( tbb::blocked_range< unsigned int >(0, hypothesis.size()),
-                               ParallelWeakLearner(&allSamples,
-                                                   &weight_distribution,
-                                                   &hypothesis,
-                                                   &weighted_error,
-                                                   &weak_hypothesis_index,
-                                                   &count,
-                                                   progressCallback) );
+                               DecisionStumpWeakLearner(&weak_learner_mutex,
+                                                        &allSamples,
+                                                        &weight_distribution,
+                                                        &hypothesis,
+                                                        &weighted_error,
+                                                        &weak_hypothesis_index,
+                                                        &count,
+                                                        progressCallback) );
 
             //Set alpha for this iteration
             const weight_type alpha = 0.5f * std::log( (1.0f - weighted_error) / weighted_error );
