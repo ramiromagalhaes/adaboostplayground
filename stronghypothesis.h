@@ -7,13 +7,13 @@
 
 #include "common.h"
 #include "labeledexample.h"
-#include "haarclassifier.h"
 
 /**
  * Instances of this class hold the weights and weak classifiers that make the strong classifier.
  * Notice that this class holds pointers to the weak classifiers, added via the insert method.
  * All those pointers will be deleted on destruction of this class.
  */
+template<typename WeakHypothesisType>
 class StrongHypothesis {
 private:
 
@@ -23,12 +23,12 @@ private:
     class entry {
     public:
         weight_type alpha;
-        HaarClassifier weakHypothesis;
+        WeakHypothesisType weakHypothesis;
 
         entry() : alpha(0),
                   weakHypothesis() {}
 
-        entry(weight_type a, HaarClassifier h) : alpha(a),
+        entry(weight_type a, WeakHypothesisType h) : alpha(a),
                                                      weakHypothesis(h) {}
     };
 
@@ -67,7 +67,7 @@ public:
 
 
 
-    void insert(weight_type alpha, HaarClassifier weak_hypothesis) {
+    void insert(weight_type alpha, WeakHypothesisType weak_hypothesis) {
         hypothesis.push_back( entry(alpha, weak_hypothesis) );
 
         if (writeToStreamOnInsert)
@@ -132,7 +132,7 @@ public:
             weight_type a;
             in >> a;
 
-            HaarClassifier weak_hypothesis;
+            WeakHypothesisType weak_hypothesis;
             if ( !weak_hypothesis.read(in) )
             {
                 return false;

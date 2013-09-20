@@ -17,7 +17,7 @@ int main(int, char **argv) {
     const std::string strongHypothesisFile = argv[4];
     const unsigned int maximum_iterations = charToInt(argv[5]);
 
-    ___main<HaarClassifier>(
+    ___main<MyHaarClassifier>(
                 positivesFile,
                 negativesFile,
                 waveletsFile,

@@ -298,7 +298,7 @@ public:
      */
     bool train(std::vector<LabeledExample> positiveSamples,
                std::vector<LabeledExample> negativeSamples,
-               StrongHypothesis & strong_hypothesis,
+               StrongHypothesis<WeakHypothesisType> & strong_hypothesis,
                std::vector <WeakHypothesisType> & hypothesis,
                const unsigned int maximum_iterations)
     {

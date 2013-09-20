@@ -16,14 +16,14 @@
 
 
 
-template<typename WeakClassifierType>
+template<typename WeakHypothesisType>
 int ___main(const std::string positivesFile,
            const std::string negativesFile,
            const std::string waveletsFile,
            const std::string strongHypothesisFile,
            const unsigned int maximum_iterations)
 {
-    StrongHypothesis strongHypothesis(strongHypothesisFile);
+    StrongHypothesis<WeakHypothesisType> strongHypothesis(strongHypothesisFile);
 
     std::vector<LabeledExample> positiveSamples, negativeSamples;
     {
@@ -42,13 +42,13 @@ int ___main(const std::string positivesFile,
         std::cout << "Loaded " << negativeSamples.size() << " negative samples." << std::endl;
     }
 
-    std::vector<WeakClassifierType> hypothesis;
+    std::vector<WeakHypothesisType> hypothesis;
     {
         loadHaarClassifiers(waveletsFile, hypothesis);
         std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 
-    Adaboost<WeakClassifierType> boosting(new SimpleProgressCallback());
+    Adaboost<WeakHypothesisType> boosting(new SimpleProgressCallback());
 
     try {
         boosting.train(positiveSamples,
