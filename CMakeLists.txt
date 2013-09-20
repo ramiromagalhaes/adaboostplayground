@@ -36,5 +36,9 @@ add_executable( trainclassifier trainclassifier.cpp ${common_source_files} )
 target_link_libraries( trainclassifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( trainclassifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 
-add_executable( testclassifier testclassifier.cpp ${common_source_files} )
-target_link_libraries( testclassifier haarcommon ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+add_executable( train_my_classifier train_my_classifier.cpp ${common_source_files} )
+target_link_libraries( train_my_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+target_link_libraries( train_my_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+
+#add_executable( testclassifier testclassifier.cpp ${common_source_files} )
+#target_link_libraries( testclassifier haarcommon ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
