@@ -1,4 +1,4 @@
-#include "prototype_trainclassifier.h"
+#include "template_trainclassifier.h"
 
 /**
  * Arguments:
