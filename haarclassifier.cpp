@@ -4,22 +4,18 @@
 #include <opencv2/core/core.hpp>
 
 
+
 HaarClassifier::HaarClassifier() : wavelet(),
                                    theta(0),
                                    p(1) {}
-
-
 
 HaarClassifier::HaarClassifier(HaarWavelet w) : wavelet(w),
                                                 theta(0),
                                                 p(1) {}
 
-
-
 HaarClassifier::HaarClassifier(const HaarClassifier & c) : wavelet(c.wavelet),
                                                            theta(c.theta),
                                                            p(c.p) {}
-
 
 
 HaarClassifier & HaarClassifier::operator=(const HaarClassifier & c)
@@ -32,40 +28,18 @@ HaarClassifier & HaarClassifier::operator=(const HaarClassifier & c)
 }
 
 
-
-HaarClassifier::~HaarClassifier()
-{
-    /* TODO properly delete the reference to wavelet. This is currently not working. No idea why.
-    if (wavelet != 0)
-    {
-        delete wavelet;
-        wavelet = 0;
-    }
-    */
-}
+HaarClassifier::~HaarClassifier() {}
 
 
 
 bool HaarClassifier::read(std::istream & in)
 {
-    //whatever's not about the HaarWavelet will be discarded
     wavelet.read(in);
-
-    std::vector<float> mean(wavelet.dimensions());
-
-    for (unsigned int i = 0; i < wavelet.dimensions(); i++)
-    {
-        in >> mean[i];
-    }
-
-    float stdDev, q;
-    in >> stdDev;
-    in >> q;
+    in >> p
+       >> theta;
 
     return true;
 }
-
-
 
 bool HaarClassifier::write(std::ostream & out) const
 {
@@ -75,14 +49,14 @@ bool HaarClassifier::write(std::ostream & out) const
         return false;
     }
 
+    out << ' '
+        << p << ' '
+        << theta;
+
     for (unsigned int i = 0; i < wavelet.dimensions(); i++)
     {
         out << ' ' << 0;
     }
-
-    out << ' '
-        << p << ' '
-        << theta;
 
     return true;
 }
@@ -110,43 +84,83 @@ float HaarClassifier::featureValue(const LabeledExample &example) const
 
 Classification HaarClassifier::classify(const LabeledExample &example) const
 {
-    return do_classify( wavelet.value(example.getIntegralSum(), example.getIntegralSquare()) );
-}
-
-Classification HaarClassifier::do_classify(const float f) const
-{
-
-    return f * p <= theta * p ? yes : no;
+    return featureValue(example) * p <= theta * p ? yes : no;
 }
 
 
 
-bool HaarClassifier::loadClassifiers(const std::string &filename, std::vector<HaarClassifier> & classifiers)
-{
-    std::ifstream ifs;
-    ifs.open(filename.c_str(), std::ifstream::in);
+//============================== MyHaarClassifier ==============================
 
-    if ( !ifs.is_open() )
+
+
+MyHaarClassifier::MyHaarClassifier() : HaarClassifier(),
+                                       means(0) {}
+
+MyHaarClassifier::MyHaarClassifier(HaarWavelet w, std::vector<float> means_) : HaarClassifier(w),
+                                                                                means(means_) {}
+
+MyHaarClassifier::MyHaarClassifier(const MyHaarClassifier &c) : HaarClassifier()
+{
+    wavelet = c.wavelet;
+    theta = c.theta;
+    p = c.p;
+    means = c.means;
+}
+
+MyHaarClassifier &MyHaarClassifier::operator=(const MyHaarClassifier &c)
+{
+    wavelet = c.wavelet;
+    theta = c.theta;
+    p = c.p;
+    means = c.means;
+
+    return *this;
+}
+
+MyHaarClassifier::~MyHaarClassifier() {}
+
+bool MyHaarClassifier::read(std::istream &in)
+{
+    if ( !HaarClassifier::read(in) )
     {
         return false;
     }
 
-    do
+    means.resize(wavelet.dimensions());
+    for (unsigned int i = 0; i < wavelet.dimensions(); i++)
     {
-        HaarClassifier classifier;
-        classifier.read(ifs);
-
-        if ( !ifs.eof() )
-        {
-            classifiers.push_back( classifier );
-        }
-        else
-        {
-            break;
-        }
-    } while (true);
-
-    ifs.close();
+        in >> means[i];
+    }
 
     return true;
+}
+
+bool MyHaarClassifier::write(std::ostream &out) const
+{
+    if ( !HaarClassifier::write(out) )
+    {
+        return false;
+    }
+
+    for (unsigned int i = 0; i < wavelet.dimensions(); i++)
+    {
+        out << ' ' << means[i];
+    }
+
+    return true;
+}
+
+float MyHaarClassifier::featureValue(const LabeledExample &example) const
+{
+    std::vector<float> s(wavelet.dimensions());
+    wavelet.srfs(example.getIntegralSum(), example.getIntegralSquare(), s);
+
+    float distance = 0;
+    for(unsigned int i = 0; i < s.size(); ++i)
+    {
+        const float v = s[i] - means[i];
+        distance += v * v;
+    }
+
+    return std::sqrt(distance);
 }
