@@ -7,14 +7,11 @@
 
 
 
-/**
- * Holds the sample and its classification.
- */
-class LabeledExample {
+class Example
+{
 private:
     cv::Mat integralSum;
     cv::Mat integralSquare;
-    Classification label;
 
     void updateIntegrals(const cv::Mat & image)
     {
@@ -26,15 +23,22 @@ private:
     }
 
 public:
-    LabeledExample() : integralSum(21, 21, cv::DataType<double>::type),
-                       integralSquare(21, 21, cv::DataType<double>::type),
-                       label(no) {}
+    Example() : integralSum   (21, 21, cv::DataType<double>::type),
+                integralSquare(21, 21, cv::DataType<double>::type) {}
 
-    LabeledExample (const cv::Mat & e, const Classification c) : integralSum(21, 21, cv::DataType<double>::type),
-                                                                 integralSquare(21, 21, cv::DataType<double>::type),
-                                                                 label(c)
+    Example(const cv::Mat & e) : integralSum   (21, 21, cv::DataType<double>::type),
+                                 integralSquare(21, 21, cv::DataType<double>::type)
     {
         updateIntegrals(e);
+    }
+
+    Example(const cv::Mat & integralSum_, const cv::Mat & integralSquare_) : integralSum(integralSum_),
+                                                                             integralSquare(integralSquare_)
+    {
+        if (!integralSum.data || !integralSquare.data || integralSum.size != integralSquare.size) //TODO should size also be 20?
+        {
+            throw 141;
+        }
     }
 
     cv::Mat getIntegralSum() const
@@ -46,6 +50,23 @@ public:
     {
         return integralSquare;
     }
+};
+
+
+
+/**
+ * Holds the sample and its classification.
+ */
+class LabeledExample : public Example {
+private:
+    Classification label;
+
+public:
+    LabeledExample() : Example(),
+                       label(no) {}
+
+    LabeledExample (const cv::Mat & e, const Classification c) : Example(e),
+                                                                 label(c) {}
 
     Classification getLabel() const
     {
