@@ -31,6 +31,8 @@ set(common_source_files
     haarclassifier.cpp
     sampleextractor.h
     sampleextractor.cpp )
+
+#TRAINNING Programs
 add_executable( trainclassifier trainclassifier.cpp template_trainclassifier.h ${common_source_files} )
 target_link_libraries( trainclassifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( trainclassifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
@@ -39,6 +41,7 @@ add_executable( train_my_classifier train_my_classifier.cpp template_trainclassi
 target_link_libraries( train_my_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( train_my_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 
+#TESTING Programs
 add_executable( testclassifier testclassifier.cpp template_testclassifier.h ${common_source_files} )
 target_link_libraries( testclassifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( testclassifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
