@@ -1,6 +1,10 @@
+#ifndef TEMPLATE_TESTCLASSIFIER_H
+#define TEMPLATE_TESTCLASSIFIER_H
+
 #include <vector>
 #include <iostream>
 
+#include <tbb/tbb.h>
 #include <opencv2/core/core.hpp>
 
 #include "common.h"
@@ -21,6 +25,37 @@ struct RocRecord
     bool operator < (const RocRecord & rh) const
     {
         return falsePositives < rh.falsePositives;
+    }
+};
+
+
+
+template<typename WeakHypothesisType>
+struct RoiCalculator
+{
+    std::vector<LabeledExample> const * const samples;
+    std::vector<RocRecord> * const records;
+    StrongHypothesis<WeakHypothesisType> * const strongHypothesis;
+
+    RoiCalculator(std::vector<LabeledExample> const * const samples_,
+                  std::vector<RocRecord> * records_,
+                  StrongHypothesis<WeakHypothesisType> * const strongHypothesis_) : samples(samples_),
+                                                                                    records(records_),
+                                                                                    strongHypothesis(strongHypothesis_) {}
+
+    void operator()(tbb::blocked_range< unsigned int > & range) const
+    {
+        for (unsigned int i = range.begin(); i < range.end(); ++i)
+        {
+            (*records)[i].value = strongHypothesis->classificationValue( (*samples)[i] );
+
+            for (unsigned int j = 0; j < samples->size(); ++j)
+            {
+                const float classVal = strongHypothesis->classificationValue( (*samples)[j] );
+                (*records)[i].truePositives  += (classVal >= (*records)[i].value) && ((*samples)[j].getLabel() == yes);
+                (*records)[i].falsePositives += (classVal >= (*records)[i].value) && ((*samples)[j].getLabel() == no);
+            }
+        }
     }
 };
 
@@ -66,25 +101,18 @@ int ___main(const std::string positivesFile,
         samples.insert( samples.end(), negativeSamples.begin(), negativeSamples.end() );
     }
 
-
     std::vector<RocRecord> records(samples.size());
-    for (unsigned int i = 0; i < samples.size(); ++i)
-    {
-        records[i].value = strongHypothesis.classificationValue(samples[i]);
+    tbb::parallel_for( tbb::blocked_range< unsigned int >(0, samples.size()),
+                       RoiCalculator<WeakHypothesisType>(&samples, &records, &strongHypothesis) );
 
-        for (unsigned int j = 0; j < samples.size(); ++j)
-        {
-            float classVal = strongHypothesis.classificationValue(samples[j]);
-            records[i].truePositives  += (classVal >= records[i].value) && (samples[j].getLabel() == yes);
-            records[i].falsePositives += (classVal >= records[i].value) && (samples[j].getLabel() == no);
-        }
-    }
     std::sort(records.begin(), records.end());
 
     for (unsigned int i = 0; i < samples.size(); ++i)
     {
-        std::cout << records[i].falsePositives << ',' << records[i].truePositives << std::endl;
+        std::cout << records[i].falsePositives << ' ' << records[i].truePositives << std::endl;
     }
 
     return 0;
 }
+
+#endif // TEMPLATE_TESTCLASSIFIER_H

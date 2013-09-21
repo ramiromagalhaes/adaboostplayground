@@ -40,15 +40,18 @@ private:
 
 public:
     StrongHypothesis() : threshold(0),
+                         hypothesis(0),
                          writeToStreamOnInsert(false) {}
 
     StrongHypothesis(weight_type threshold_) : threshold(threshold_),
+                                               hypothesis(0),
                                                writeToStreamOnInsert(false) {}
 
     /**
      * This constructor should never be used, except during trainning.
      */
     StrongHypothesis(std::string path_) : threshold(0),
+                                          hypothesis(0),
                                           writeToStreamOnInsert(true),
                                           path(path_)
     {
@@ -84,7 +87,7 @@ public:
 
 
 
-    Classification classify(LabeledExample & sample) const {
+    Classification classify(const LabeledExample & sample) const {
         weight_type result = .0f;
 
         for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
@@ -96,7 +99,7 @@ public:
 
 
 
-    weight_type classificationValue(LabeledExample & sample) const {
+    weight_type classificationValue(const LabeledExample & sample) const {
         weight_type result = .0f;
 
         for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
