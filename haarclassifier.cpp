@@ -139,10 +139,14 @@ bool MyHaarClassifier::read(std::istream &in)
 
 bool MyHaarClassifier::write(std::ostream &out) const
 {
-    if ( !HaarClassifier::write(out) )
+    if ( !wavelet.write(out) )
     {
         return false;
     }
+
+    out << ' '
+        << p << ' '
+        << theta;
 
     for (unsigned int i = 0; i < wavelet.dimensions(); i++)
     {
