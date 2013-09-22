@@ -11,13 +11,11 @@
  *     strongHypothesisInputFile
  */
 int main(int, char **argv) {
-    const std::string positivesFile = argv[1];
-    const std::string negativesFile = argv[2];
+    const std::string testImagesIndexFileName = argv[1];
+    const std::string groundTruthFileName = argv[2];
     const std::string strongHypothesisFile = argv[3];
 
-    return ___main<MyHaarClassifier>(positivesFile,
-                                     negativesFile,
+    return ___main<MyHaarClassifier>(testImagesIndexFileName,
+                                     groundTruthFileName,
                                      strongHypothesisFile);
-
-    return 0;
 }

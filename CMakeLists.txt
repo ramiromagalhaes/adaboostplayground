@@ -7,6 +7,7 @@ set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -D_DEBUG -Wextra -Wa
 set(CMAKE_CSS_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 
 find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
+find_package( Boost REQUIRED COMPONENTS filesystem system )
 
 # Depends on my haarcommon library
 include_directories( /home/ramiro/workspace/haarcommon/ )
@@ -30,7 +31,8 @@ set(common_source_files
     haarclassifier.h
     haarclassifier.cpp
     sampleextractor.h
-    sampleextractor.cpp )
+    sampleextractor.cpp
+    scanner.h)
 
 #TRAINNING Programs
 add_executable( trainclassifier trainclassifier.cpp template_trainclassifier.h ${common_source_files} )
