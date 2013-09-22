@@ -67,9 +67,9 @@ public:
 
     virtual bool write(std::ostream & out) const;
 
-    virtual float featureValue(const Example & example) const;
+    virtual float featureValue(const Example & example, const float scale = 1.0f) const;
 
-    virtual Classification classify(const Example & example) const;
+    virtual Classification classify(const Example & example, const float scale = 1.0f) const;
 
     void setThreshold(const float q_);
 
@@ -98,9 +98,9 @@ public:
 
     virtual bool write(std::ostream & out) const;
 
-    virtual float featureValue(const Example & example) const;
+    virtual float featureValue(const Example & example, const float scale = 1.0f) const;
 
-    virtual Classification classify(const Example & example) const;
+    virtual Classification classify(const Example & example, const float scale = 1.0f) const;
 
 protected:
     std::vector<float> means;

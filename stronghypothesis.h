@@ -87,17 +87,17 @@ public:
 
 
 
-    Classification classify(const Example & example) const {
-        return classificationValue(example) >= threshold ? yes : no;
+    Classification classify(const Example & example, const float scale = 1.0f) const {
+        return classificationValue(example, scale) >= threshold ? yes : no;
     }
 
 
 
-    float classificationValue(const Example & example) const {
+    float classificationValue(const Example & example, const float scale = 1.0f) const {
         float result = .0f;
 
         for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
-            result += (it->alpha) * (it->weakHypothesis.classify(example));
+            result += (it->alpha) * (it->weakHypothesis.classify(example, scale));
         }
 
         return result;
