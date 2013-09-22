@@ -66,7 +66,8 @@ private:
     const float scaling_factor; //how mutch the scale will change per iteration
     const float delta; //window shift constant
 
-    //as described by Viola & Jones 2004
+    //As described by Viola & Jones 2004.
+    //This is an awful slow implementation. Find a way to speed it up!!!
     void integrateDetection(std::vector<cv::Rect> & detections)
     {
         std::vector< std::vector<cv::Rect> > subsets;
