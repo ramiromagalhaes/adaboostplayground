@@ -43,10 +43,6 @@ public:
                          hypothesis(0),
                          writeToStreamOnInsert(false) {}
 
-    StrongHypothesis(weight_type threshold_) : threshold(threshold_),
-                                               hypothesis(0),
-                                               writeToStreamOnInsert(false) {}
-
     /**
      * This constructor should never be used, except during trainning.
      */
@@ -66,6 +62,13 @@ public:
     ~StrongHypothesis()
     {
         hypothesis.clear(); //each entry object destroys its contents
+    }
+
+
+
+    void setThreshold(const float t)
+    {
+        threshold = t;
     }
 
 
