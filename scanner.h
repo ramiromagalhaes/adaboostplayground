@@ -2,6 +2,8 @@
 #define SCANNER_H
 
 #include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 #include "stronghypothesis.h"
 #include "labeledexample.h"
 
@@ -10,38 +12,39 @@ class Scanner
 {
 public:
     Scanner(StrongHypothesis<WeakClassifierType> * const classifier_) : classifier(classifier_),
-                                                                        scannedWindows(0) {}
+                                                                        initial_size(20),
+                                                                        scaling_factor(1.25f),
+                                                                        delta(1) {}
 
-    void scan(cv::Mat & image, std::vector<cv::Rect> & detections)
+    unsigned int scan(cv::Mat & image, std::vector<cv::Rect> & detections)
     {
-        const int initial_size = 20;
-        const float scaling_factor = 1.25f;
+        cv::Mat integralSum   (image.rows + 1, image.cols + 1, cv::DataType<double>::type);
+        cv::Mat integralSquare(image.rows + 1, image.cols + 1, cv::DataType<double>::type);
+        cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
 
+        unsigned int scannedWindows = 0;
+
+        //We iterate our ROI over the integral image, therefore, when we detect something,
+        //we must set the correct ROI.
         cv::Rect roi(0, 0, initial_size, initial_size);
 
-        for(float scale = 1; scale * initial_size < image.cols && scale * initial_size < image.rows; scale *= scaling_factor)
+        for(float scale = 1; scale * initial_size < image.cols
+                          && scale * initial_size < image.rows; scale *= scaling_factor)
         {
-            const float delta = 1 * scaling_factor;
-            roi.width = roi.height = initial_size * scaling_factor;
+            const float shift = delta * scale;
+            roi.width = roi.height = initial_size * scale + 1;
 
-            for (int x = 0; x < image.cols - roi.width; x += delta)
+            for (roi.x = 1; roi.x < integralSum.cols - roi.width; roi.x += shift)
             {
-                roi.x = x;
-                for (int y = 0; y < image.rows - roi.height; y += delta)
+                for (roi.y = 1; roi.y < integralSum.rows - roi.height; roi.y += shift)
                 {
-                    roi.y = y;
+                    cv::Rect exampleRoi = roi;
+                    --exampleRoi.x;
+                    --exampleRoi.y;
+                    const Example example(integralSum(exampleRoi), integralSquare(exampleRoi));
 
-                    const cv::Size classifier_size(20, 20);
-                    cv::Mat sample(classifier_size, cv::DataType<unsigned char>::type);
-                    cv::resize(image(roi), sample, classifier_size/*, 0, 0, INTER_LINEAR*/);
-
-                    const LabeledExample example(sample, no); //classification here is irrelevant.
-                                                              //I'm just using it since I didn't yet change
-                                                              //things to use Example instead of LabeledExample.
-
-                    if ( classifier->classify(example) == yes )
+                    if ( classifier->classify(example, scale) == yes )
                     {
-                        //TODO integrate detections
                         detections.push_back(roi);
                     }
 
@@ -49,16 +52,84 @@ public:
                 }
             }
         }
-    }
 
-    unsigned int getScannedWindows()
-    {
+        integrateDetection(detections);
+
         return scannedWindows;
     }
 
+
+
 private:
     StrongHypothesis<WeakClassifierType> const * const classifier;
-    unsigned int scannedWindows;
+    const int initial_size; //initial width and height of the detector
+    const float scaling_factor; //how mutch the scale will change per iteration
+    const float delta; //window shift constant
+
+    //as described by Viola & Jones 2004
+    void integrateDetection(std::vector<cv::Rect> & detections)
+    {
+        std::vector< std::vector<cv::Rect> > subsets;
+
+        for(unsigned int i = 0; i < detections.size(); ++i)
+        {
+            bool inserted = false;
+
+            for(unsigned int j = 0; j < subsets.size(); ++j)
+            {
+                for(unsigned int k = 0; k < subsets[j].size(); ++k)
+                {
+                    if ( (detections[i] & subsets[j][k]) != cv::Rect(0,0,0,0) )
+                    {
+                        subsets[j].push_back(detections[i]);
+                        inserted = true;
+                        break;
+                    }
+                }
+
+                if (inserted)
+                {
+                    break;
+                }
+            }
+
+            if (!inserted)
+            {
+                subsets.push_back(std::vector<cv::Rect>());
+                subsets[subsets.size() - 1].push_back(detections[i]);
+            }
+        }
+
+        detections.clear();
+
+        for(unsigned int i = 0; i < subsets.size(); ++i)
+        {
+            double integratedX = 0;
+            double integratedY = 0;
+            double integratedWidth = 0;
+            double integratedHeight = 0;
+
+            for(unsigned int j = 0; j < subsets[i].size(); ++j)
+            {
+                integratedX += subsets[i][j].x;
+                integratedY += subsets[i][j].y;
+                integratedWidth  += subsets[i][j].width;
+                integratedHeight += subsets[i][j].height;
+            }
+
+            integratedX      /= subsets[i].size();
+            integratedY      /= subsets[i].size();
+            integratedWidth  /= subsets[i].size();
+            integratedHeight /= subsets[i].size();
+
+            detections.push_back(
+                cv::Rect(integratedX,
+                         integratedY,
+                         integratedWidth,
+                         integratedHeight));
+        }
+    }
+
 };
 
 #endif // SCANNER_H
