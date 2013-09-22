@@ -76,13 +76,13 @@ void HaarClassifier::setPolarity(const float p_)
 
 
 //This is supposed to be used only during trainning
-float HaarClassifier::featureValue(const LabeledExample &example) const
+float HaarClassifier::featureValue(const Example &example) const
 {
     return wavelet.value(example.getIntegralSum(), example.getIntegralSquare());
 }
 
 
-Classification HaarClassifier::classify(const LabeledExample &example) const
+Classification HaarClassifier::classify(const Example &example) const
 {
     return featureValue(example) * p <= theta * p ? yes : no;
 }
@@ -158,7 +158,7 @@ bool MyHaarClassifier::write(std::ostream &out) const
 
 
 
-float MyHaarClassifier::featureValue(const LabeledExample &example) const
+float MyHaarClassifier::featureValue(const Example &example) const
 {
     std::vector<float> s(wavelet.dimensions());
     wavelet.srfs(example.getIntegralSum(), example.getIntegralSquare(), s);
@@ -173,7 +173,7 @@ float MyHaarClassifier::featureValue(const LabeledExample &example) const
     return std::sqrt(distance);
 }
 
-Classification MyHaarClassifier::classify(const LabeledExample &example) const
+Classification MyHaarClassifier::classify(const Example &example) const
 {
     const float f = featureValue(example);
 

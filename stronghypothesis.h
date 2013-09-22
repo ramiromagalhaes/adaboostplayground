@@ -87,23 +87,17 @@ public:
 
 
 
-    Classification classify(const LabeledExample & sample) const {
-        weight_type result = .0f;
-
-        for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
-            result += (it->alpha) * (it->weakHypothesis.classify(sample));
-        }
-
-        return result >= threshold ? yes : no;
+    Classification classify(const Example & example) const {
+        return classificationValue(example) >= threshold ? yes : no;
     }
 
 
 
-    weight_type classificationValue(const LabeledExample & sample) const {
-        weight_type result = .0f;
+    float classificationValue(const Example & example) const {
+        float result = .0f;
 
         for (typename std::vector<entry>::const_iterator it = hypothesis.begin(); it != hypothesis.end(); ++it) {
-            result += (it->alpha) * (it->weakHypothesis.classify(sample));
+            result += (it->alpha) * (it->weakHypothesis.classify(example));
         }
 
         return result;
