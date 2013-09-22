@@ -51,3 +51,8 @@ target_link_libraries( testclassifier optimized haarcommon-release ${OpenCV_LIBS
 add_executable( test_my_classifier test_my_classifier.cpp template_testclassifier.h ${common_source_files} )
 target_link_libraries( test_my_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( test_my_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+
+#SHOW Program
+add_executable( detect detect.cpp ${common_source_files} )
+target_link_libraries( detect debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
+target_link_libraries( detect optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
