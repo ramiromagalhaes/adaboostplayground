@@ -198,6 +198,86 @@ cv::Point2f center(cv::Rect & rect)
 
 
 template<typename WeakHypothesisType>
+struct TotalTruePositivesAndNegatives
+{
+    std::vector<ImageAndGroundTruth> * const images;
+    int * const totalTruePositives;
+    int * const totalFalsePositives;
+    int * const totalScannedWindows;
+
+    int * const evaluatedImages;
+
+    StrongHypothesis<WeakHypothesisType> * const strongHypothesis;
+
+    tbb::queuing_mutex * const mutex;
+
+    TotalTruePositivesAndNegatives(std::vector<ImageAndGroundTruth> * const images_,
+                                   int * const totalTruePositives_,
+                                   int * const totalFalsePositives_,
+                                   int * const totalScannedWindows_,
+                                   int * const evaluatedImages_,
+                                   tbb::queuing_mutex * const mutex_,
+                                   StrongHypothesis<WeakHypothesisType> * const strongHypothesis_) : images(images_),
+                                                                                                     totalTruePositives(totalTruePositives_),
+                                                                                                     totalFalsePositives(totalFalsePositives_),
+                                                                                                     totalScannedWindows(totalScannedWindows_),
+                                                                                                     evaluatedImages(evaluatedImages_),
+                                                                                                     strongHypothesis(strongHypothesis_),
+                                                                                                     mutex(mutex_) {}
+
+    void operator()(tbb::blocked_range< unsigned int > & range) const
+    {
+        unsigned int scannedWindows = 0;
+        Scanner<WeakHypothesisType> scanner(strongHypothesis);
+
+        for(unsigned int k = range.begin(); k != range.end(); ++k)
+        {
+            ImageAndGroundTruth imageAndGt = (*images)[k];
+
+            int imageTruePositives = 0;
+
+            std::vector<cv::Rect> detections;
+            scannedWindows += scanner.scan(imageAndGt.image, detections);
+
+            for(unsigned int i = 0; i < detections.size(); ++i)
+            {
+                const cv::Point2f detectionMidpoint = center(detections[i]);
+
+                for(unsigned int j = 0; j < imageAndGt.faces.size(); ++j)
+                {
+                    if ( imageAndGt.faces[j].width * 0.9 <=  detections[i].width && detections[i].width <= imageAndGt.faces[j].width * 1.1
+                      && imageAndGt.faces[j].height * 0.9 <=  detections[i].height && detections[i].height <= imageAndGt.faces[j].height * 1.1 )
+                    {
+                        const cv::Point2f gtMidpoint = center(imageAndGt.faces[j]);
+
+                        if ( imageAndGt.faces[j].width * 0.9 <= std::abs(detectionMidpoint.x - gtMidpoint.x) && std::abs(detectionMidpoint.x - gtMidpoint.x) <= imageAndGt.faces[j].width * 1.1
+                          && imageAndGt.faces[j].height * 0.9 <= std::abs(detectionMidpoint.y - gtMidpoint.y) && std::abs(detectionMidpoint.y - gtMidpoint.y) <= imageAndGt.faces[j].height * 1.1 )
+                        {
+                            ++imageTruePositives;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            {
+                tbb::queuing_mutex::scoped_lock lock(*mutex);
+                (*totalTruePositives)  += imageTruePositives;
+                (*totalFalsePositives) += (detections.size() - imageTruePositives);
+                (*totalScannedWindows) += scannedWindows;
+
+                ++(*evaluatedImages);
+                std::cout << "\rProgress " << 100 * (*evaluatedImages) / images->size() << '%';
+                std::cout.flush();
+                lock.release();
+            }
+        }
+    }
+};
+
+
+
+template<typename WeakHypothesisType>
 int ___main(const std::string testImagesIndexFileName,
             const std::string groundTruthFileName,
             const std::string strongHypothesisFile)
@@ -213,6 +293,8 @@ int ___main(const std::string testImagesIndexFileName,
         {
             return 11;
         }
+
+        std::cout << "Loaded strong classifier." << std::endl;
     }
 
 
@@ -222,61 +304,47 @@ int ___main(const std::string testImagesIndexFileName,
     {
         return false;
     }
+    std::cout << "Loaded " << images.size() << " images." << std::endl;
 
-    int truePositives = 0;
-    int falsePositives = 0;
 
-    Scanner<WeakHypothesisType> scanner(&strongHypothesis);
 
-    for(std::vector<ImageAndGroundTruth>::iterator imageAndGt = images.begin(); imageAndGt != images.end(); ++imageAndGt)
-    {
-        std::cout << "\rProgress " << 100 * (imageAndGt - images.begin()) / images.size() << '%';
-        std::cout.flush();
+    int totalTruePositives = 0;
+    int totalFalsePositives = 0;
+    int totalScannedWindows = 0;
+    int evaluatedImages = 0;
+    tbb::queuing_mutex mutex;
 
-        std::vector<cv::Rect> detections(0);
-        scanner.scan(imageAndGt->image, detections);
-
-        for(unsigned int i = 0; i < detections.size(); ++i)
-        {
-            const cv::Point2f detectionMidpoint = center(detections[i]);
-
-            for(unsigned int j = 0; j < imageAndGt->faces.size(); ++j)
-            {
-                if ( imageAndGt->faces[j].width * 0.9 <=  detections[i].width && detections[i].width <= imageAndGt->faces[j].width * 1.1
-                  && imageAndGt->faces[j].height * 0.9 <=  detections[i].height && detections[i].height <= imageAndGt->faces[j].height * 1.1 )
-                {
-                    const cv::Point2f gtMidpoint = center(imageAndGt->faces[j]);
-
-                    if ( imageAndGt->faces[j].width * 0.9 <= std::abs(detectionMidpoint.x - gtMidpoint.x) && std::abs(detectionMidpoint.x - gtMidpoint.x) <= imageAndGt->faces[j].width * 1.1
-                      && imageAndGt->faces[j].height * 0.9 <= std::abs(detectionMidpoint.y - gtMidpoint.y) && std::abs(detectionMidpoint.y - gtMidpoint.y) <= imageAndGt->faces[j].height * 1.1 )
-                    {
-                        ++truePositives;
-                        break;
-                    }
-                }
-            }
-        }
-
-        falsePositives += (detections.size() - truePositives);
-    }
-
-    std::cout <<   "Total subwindows scanned   : " << scanner.getScannedWindows();
-    std::cout << "\nTotal faces in ground truth: " << totalFacesInGroundTruth;
-    std::cout << "\nTotal true positives       : " << truePositives;
-    std::cout << "\nTotal false positives      : " << falsePositives << std::endl;
+    std::cout << "\rProgress " << 100 * (evaluatedImages / images.size()) << '%';
+    std::cout.flush();
 
     /*
-    std::vector<RocRecord> records(samples.size());
-    tbb::parallel_for( tbb::blocked_range< unsigned int >(0, samples.size()),
-                       RocCalculator<WeakHypothesisType>(&samples, &records, &strongHypothesis) );
-
-    std::sort(records.begin(), records.end());
-
-    for (unsigned int i = 0; i < samples.size(); ++i)
-    {
-        std::cout << records[i].falsePositives << ' ' << records[i].truePositives << std::endl;
-    }
+    //USEFULL DEBUG THING!!!
+    TotalTruePositivesAndNegatives<WeakHypothesisType> ttpan(
+        &images,
+        &totalTruePositives,
+        &totalFalsePositives,
+        &totalScannedWindows,
+        &evaluatedImages,
+        &mutex,
+        &strongHypothesis);
+    tbb::blocked_range< unsigned int > range(0, images.size());
+    ttpan( range );
     */
+
+    tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
+                      TotalTruePositivesAndNegatives<WeakHypothesisType>(
+                          &images,
+                          &totalTruePositives,
+                          &totalFalsePositives,
+                          &totalScannedWindows,
+                          &evaluatedImages,
+                          &mutex,
+                          &strongHypothesis) );
+
+    std::cout << "\rTotal subwindows scanned   : " << totalScannedWindows;
+    std::cout << "\nTotal faces in ground truth: " << totalFacesInGroundTruth;
+    std::cout << "\nTotal true positives       : " << totalTruePositives;
+    std::cout << "\nTotal false positives      : " << totalFalsePositives << std::endl;
 
     return 0;
 }

@@ -55,7 +55,7 @@ public:
 
     HaarClassifier();
 
-    HaarClassifier(HaarWavelet w);
+    HaarClassifier(HaarWavelet &w);
 
     HaarClassifier(const HaarClassifier & c);
 
@@ -81,12 +81,14 @@ protected:
     float p;
 };
 
+
+
 class MyHaarClassifier : public HaarClassifier
 {
 public:
     MyHaarClassifier();
 
-    MyHaarClassifier(HaarWavelet w, std::vector<float> means_);
+    MyHaarClassifier(HaarWavelet & w, std::vector<float> means_);
 
     MyHaarClassifier(const MyHaarClassifier & c);
 
@@ -106,6 +108,41 @@ protected:
     std::vector<float> means;
     //Here the theta (threshold) will be used as the distance.
     //p is still the polarity
+};
+
+
+
+class ViolaJonesClassifier
+{
+    //TODO I copy & pasted that from HaarClassifier just because I must change the wavelet attribute. Think of a less dumb way to do that.
+
+public:
+    ViolaJonesClassifier();
+
+    ViolaJonesClassifier(ViolaJonesHaarWavelet &w);
+
+    ViolaJonesClassifier(const ViolaJonesClassifier & c);
+
+    ViolaJonesClassifier & operator=(const ViolaJonesClassifier & c);
+
+    virtual ~ViolaJonesClassifier();
+
+    virtual bool read(std::istream & in);
+
+    virtual bool write(std::ostream & out) const;
+
+    virtual float featureValue(const Example & example, const float scale = 1.0f) const;
+
+    virtual Classification classify(const Example & example, const float scale = 1.0f) const;
+
+    void setThreshold(const float q_);
+
+    void setPolarity(const float p_);
+
+protected:
+    ViolaJonesHaarWavelet wavelet;
+    float theta;
+    float p;
 };
 
 
