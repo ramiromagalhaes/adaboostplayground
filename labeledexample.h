@@ -35,7 +35,7 @@ public:
     Example(const cv::Mat & integralSum_, const cv::Mat & integralSquare_) : integralSum(integralSum_),
                                                                              integralSquare(integralSquare_)
     {
-        if (!integralSum.data || !integralSquare.data || integralSum.size != integralSquare.size) //TODO should size also be 20?
+        if (!integralSum.data || !integralSquare.data || integralSum.size != integralSquare.size)
         {
             throw 141;
         }
