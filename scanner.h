@@ -14,13 +14,15 @@ public:
     Scanner(StrongHypothesis<WeakClassifierType> * const classifier_) : classifier(classifier_),
                                                                         initial_size(20),
                                                                         scaling_factor(1.25f),
-                                                                        delta(1) {}
+                                                                        delta(1.5f) {}
 
     unsigned int scan(cv::Mat & image, std::vector<cv::Rect> & detections)
     {
         cv::Mat integralSum   (image.rows + 1, image.cols + 1, cv::DataType<double>::type);
         cv::Mat integralSquare(image.rows + 1, image.cols + 1, cv::DataType<double>::type);
         cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
+
+        const float max_scaling_factor = std::pow(scaling_factor, 5.0f);
 
         unsigned int scannedWindows = 0;
 
@@ -29,7 +31,8 @@ public:
         cv::Rect roi(0, 0, initial_size, initial_size);
 
         for(float scale = 1; scale * initial_size < image.cols
-                          && scale * initial_size < image.rows; scale *= scaling_factor)
+                          && scale * initial_size < image.rows
+                          && scale < max_scaling_factor; scale *= scaling_factor)
         {
             const float shift = delta * scale;
             roi.width = roi.height = initial_size * scale + 1;
