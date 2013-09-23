@@ -34,9 +34,19 @@ HaarClassifier::~HaarClassifier() {}
 
 bool HaarClassifier::read(std::istream & in)
 {
-    wavelet.read(in);
+    if ( !wavelet.read(in) )
+    {
+        return false;
+    }
+
     in >> p
        >> theta;
+
+    for (unsigned int i = 0; i < wavelet.dimensions(); i++)
+    {
+        float mean;
+        in >> mean; //discard the means.
+    }
 
     return true;
 }
@@ -123,10 +133,13 @@ MyHaarClassifier::~MyHaarClassifier() {}
 
 bool MyHaarClassifier::read(std::istream &in)
 {
-    if ( !HaarClassifier::read(in) )
+    if ( !wavelet.read(in) )
     {
         return false;
     }
+
+    in >> p
+       >> theta;
 
     means.resize(wavelet.dimensions());
     for (unsigned int i = 0; i < wavelet.dimensions(); i++)
