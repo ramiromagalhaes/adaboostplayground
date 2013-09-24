@@ -174,7 +174,7 @@ bool MyHaarClassifier::write(std::ostream &out) const
 float MyHaarClassifier::featureValue(const Example &example, const float scale) const
 {
     std::vector<float> s(wavelet.dimensions());
-    wavelet.srfs(example.getIntegralSum(), example.getIntegralSquare(), s, scale);
+    wavelet.srfs(example.getIntegralSum(), s, scale);
 
     float distance = 0;
     for(unsigned int i = 0; i < s.size(); ++i)
