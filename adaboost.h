@@ -333,6 +333,20 @@ public:
             //A progress counter
             unsigned long count = 0;
 
+            /*
+             *USEFUL SINGLE THREAD DEBUG THING
+            DecisionStumpWeakLearner dswl(&weak_learner_mutex,
+                                     &allSamples,
+                                     &weight_distribution,
+                                     &hypothesis,
+                                     &weighted_error,
+                                     &weak_hypothesis_index,
+                                     &count,
+                                     progressCallback);
+            tbb::blocked_range< unsigned int > range(0, hypothesis.size());
+            dswl( range );
+            */
+
             //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
             tbb::parallel_for( tbb::blocked_range< unsigned int >(0, hypothesis.size()),
                                DecisionStumpWeakLearner(&weak_learner_mutex,
