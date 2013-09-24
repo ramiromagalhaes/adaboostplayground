@@ -13,11 +13,6 @@
 
 
 
-//This is usefull for certain debugging tasks. Uncomment if needed.
-//tbb::task_scheduler_init init(1);
-
-
-
 /**
  * A callback to report the progress of the Adaboost train method. Just create
  * your implementation and pass an instance of it to the Adaboost constructor.
