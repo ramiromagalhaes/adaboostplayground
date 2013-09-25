@@ -1,2 +1,4 @@
 #!/bin/sh
-./trainclassifier /mnt/faces/faces.pgm /mnt/fundo/background-partial.pgm /mnt/features/haarclassifiers-optimized.txt /mnt/classifiers/strongHypothesis.txt 1
+./test_my_classifier     /mnt/test-dataset/mit-cmu-png.txt /mnt/test-dataset/mit-cmu/abc-ground-truth.txt /mnt/classifiers/strongHypothesis-my.txt     /home/ramiro/roc-my.txt
+./test_pavani_classifier /mnt/test-dataset/mit-cmu-png.txt /mnt/test-dataset/mit-cmu/abc-ground-truth.txt /mnt/classifiers/strongHypothesis-pavani.txt /home/ramiro/roc-pavani.txt
+./test_vj_classifier     /mnt/test-dataset/mit-cmu-png.txt /mnt/test-dataset/mit-cmu/abc-ground-truth.txt /mnt/classifiers/strongHypothesis-vj.txt     /home/ramiro/roc-vj.txt
