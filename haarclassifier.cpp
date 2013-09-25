@@ -243,12 +243,18 @@ bool ViolaJonesClassifier::read(std::istream & in)
     in >> p
        >> theta;
 
+    //TODO remove that when you change the write method
+    for (unsigned int i = 0; i < wavelet.dimensions(); i++)
+    {
+        float discard;
+        in >> discard;
+    }
+
     return true;
 }
 
 bool ViolaJonesClassifier::write(std::ostream & out) const
 {
-    //whatever's not about the HaarWavelet won't be written
     if ( !wavelet.write(out) )
     {
         return false;
@@ -258,6 +264,7 @@ bool ViolaJonesClassifier::write(std::ostream & out) const
         << p << ' '
         << theta;
 
+    //TODO No need to write that on the strong classifier should remove.
     for (unsigned int i = 0; i < wavelet.dimensions(); i++)
     {
         out << ' ' << 0;
