@@ -25,15 +25,15 @@ struct ScannerEntry
 {
     cv::Rect position;
     float featureValue;
-    bool validDetection;
+    bool isTrueFaceRegion;
 
-    ScannerEntry() : position(0, 0, 0, 0), featureValue(0), validDetection(false) {}
+    ScannerEntry() : position(0, 0, 0, 0), featureValue(0), isTrueFaceRegion(false) {}
 
     ScannerEntry(const cv::Rect & position_,
                  const float featureValue_,
                  const bool validDetection_) : position(position_),
-                                              featureValue(featureValue_),
-                                              validDetection(validDetection_) {}
+                                               featureValue(featureValue_),
+                                               isTrueFaceRegion(validDetection_) {}
 
     bool operator < (const ScannerEntry & rh) const
     {
@@ -229,8 +229,8 @@ void fromScannerEntries2RocCurve(tbb::concurrent_vector<ScannerEntry> & entries,
             f_prev = entry->featureValue;
         }
 
-        true_positives += entry->validDetection;
-        false_positives += !entry->validDetection;
+        true_positives += entry->isTrueFaceRegion;
+        false_positives += !entry->isTrueFaceRegion;
     }
 
     RocPoint p;
