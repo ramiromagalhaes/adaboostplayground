@@ -409,24 +409,28 @@ int ___main(const std::string testImagesIndexFileName,
         std::cout << "\nTotal scanned windows:" << totalScannedWindows << std::endl;
     }
 
-    std::cout << "\nBuilding ROC curve...\n";
+    std::cout << "\nBuilding ROC curve...";
     std::cout.flush();
 
     std::vector<RocPoint> rocCurve;
     fromScannerEntries2RocCurve(entries, rocCurve);
+    std::cout << "Built a ROC curve with " << rocCurve.size() << " ROC points.\n";
 
     {
         std::cout << "\nWriting ROC curve to file " << rocCurveFile << '.' << std::endl;
 
-        std::ofstream out(rocCurveFile.c_str());
-        if ( !out.is_open() )
+        std::ofstream rocOut(rocCurveFile.c_str());
+        if ( !rocOut.is_open() )
         {
             return 13;
         }
         for (std::vector<RocPoint>::iterator rocPoint = rocCurve.begin(); rocPoint != rocCurve.end(); ++rocPoint)
         {
-            out << rocPoint->falsePositives << ' ' << rocPoint->truePositives << '\n';
+            rocOut << rocPoint->falsePositives << ' ' << rocPoint->truePositives << std::endl;
+            rocOut.flush();
         }
+
+        rocOut.close();
     }
 
     return 0;
