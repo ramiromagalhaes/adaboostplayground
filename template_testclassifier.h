@@ -25,18 +25,51 @@ struct ScannerEntry
 {
     cv::Rect position;
     float featureValue;
+    bool validDetection;
 
-    ScannerEntry() : position(0, 0, 0, 0), featureValue(0) {}
+    ScannerEntry() : position(0, 0, 0, 0), featureValue(0), validDetection(false) {}
 
     ScannerEntry(const cv::Rect & position_,
-                 const float featureValue_) : position(position_),
-                                              featureValue(featureValue_) {}
+                 const float featureValue_,
+                 const bool validDetection_) : position(position_),
+                                              featureValue(featureValue_),
+                                              validDetection(validDetection_) {}
 
     bool operator < (const ScannerEntry & rh) const
     {
         return featureValue < rh.featureValue;
     }
 };
+
+
+
+cv::Point2f center(const cv::Rect & rect)
+{
+    return cv::Point(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
+}
+
+
+
+inline bool matchesGroundTruth(const cv::Rect & r, const std::vector<cv::Rect> & groundTruths)
+{
+    for (std::vector<cv::Rect>::const_iterator groundTruth = groundTruths.begin(); groundTruth != groundTruths.end(); ++groundTruth )
+    {
+        if ( groundTruth->width  * 0.9f <=  r.width  && r.width  <= groundTruth->width  * 1.1f
+          && groundTruth->height * 0.9f <=  r.height && r.height <= groundTruth->height * 1.1f )
+        {
+            const cv::Point2f rCenter  = center(r);
+            const cv::Point2f gtCenter = center(*groundTruth);
+            float distance = cv::norm(gtCenter - rCenter);
+
+            if ( distance <= groundTruth->width * 0.1f && distance <= groundTruth->height * 0.1f )
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 
 
@@ -49,13 +82,13 @@ public:
                                                                            scaling_factor(1.25f),
                                                                            delta(1.5f) {}
 
-    unsigned int scan(cv::Mat & image, tbb::concurrent_vector<ScannerEntry> & entries)
+    unsigned int scan(const cv::Mat & image, const std::vector<cv::Rect> & groundTruth, tbb::concurrent_vector<ScannerEntry> & entries)
     {
         cv::Mat integralSum   (image.rows + 1, image.cols + 1, cv::DataType<double>::type);
         cv::Mat integralSquare(image.rows + 1, image.cols + 1, cv::DataType<double>::type);
         cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
 
-        const float max_scaling_factor = std::pow(scaling_factor, 9.0f);
+        //const float max_scaling_factor = std::pow(scaling_factor, 9.0f);
 
         unsigned int scannedWindows = 0;
 
@@ -63,9 +96,9 @@ public:
         //therefore, we must set the correct ROI when saving what we found here.
         cv::Rect roi(0, 0, initial_size, initial_size);
 
-        for(float scale = 1; scale * initial_size < image.cols
-                          && scale * initial_size < image.rows
-                          && scale < max_scaling_factor; scale *= scaling_factor)
+        for(float scale = 1.5f; scale * initial_size < image.cols
+                             && scale * initial_size < image.rows
+                             /*&& scale < max_scaling_factor*/; scale *= scaling_factor)
         {
             const float shift = delta * scale; //like Viola and Jones do
 
@@ -80,8 +113,9 @@ public:
                     --exampleRoi.y; //Note that we iterate over x and y from 1 (see the fors above)
 
                     const Example example(integralSum(exampleRoi), integralSquare(exampleRoi));
+                    const bool isFaceRegion = matchesGroundTruth(exampleRoi, groundTruth);
 
-                    ScannerEntry e( exampleRoi, classifier->classificationValue(example, scale) );
+                    ScannerEntry e( exampleRoi, classifier->classificationValue(example, scale), isFaceRegion);
                     entries.push_back(e);
                     ++scannedWindows;
                 }
@@ -104,22 +138,6 @@ struct ImageAndGroundTruth
 {
     cv::Mat image;
     std::vector<cv::Rect> faces;
-};
-
-
-
-struct RocRecord
-{
-    int falsePositives;
-    int truePositives;
-    float value;
-
-    RocRecord() : falsePositives(0), truePositives(0), value(0) {}
-
-    bool operator < (const RocRecord & rh) const
-    {
-        return falsePositives < rh.falsePositives;
-    }
 };
 
 
@@ -154,7 +172,7 @@ struct ParallelScan
         for(unsigned int k = range.begin(); k != range.end(); ++k)
         {
             ImageAndGroundTruth imageAndGt = (*images)[k];
-            scannedWindows = scanner.scan(imageAndGt.image, *entries);
+            scannedWindows = scanner.scan(imageAndGt.image, imageAndGt.faces, *entries);
         }
 
         {
@@ -167,6 +185,22 @@ struct ParallelScan
 
             lock.release();
         }
+    }
+};
+
+
+
+struct RocRecord
+{
+    int falsePositives;
+    int truePositives;
+    float value;
+
+    RocRecord() : falsePositives(0), truePositives(0), value(0) {}
+
+    bool operator < (const RocRecord & rh) const
+    {
+        return falsePositives < rh.falsePositives;
     }
 };
 
@@ -317,13 +351,6 @@ bool getTestImages(const std::string indexFileName,
 
 
 
-cv::Point2f center(cv::Rect & rect)
-{
-    return cv::Point(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
-}
-
-
-
 template<typename WeakHypothesisType>
 struct TotalTruePositivesAndNegatives
 {
@@ -457,7 +484,7 @@ int ___main(const std::string testImagesIndexFileName,
                                                        &entries,
                                                        &mutex) );
 
-    std::cout << "\nSorting...";
+    std::cout << "\nSorting...\n";
     std::cout.flush();
 
     tbb::parallel_sort(entries.begin(), entries.end());
