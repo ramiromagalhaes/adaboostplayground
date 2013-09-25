@@ -35,15 +35,15 @@ public:
                           && scale < max_scaling_factor; scale *= scaling_factor)
         {
             const float shift = delta * scale;
-            roi.width = roi.height = initial_size * scale + 1;
+            roi.width = roi.height = initial_size * scale + 1; //integral images have +1 sizes
 
             for (roi.x = 1; roi.x < integralSum.cols - roi.width; roi.x += shift)
             {
                 for (roi.y = 1; roi.y < integralSum.rows - roi.height; roi.y += shift)
                 {
                     cv::Rect exampleRoi = roi;
-                    --exampleRoi.x;
-                    --exampleRoi.y;
+                    --exampleRoi.x; //Correctly position the roi over the integral images
+                    --exampleRoi.y; //Note that x and y both begin with 1.
                     const Example example(integralSum(exampleRoi), integralSquare(exampleRoi));
 
                     if ( classifier->classify(example, scale) == yes )

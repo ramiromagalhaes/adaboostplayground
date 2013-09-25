@@ -21,6 +21,85 @@
 
 
 
+struct ScannerEntry
+{
+    cv::Rect position;
+    float featureValue;
+
+    ScannerEntry() : position(0, 0, 0, 0), featureValue(0) {}
+
+    ScannerEntry(const cv::Rect & position_,
+                 const float featureValue_) : position(position_),
+                                              featureValue(featureValue_) {}
+
+    bool operator < (const ScannerEntry & rh) const
+    {
+        return featureValue < rh.featureValue;
+    }
+};
+
+
+
+template<typename WeakClassifierType>
+class RocScanner
+{
+public:
+    RocScanner(StrongHypothesis<WeakClassifierType> * const classifier_) : classifier(classifier_),
+                                                                           initial_size(20),
+                                                                           scaling_factor(1.25f),
+                                                                           delta(1.5f) {}
+
+    unsigned int scan(cv::Mat & image, tbb::concurrent_vector<ScannerEntry> & entries)
+    {
+        cv::Mat integralSum   (image.rows + 1, image.cols + 1, cv::DataType<double>::type);
+        cv::Mat integralSquare(image.rows + 1, image.cols + 1, cv::DataType<double>::type);
+        cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
+
+        const float max_scaling_factor = std::pow(scaling_factor, 9.0f);
+
+        unsigned int scannedWindows = 0;
+
+        //We iterate our ROI over the integral image even though it is set as the original image,
+        //therefore, we must set the correct ROI when saving what we found here.
+        cv::Rect roi(0, 0, initial_size, initial_size);
+
+        for(float scale = 1; scale * initial_size < image.cols
+                          && scale * initial_size < image.rows
+                          && scale < max_scaling_factor; scale *= scaling_factor)
+        {
+            const float shift = delta * scale; //like Viola and Jones do
+
+            roi.width = roi.height = initial_size * scale + 1; //integral images have +1 sizes if compared to the original image
+
+            for (roi.x = 1; roi.x < integralSum.cols - roi.width; roi.x += shift)
+            {
+                for (roi.y = 1; roi.y < integralSum.rows - roi.height; roi.y += shift)
+                {
+                    cv::Rect exampleRoi = roi;
+                    --exampleRoi.x; //Correctly position the roi over the integral images
+                    --exampleRoi.y; //Note that we iterate over x and y from 1 (see the fors above)
+
+                    const Example example(integralSum(exampleRoi), integralSquare(exampleRoi));
+
+                    ScannerEntry e( exampleRoi, classifier->classificationValue(example, scale) );
+                    entries.push_back(e);
+                    ++scannedWindows;
+                }
+            }
+        }
+
+        return scannedWindows;
+    }
+
+private:
+    StrongHypothesis<WeakClassifierType> const * const classifier;
+    const int initial_size; //initial width and height of the detector
+    const float scaling_factor; //how mutch the scale will change per iteration
+    const float delta; //window shift constant
+};
+
+
+
 struct ImageAndGroundTruth
 {
     cv::Mat image;
@@ -40,6 +119,54 @@ struct RocRecord
     bool operator < (const RocRecord & rh) const
     {
         return falsePositives < rh.falsePositives;
+    }
+};
+
+
+
+template<typename WeakHypothesisType>
+struct ParallelScan
+{
+    std::vector<ImageAndGroundTruth> * const images;
+    int * const totalScannedWindows;
+    int * const evaluatedImages;
+    StrongHypothesis<WeakHypothesisType> * const strongHypothesis;
+    tbb::concurrent_vector<ScannerEntry> * const entries;
+    tbb::queuing_mutex * const mutex;
+
+    ParallelScan(std::vector<ImageAndGroundTruth> * const images_,
+                 int * const totalScannedWindows_,
+                 int * const evaluatedImages_,
+                 StrongHypothesis<WeakHypothesisType> * const strongHypothesis_,
+                 tbb::concurrent_vector<ScannerEntry> * const entries_,
+                 tbb::queuing_mutex * const mutex_) : images(images_),
+                                                      totalScannedWindows(totalScannedWindows_),
+                                                      evaluatedImages(evaluatedImages_),
+                                                      strongHypothesis(strongHypothesis_),
+                                                      entries(entries_),
+                                                      mutex(mutex_) {}
+
+    void operator()(tbb::blocked_range< unsigned int > & range) const
+    {
+        unsigned int scannedWindows = 0;
+        RocScanner<WeakHypothesisType> scanner(strongHypothesis);
+
+        for(unsigned int k = range.begin(); k != range.end(); ++k)
+        {
+            ImageAndGroundTruth imageAndGt = (*images)[k];
+            scannedWindows = scanner.scan(imageAndGt.image, *entries);
+        }
+
+        {
+            tbb::queuing_mutex::scoped_lock lock(*mutex);
+            *totalScannedWindows += scannedWindows;
+            *evaluatedImages += 1;
+
+            std::cout << "\rProgress " << 100 * (*evaluatedImages) / images->size() << '%';
+            std::cout.flush();
+
+            lock.release();
+        }
     }
 };
 
@@ -298,24 +425,42 @@ int ___main(const std::string testImagesIndexFileName,
     }
 
 
+
     int totalFacesInGroundTruth = 0;
     std::vector<ImageAndGroundTruth> images;
     if ( !getTestImages(testImagesIndexFileName, groundTruthFileName, images, totalFacesInGroundTruth) )
     {
         return false;
     }
-    std::cout << "Loaded " << images.size() << " images." << std::endl;
+    std::cout << "Loaded " << images.size() << " images and " << totalFacesInGroundTruth << " ground truth entries." << std::endl;
 
 
 
     int totalTruePositives = 0;
     int totalFalsePositives = 0;
+
     int totalScannedWindows = 0;
     int evaluatedImages = 0;
+
+    tbb::concurrent_vector<ScannerEntry> entries;
+
     tbb::queuing_mutex mutex;
 
     std::cout << "\rProgress " << 100 * (evaluatedImages / images.size()) << '%';
     std::cout.flush();
+
+    tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
+                      ParallelScan<WeakHypothesisType>(&images,
+                                                       &totalScannedWindows,
+                                                       &evaluatedImages,
+                                                       &strongHypothesis,
+                                                       &entries,
+                                                       &mutex) );
+
+    std::cout << "\nSorting...";
+    std::cout.flush();
+
+    tbb::parallel_sort(entries.begin(), entries.end());
 
     /*
     //USEFULL DEBUG THING!!!
@@ -331,6 +476,7 @@ int ___main(const std::string testImagesIndexFileName,
     ttpan( range );
     */
 
+    /*
     tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
                       TotalTruePositivesAndNegatives<WeakHypothesisType>(
                           &images,
@@ -340,6 +486,7 @@ int ___main(const std::string testImagesIndexFileName,
                           &evaluatedImages,
                           &mutex,
                           &strongHypothesis) );
+    */
 
     std::cout << "\rTotal subwindows scanned   : " << totalScannedWindows;
     std::cout << "\nTotal faces in ground truth: " << totalFacesInGroundTruth;
