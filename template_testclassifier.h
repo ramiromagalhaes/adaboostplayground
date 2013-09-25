@@ -146,15 +146,15 @@ template<typename WeakHypothesisType>
 struct ParallelScan
 {
     std::vector<ImageAndGroundTruth> * const images;
-    int * const totalScannedWindows;
-    int * const evaluatedImages;
+    unsigned int * const totalScannedWindows;
+    unsigned int * const evaluatedImages;
     StrongHypothesis<WeakHypothesisType> * const strongHypothesis;
     tbb::concurrent_vector<ScannerEntry> * const entries;
     tbb::queuing_mutex * const mutex;
 
     ParallelScan(std::vector<ImageAndGroundTruth> * const images_,
-                 int * const totalScannedWindows_,
-                 int * const evaluatedImages_,
+                 unsigned int * const totalScannedWindows_,
+                 unsigned int * const evaluatedImages_,
                  StrongHypothesis<WeakHypothesisType> * const strongHypothesis_,
                  tbb::concurrent_vector<ScannerEntry> * const entries_,
                  tbb::queuing_mutex * const mutex_) : images(images_),
@@ -190,15 +190,15 @@ struct ParallelScan
 
 
 
-struct RocRecord
+struct RocPoint
 {
     int falsePositives;
     int truePositives;
-    float value;
 
-    RocRecord() : falsePositives(0), truePositives(0), value(0) {}
+    RocPoint() : falsePositives(0),
+                 truePositives(0) {}
 
-    bool operator < (const RocRecord & rh) const
+    bool operator < (const RocPoint & rh) const
     {
         return falsePositives < rh.falsePositives;
     }
@@ -206,34 +206,38 @@ struct RocRecord
 
 
 
-template<typename WeakHypothesisType>
-struct RocCalculator
+void fromScannerEntries2RocCurve(tbb::concurrent_vector<ScannerEntry> & entries, std::vector<RocPoint> & rocCurve)
 {
-    std::vector<LabeledExample> const * const samples;
-    std::vector<RocRecord> * const records;
-    StrongHypothesis<WeakHypothesisType> * const strongHypothesis;
+    //As seen in "An introduction to ROC analysis, from Tom Fawcett, 2005, Elsevier."
 
-    RocCalculator(std::vector<LabeledExample> const * const samples_,
-                  std::vector<RocRecord> * records_,
-                  StrongHypothesis<WeakHypothesisType> * const strongHypothesis_) : samples(samples_),
-                                                                                    records(records_),
-                                                                                    strongHypothesis(strongHypothesis_) {}
+    tbb::parallel_sort(entries.begin(), entries.end());
 
-    void operator()(tbb::blocked_range< unsigned int > & range) const
+    unsigned int false_positives = 0;
+    unsigned int true_positives = 0;
+
+    float f_prev = std::numeric_limits<float>::min();
+
+    for(tbb::concurrent_vector<ScannerEntry>::iterator entry = entries.begin(); entry != entries.end(); ++entry)
     {
-        for (unsigned int i = range.begin(); i < range.end(); ++i)
+        if ( entry->featureValue != f_prev )
         {
-            (*records)[i].value = strongHypothesis->classificationValue( (*samples)[i] );
+            RocPoint p;
+            p.truePositives = true_positives;
+            p.falsePositives = false_positives;
 
-            for (unsigned int j = 0; j < samples->size(); ++j)
-            {
-                const float classVal = strongHypothesis->classificationValue( (*samples)[j] );
-                (*records)[i].truePositives  += (classVal >= (*records)[i].value) && ((*samples)[j].getLabel() == yes);
-                (*records)[i].falsePositives += (classVal >= (*records)[i].value) && ((*samples)[j].getLabel() == no);
-            }
+            rocCurve.push_back(p);
+            f_prev = entry->featureValue;
         }
+
+        true_positives += entry->validDetection;
+        false_positives += !entry->validDetection;
     }
-};
+
+    RocPoint p;
+    p.truePositives = true_positives;
+    p.falsePositives = false_positives;
+    rocCurve.push_back(p); //This is 1, 1
+}
 
 
 
@@ -352,89 +356,10 @@ bool getTestImages(const std::string indexFileName,
 
 
 template<typename WeakHypothesisType>
-struct TotalTruePositivesAndNegatives
-{
-    std::vector<ImageAndGroundTruth> * const images;
-    int * const totalTruePositives;
-    int * const totalFalsePositives;
-    int * const totalScannedWindows;
-
-    int * const evaluatedImages;
-
-    StrongHypothesis<WeakHypothesisType> * const strongHypothesis;
-
-    tbb::queuing_mutex * const mutex;
-
-    TotalTruePositivesAndNegatives(std::vector<ImageAndGroundTruth> * const images_,
-                                   int * const totalTruePositives_,
-                                   int * const totalFalsePositives_,
-                                   int * const totalScannedWindows_,
-                                   int * const evaluatedImages_,
-                                   tbb::queuing_mutex * const mutex_,
-                                   StrongHypothesis<WeakHypothesisType> * const strongHypothesis_) : images(images_),
-                                                                                                     totalTruePositives(totalTruePositives_),
-                                                                                                     totalFalsePositives(totalFalsePositives_),
-                                                                                                     totalScannedWindows(totalScannedWindows_),
-                                                                                                     evaluatedImages(evaluatedImages_),
-                                                                                                     strongHypothesis(strongHypothesis_),
-                                                                                                     mutex(mutex_) {}
-
-    void operator()(tbb::blocked_range< unsigned int > & range) const
-    {
-        unsigned int scannedWindows = 0;
-        Scanner<WeakHypothesisType> scanner(strongHypothesis);
-
-        for(unsigned int k = range.begin(); k != range.end(); ++k)
-        {
-            ImageAndGroundTruth imageAndGt = (*images)[k];
-
-            int imageTruePositives = 0;
-
-            std::vector<cv::Rect> detections;
-            scannedWindows += scanner.scan(imageAndGt.image, detections);
-
-            for(unsigned int i = 0; i < detections.size(); ++i)
-            {
-                const cv::Point2f detectionMidpoint = center(detections[i]);
-
-                for(unsigned int j = 0; j < imageAndGt.faces.size(); ++j)
-                {
-                    if ( imageAndGt.faces[j].width * 0.9 <=  detections[i].width && detections[i].width <= imageAndGt.faces[j].width * 1.1
-                      && imageAndGt.faces[j].height * 0.9 <=  detections[i].height && detections[i].height <= imageAndGt.faces[j].height * 1.1 )
-                    {
-                        const cv::Point2f gtMidpoint = center(imageAndGt.faces[j]);
-
-                        if ( imageAndGt.faces[j].width * 0.9 <= std::abs(detectionMidpoint.x - gtMidpoint.x) && std::abs(detectionMidpoint.x - gtMidpoint.x) <= imageAndGt.faces[j].width * 1.1
-                          && imageAndGt.faces[j].height * 0.9 <= std::abs(detectionMidpoint.y - gtMidpoint.y) && std::abs(detectionMidpoint.y - gtMidpoint.y) <= imageAndGt.faces[j].height * 1.1 )
-                        {
-                            ++imageTruePositives;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            {
-                tbb::queuing_mutex::scoped_lock lock(*mutex);
-                (*totalTruePositives)  += imageTruePositives;
-                (*totalFalsePositives) += (detections.size() - imageTruePositives);
-                (*totalScannedWindows) += scannedWindows;
-
-                ++(*evaluatedImages);
-                std::cout << "\rProgress " << 100 * (*evaluatedImages) / images->size() << '%';
-                std::cout.flush();
-                lock.release();
-            }
-        }
-    }
-};
-
-
-
-template<typename WeakHypothesisType>
 int ___main(const std::string testImagesIndexFileName,
             const std::string groundTruthFileName,
-            const std::string strongHypothesisFile)
+            const std::string strongHypothesisFile,
+            const std::string rocCurveFile)
 {
     StrongHypothesis<WeakHypothesisType> strongHypothesis;
     {
@@ -463,62 +388,46 @@ int ___main(const std::string testImagesIndexFileName,
 
 
 
-    int totalTruePositives = 0;
-    int totalFalsePositives = 0;
-
-    int totalScannedWindows = 0;
-    int evaluatedImages = 0;
-
     tbb::concurrent_vector<ScannerEntry> entries;
 
-    tbb::queuing_mutex mutex;
+    {
+        unsigned int evaluatedImages = 0;
+        unsigned int totalScannedWindows = 0;
 
-    std::cout << "\rProgress " << 100 * (evaluatedImages / images.size()) << '%';
+        std::cout << "\rProgress 0%";
+        std::cout.flush();
+
+        tbb::queuing_mutex mutex;
+        tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
+                          ParallelScan<WeakHypothesisType>(&images,
+                                                           &totalScannedWindows,
+                                                           &evaluatedImages,
+                                                           &strongHypothesis,
+                                                           &entries,
+                                                           &mutex) );
+
+        std::cout << "\nTotal scanned windows:" << totalScannedWindows << std::endl;
+    }
+
+    std::cout << "\nBuilding ROC curve...\n";
     std::cout.flush();
 
-    tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
-                      ParallelScan<WeakHypothesisType>(&images,
-                                                       &totalScannedWindows,
-                                                       &evaluatedImages,
-                                                       &strongHypothesis,
-                                                       &entries,
-                                                       &mutex) );
+    std::vector<RocPoint> rocCurve;
+    fromScannerEntries2RocCurve(entries, rocCurve);
 
-    std::cout << "\nSorting...\n";
-    std::cout.flush();
+    {
+        std::cout << "\nWriting ROC curve to file " << rocCurveFile << '.' << std::endl;
 
-    tbb::parallel_sort(entries.begin(), entries.end());
-
-    /*
-    //USEFULL DEBUG THING!!!
-    TotalTruePositivesAndNegatives<WeakHypothesisType> ttpan(
-        &images,
-        &totalTruePositives,
-        &totalFalsePositives,
-        &totalScannedWindows,
-        &evaluatedImages,
-        &mutex,
-        &strongHypothesis);
-    tbb::blocked_range< unsigned int > range(0, images.size());
-    ttpan( range );
-    */
-
-    /*
-    tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
-                      TotalTruePositivesAndNegatives<WeakHypothesisType>(
-                          &images,
-                          &totalTruePositives,
-                          &totalFalsePositives,
-                          &totalScannedWindows,
-                          &evaluatedImages,
-                          &mutex,
-                          &strongHypothesis) );
-    */
-
-    std::cout << "\rTotal subwindows scanned   : " << totalScannedWindows;
-    std::cout << "\nTotal faces in ground truth: " << totalFacesInGroundTruth;
-    std::cout << "\nTotal true positives       : " << totalTruePositives;
-    std::cout << "\nTotal false positives      : " << totalFalsePositives << std::endl;
+        std::ofstream out(rocCurveFile.c_str());
+        if ( !out.is_open() )
+        {
+            return 13;
+        }
+        for (std::vector<RocPoint>::iterator rocPoint = rocCurve.begin(); rocPoint != rocCurve.end(); ++rocPoint)
+        {
+            out << rocPoint->falsePositives << ' ' << rocPoint->truePositives << '\n';
+        }
+    }
 
     return 0;
 }
