@@ -92,25 +92,27 @@ public:
 
         unsigned int scannedWindows = 0;
 
-        //We iterate our ROI over the integral image even though it is set as the original image,
-        //therefore, we must set the correct ROI when saving what we found here.
+        //TODO review how we iterate over the image. This ROI seems to be iterating over the original
+        //image, but it is also transformed in the ROI that iterates over the integrals. It is confusing
+        //and probably performs worse then it could be.
         cv::Rect roi(0, 0, initial_size, initial_size);
 
-        for(float scale = 1.5f; scale * initial_size < image.cols
-                             && scale * initial_size < image.rows
+        for(float scale = 1.5f; scale * initial_size <= image.cols
+                             && scale * initial_size <= image.rows
                              /*&& scale < max_scaling_factor*/; scale *= scaling_factor)
         {
             const float shift = delta * scale; //like Viola and Jones do
 
-            roi.width = roi.height = initial_size * scale + 1; //integral images have +1 sizes if compared to the original image
+            roi.width = roi.height = initial_size * scale;
 
-            for (roi.x = 1; roi.x < integralSum.cols - roi.width; roi.x += shift)
+            for (roi.x = 1; roi.x <= integralSum.cols - roi.width; roi.x += shift)
             {
-                for (roi.y = 1; roi.y < integralSum.rows - roi.height; roi.y += shift)
+                for (roi.y = 1; roi.y <= integralSum.rows - roi.height; roi.y += shift)
                 {
                     cv::Rect exampleRoi = roi;
                     --exampleRoi.x; //Correctly position the roi over the integral images
                     --exampleRoi.y; //Note that we iterate over x and y from 1 (see the fors above)
+                    exampleRoi.width = exampleRoi.height = exampleRoi.height + 1; //integral images have +1 sizes if compared to the original image
 
                     const Example example(integralSum(exampleRoi), integralSquare(exampleRoi));
                     const bool isFaceRegion = matchesGroundTruth(exampleRoi, groundTruth);
@@ -362,8 +364,12 @@ bool getTestImages__2(const std::string positivesFile,
 {
     std::vector<cv::Mat> samples;
 
-    SampleExtractor::fromImageFile(positivesFile, samples);
-    *totalFacesInGroundTruth = samples.size();
+    if ( !SampleExtractor::fromImageFile(positivesFile, samples) )
+    {
+        return false;
+    }
+
+    totalFacesInGroundTruth = samples.size();
     for(std::vector<cv::Mat>::iterator sample = samples.begin(); sample != samples.end(); ++sample)
     {
         ImageAndGroundTruth iagt;
@@ -375,7 +381,10 @@ bool getTestImages__2(const std::string positivesFile,
 
     samples.clear();
 
-    SampleExtractor::fromImageFile(negativesFile, samples);
+    if ( !SampleExtractor::fromImageFile(negativesFile, samples) )
+    {
+        return false;
+    }
     for(std::vector<cv::Mat>::iterator sample = samples.begin(); sample != samples.end(); ++sample)
     {
         ImageAndGroundTruth iagt;
@@ -384,6 +393,7 @@ bool getTestImages__2(const std::string positivesFile,
         images.push_back(iagt);
     }
 
+    return true;
 }
 
 
@@ -413,9 +423,10 @@ int ___main(const std::string testImagesIndexFileName,
 
     int totalFacesInGroundTruth = 0;
     std::vector<ImageAndGroundTruth> images;
+
     if ( !getTestImages(testImagesIndexFileName, groundTruthFileName, images, totalFacesInGroundTruth) )
     {
-        return false;
+        return 13;
     }
     std::cout << "Loaded " << images.size() << " images and " << totalFacesInGroundTruth << " ground truth entries." << std::endl;
 
