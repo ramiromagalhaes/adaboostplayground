@@ -174,13 +174,13 @@ struct ParallelScan
         for(unsigned int k = range.begin(); k != range.end(); ++k)
         {
             ImageAndGroundTruth imageAndGt = (*images)[k];
-            scannedWindows = scanner.scan(imageAndGt.image, imageAndGt.faces, *entries);
+            scannedWindows += scanner.scan(imageAndGt.image, imageAndGt.faces, *entries);
         }
 
         {
             tbb::queuing_mutex::scoped_lock lock(*mutex);
             *totalScannedWindows += scannedWindows;
-            *evaluatedImages += 1;
+            *evaluatedImages += range.size();
 
             std::cout << "\rProgress " << 100 * (*evaluatedImages) / images->size() << '%';
             std::cout.flush();
@@ -424,6 +424,9 @@ int ___main(const std::string testImagesIndexFileName,
     int totalFacesInGroundTruth = 0;
     std::vector<ImageAndGroundTruth> images;
 
+    //I can use the getTestImages__2 to test the classifier an image database like those used in trainning.
+    //Remember to change the name of the ___main parameters.
+    //if ( !getTestImages__2(positivesFile, negativesFile, images, totalFacesInGroundTruth) )
     if ( !getTestImages(testImagesIndexFileName, groundTruthFileName, images, totalFacesInGroundTruth) )
     {
         return 13;
@@ -433,7 +436,6 @@ int ___main(const std::string testImagesIndexFileName,
 
 
     tbb::concurrent_vector<ScannerEntry> entries;
-
     {
         unsigned int evaluatedImages = 0;
         unsigned int totalScannedWindows = 0;
