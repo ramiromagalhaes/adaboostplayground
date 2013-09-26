@@ -83,12 +83,12 @@ protected:
 
 
 
-class MyHaarClassifier : public HaarClassifier
+class MyHaarClassifier
 {
 public:
     MyHaarClassifier();
 
-    MyHaarClassifier(HaarWavelet & w, std::vector<float> means_);
+    MyHaarClassifier(MyHaarWavelet &w, std::vector<float> means_);
 
     MyHaarClassifier(const MyHaarClassifier & c);
 
@@ -104,10 +104,14 @@ public:
 
     virtual Classification classify(const Example & example, const float scale = 1.0f) const;
 
+    void setThreshold(const float q_);
+
+    void setPolarity(const float p_);
+
 protected:
-    std::vector<float> means;
-    //Here the theta (threshold) will be used as the distance.
-    //p is still the polarity
+    MyHaarWavelet wavelet;
+    float theta;
+    float p;
 };
 
 
