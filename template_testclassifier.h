@@ -37,7 +37,7 @@ struct ScannerEntry
 
     bool operator < (const ScannerEntry & rh) const
     {
-        return featureValue < rh.featureValue;
+        return featureValue > rh.featureValue; //According to "An introduction to ROC analysis", this should be decreasing.
     }
 };
 
