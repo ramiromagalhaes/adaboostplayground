@@ -23,6 +23,9 @@ public:
     static bool fromIndexFile(const std::string &indexPath, std::vector<LabeledExample> &samples, Classification c);
 
     static bool fromImageFile(const std::string &imagePath, std::vector<LabeledExample> &samples, Classification c);
+
+    static bool fromImageFile(const std::string &imagePath, std::vector<cv::Mat> &samples);
+
 };
 
 #endif // SAMPLEEXTRACTOR_H
