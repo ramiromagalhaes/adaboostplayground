@@ -355,6 +355,39 @@ bool getTestImages(const std::string indexFileName,
 
 
 
+bool getTestImages__2(const std::string positivesFile,
+                      const std::string negativesFile,
+                      std::vector<ImageAndGroundTruth> & images,
+                      int & totalFacesInGroundTruth)
+{
+    std::vector<cv::Mat> samples;
+
+    SampleExtractor::fromImageFile(positivesFile, samples);
+    *totalFacesInGroundTruth = samples.size();
+    for(std::vector<cv::Mat>::iterator sample = samples.begin(); sample != samples.end(); ++sample)
+    {
+        ImageAndGroundTruth iagt;
+        iagt.image = *sample;
+        iagt.faces.push_back(cv::Rect(0, 0, sample->cols, sample->rows));
+
+        images.push_back(iagt);
+    }
+
+    samples.clear();
+
+    SampleExtractor::fromImageFile(negativesFile, samples);
+    for(std::vector<cv::Mat>::iterator sample = samples.begin(); sample != samples.end(); ++sample)
+    {
+        ImageAndGroundTruth iagt;
+        iagt.image = *sample;
+
+        images.push_back(iagt);
+    }
+
+}
+
+
+
 template<typename WeakHypothesisType>
 int ___main(const std::string testImagesIndexFileName,
             const std::string groundTruthFileName,
