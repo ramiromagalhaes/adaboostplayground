@@ -107,9 +107,9 @@ MyHaarClassifier::MyHaarClassifier() : wavelet(),
                                        theta(0),
                                        p(1) {}
 
-MyHaarClassifier::MyHaarClassifier(MyHaarWavelet & w, std::vector<float> means_) : wavelet(w),
-                                                                                   theta(0),
-                                                                                   p(1) {}
+MyHaarClassifier::MyHaarClassifier(MyHaarWavelet & w) : wavelet(w),
+                                                        theta(0),
+                                                        p(1) {}
 
 MyHaarClassifier::MyHaarClassifier(const MyHaarClassifier &c)
 {

@@ -88,7 +88,7 @@ class MyHaarClassifier
 public:
     MyHaarClassifier();
 
-    MyHaarClassifier(MyHaarWavelet &w, std::vector<float> means_);
+    MyHaarClassifier(MyHaarWavelet &w);
 
     MyHaarClassifier(const MyHaarClassifier & c);
 
