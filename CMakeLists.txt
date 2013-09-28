@@ -28,8 +28,7 @@ set(common_source_files
     labeledexample.h
     stronghypothesis.h
     adaboost.h
-    haarclassifier.h
-    haarclassifier.cpp
+    weakhypothesis.h
     sampleextractor.h
     sampleextractor.cpp
     scanner.h)

@@ -16,7 +16,7 @@
 #include "common.h"
 #include "stronghypothesis.h"
 #include "scanner.h"
-#include "haarclassifier.h"
+#include "weakhypothesis.h"
 #include "sampleextractor.h"
 
 
