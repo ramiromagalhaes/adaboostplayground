@@ -21,6 +21,17 @@
 
 
 
+/*
+The algorithms implemented in this program are based on "An introduction to ROC analysis"
+from Tom Fawcett, 2005, Elsevier. If things seem confusing, it is recommended that you
+read that paper.
+*/
+
+
+
+/**
+ * When iterating over the images, a RocScanner will produce instances of this class.
+ */
 struct ScannerEntry
 {
     cv::Rect position;
@@ -35,9 +46,12 @@ struct ScannerEntry
                                                featureValue(featureValue_),
                                                isTrueFaceRegion(validDetection_) {}
 
+    /**
+     * The "natural" ordering for a list of instances of this class is the decreasing order.
+     */
     bool operator < (const ScannerEntry & rh) const
     {
-        return featureValue > rh.featureValue; //According to "An introduction to ROC analysis", this should be decreasing.
+        return featureValue > rh.featureValue;
     }
 };
 
@@ -50,6 +64,11 @@ cv::Point2f center(const cv::Rect & rect)
 
 
 
+/**
+ * The criteria implemented here was taken from Pavani's article "Haar-like features with optimally
+ * weighted rectangles for rapid object detection". If rectangle r matches a ground truth considering
+ * Pavani's matching criteria, this function returns true.
+ */
 inline bool matchesGroundTruth(const cv::Rect & r, const std::vector<cv::Rect> & groundTruths)
 {
     for (std::vector<cv::Rect>::const_iterator groundTruth = groundTruths.begin(); groundTruth != groundTruths.end(); ++groundTruth )
@@ -73,6 +92,10 @@ inline bool matchesGroundTruth(const cv::Rect & r, const std::vector<cv::Rect> &
 
 
 
+/**
+ * Iterates over an image producing instances of ScannerEntry. Latter, such entries will be processed
+ * so a ROC curve is produced.
+ */
 template<typename WeakClassifierType>
 class RocScanner
 {
@@ -144,6 +167,9 @@ struct ImageAndGroundTruth
 
 
 
+/**
+ * Uses the RocScanner to scan many images in parallel.
+ */
 template<typename WeakHypothesisType>
 struct ParallelScan
 {
@@ -192,6 +218,9 @@ struct ParallelScan
 
 
 
+/**
+ * A point in a ROC curve.
+ */
 struct RocPoint
 {
     int falsePositives;
