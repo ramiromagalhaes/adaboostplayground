@@ -2,16 +2,17 @@
 #define WEAKHYPOTHESIS_h
 
 #include <string>
+#include <sstream>
 #include <fstream>
 #include <vector>
 
 #include <opencv2/core/core.hpp>
 
 #include <haarwavelet.h>
+#include <haarwaveletevaluators.h>
 
 #include "common.h"
 #include "labeledexample.h"
-
 
 
 template<typename HaarClassifierType>
@@ -27,8 +28,16 @@ bool loadHaarClassifiers(const std::string &filename, std::vector<HaarClassifier
 
     do
     {
+        std::string line;
+        getline(ifs, line);
+        if (line.empty())
+        {
+            break;
+        }
+        std::istringstream lineInputStream(line);
+
         HaarClassifierType classifier;
-        classifier.read(ifs);
+        classifier.read(lineInputStream);
 
         if ( !ifs.eof() )
         {
@@ -46,7 +55,8 @@ bool loadHaarClassifiers(const std::string &filename, std::vector<HaarClassifier
 }
 
 
-template <typename FeatureType>
+
+template <typename FeatureType, typename HaarEvaluatorType>
 class ThresholdedWeakClassifier
 {
 public:
@@ -123,9 +133,8 @@ public:
     //This is supposed to be used only during trainning
     float featureValue(const Example &example, const float scale = 1.0f) const
     {
-        return feature.value(example.getIntegralSum(), example.getIntegralSquare(), scale);
+        return evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
     }
-
 
     Classification classify(const Example &example, const float scale = 1.0f) const
     {
@@ -134,16 +143,23 @@ public:
 
 protected:
     FeatureType feature;
+    HaarEvaluatorType evaluator; //TODO use a static variable
     float theta;
     float p;
 };
 
 
 
-typedef ThresholdedWeakClassifier<HaarWavelet> HaarClassifier;
-typedef ThresholdedWeakClassifier<MyHaarWavelet> MyHaarClassifier;
-typedef ThresholdedWeakClassifier<ViolaJonesHaarWavelet> ViolaJonesClassifier;
+//Viola & Jones' classifier
+typedef ThresholdedWeakClassifier<HaarWavelet, VarianceNormalizedWaveletEvaluator> ViolaJonesClassifier;
 
+//Pavani's classifier.
+typedef ThresholdedWeakClassifier<HaarWavelet, IntensityNormalizedWaveletEvaluator> PavaniHaarClassifier;
+typedef ThresholdedWeakClassifier<HaarWavelet, VarianceNormalizedWaveletEvaluator>  PavaniVarNormHaarClassifier;
+
+//My classifier
+typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvaluator> MyHaarClassifier;
+typedef ThresholdedWeakClassifier<MyHaarWavelet, VarianceNormalizedWaveletEvaluator>  MyVarNormHaarClassifier;
 
 
 
