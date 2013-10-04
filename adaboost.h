@@ -300,7 +300,7 @@ public:
         unsigned int t = 0;
 
 
-        //Collects into allSamples pointers to both positive and negative LabeledExamples
+        //allSamples collects pointers to both positive and negative LabeledExamples
         std::vector<const LabeledExample *> allSamples(positiveSamples.size() + negativeSamples.size());//TODO make the LabeledExample pointer constant?
         std::transform(positiveSamples.begin(), positiveSamples.end(),
                        allSamples.begin(),
@@ -368,14 +368,13 @@ public:
 
 
             /*
-#define DIRTY_DEBUG
-#include <sstream>
+             * PIECE OF CODE USUFUL FOR DEBUGGING
+            #include <sstream>
             std::stringstream oss;
             oss << "file-" << t << ".csv";
             std::ofstream debugFile(oss.str().c_str());
             std::vector<weight_type> old(weight_distribution.size());
             std::copy(weight_distribution.begin(), weight_distribution.end(), old.begin());
-#define DIRTY_DEBUG_END
             */
 
             //Now we just have to update the weight distribution of the samples.
@@ -387,13 +386,11 @@ public:
                                               weight_distribution );
 
             /*
-#define DIRTY_DEBUG_2
             for( WeightVector::size_type i = 0; i < allSamples.size(); ++i )
             {
                 debugFile << old[i] << ' ' << hypothesis[weak_hypothesis_index].classify( *(allSamples[i]) ) << ' ' << allSamples[i]->getLabel() << ' ' << weight_distribution[i] << std::endl;
             }
             debugFile.close();
-#define DIRTY_DEBUG_2_END
             */
 
 
