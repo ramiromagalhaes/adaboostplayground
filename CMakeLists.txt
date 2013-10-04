@@ -10,7 +10,7 @@ find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
 find_package( Boost REQUIRED COMPONENTS filesystem system )
 
 # Depends on my haarcommon library
-include_directories( /home/ramiro/workspace/haarcommon/ )
+include_directories( /home/ramiro/workspace/haarcommon/src/ )
 link_directories( /home/ramiro/workspace/haarcommon-build/ )
 
 # Reference to external lib
