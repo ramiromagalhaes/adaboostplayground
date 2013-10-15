@@ -16,9 +16,9 @@ link_directories( /home/ramiro/workspace/haarcommon-build/ )
 # Reference to external lib
 # You can define two import-locations: one for debug and one for release.
 add_library( haarcommon-release SHARED IMPORTED )
-set_target_properties( haarcommon-release PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build/libhaarcommon.a )
+set_target_properties( haarcommon-release PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build/src/libhaarcommon.so )
 add_library( haarcommon-debug SHARED IMPORTED )
-set_target_properties( haarcommon-debug PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build-debug/libhaarcommon.a )
+set_target_properties( haarcommon-debug PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build-debug/src/libhaarcommon.so )
 
 
 # Setting the main program
