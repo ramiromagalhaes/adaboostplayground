@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #include <fstream>
 #include <sstream>
@@ -57,7 +58,7 @@ struct ScannerEntry
 
 
 
-cv::Point2f center(const cv::Rect & rect)
+inline cv::Point2f center(const cv::Rect & rect)
 {
     return cv::Point(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
 }
@@ -105,15 +106,14 @@ public:
                                                                            scaling_factor(1.25f),
                                                                            delta(1.5f) {}
 
-    unsigned int scan(const cv::Mat & image, const std::vector<cv::Rect> & groundTruth, tbb::concurrent_vector<ScannerEntry> & entries)
+    void scan(const cv::Mat & image, const std::vector<cv::Rect> & groundTruth,
+              tbb::concurrent_vector<ScannerEntry> & entries,
+              unsigned int & positiveInstances,
+              unsigned int & negativeInstances)
     {
         cv::Mat integralSum   (image.rows + 1, image.cols + 1, cv::DataType<double>::type);
         cv::Mat integralSquare(image.rows + 1, image.cols + 1, cv::DataType<double>::type);
         cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
-
-        //const float max_scaling_factor = std::pow(scaling_factor, 9.0f);
-
-        unsigned int scannedWindows = 0;
 
         //TODO review how we iterate over the image. This ROI seems to be iterating over the original
         //image, but it is also transformed in the ROI that iterates over the integrals. It is confusing
@@ -121,8 +121,7 @@ public:
         cv::Rect roi(0, 0, initial_size, initial_size);
 
         for(float scale = 1.5f; scale * initial_size <= image.cols
-                             && scale * initial_size <= image.rows
-                             /*&& scale < max_scaling_factor*/; scale *= scaling_factor)
+                             && scale * initial_size <= image.rows; scale *= scaling_factor)
         {
             const float shift = delta * scale; //like Viola and Jones do
 
@@ -142,12 +141,12 @@ public:
 
                     ScannerEntry e( exampleRoi, classifier->classificationValue(example, scale), isFaceRegion);
                     entries.push_back(e);
-                    ++scannedWindows;
+
+                    positiveInstances += isFaceRegion;
+                    negativeInstances += !isFaceRegion;
                 }
             }
         }
-
-        return scannedWindows;
     }
 
 private:
@@ -174,19 +173,22 @@ template<typename WeakHypothesisType>
 struct ParallelScan
 {
     std::vector<ImageAndGroundTruth> * const images;
-    unsigned int * const totalScannedWindows;
+    unsigned int * const totalPositiveInstances;
+    unsigned int * const totalNegativeInstances;
     unsigned int * const evaluatedImages;
     StrongHypothesis<WeakHypothesisType> * const strongHypothesis;
     tbb::concurrent_vector<ScannerEntry> * const entries;
     tbb::queuing_mutex * const mutex;
 
     ParallelScan(std::vector<ImageAndGroundTruth> * const images_,
-                 unsigned int * const totalScannedWindows_,
+                 unsigned int * const totalPositiveInstances_,
+                 unsigned int * const totalNegativeInstances_,
                  unsigned int * const evaluatedImages_,
                  StrongHypothesis<WeakHypothesisType> * const strongHypothesis_,
                  tbb::concurrent_vector<ScannerEntry> * const entries_,
                  tbb::queuing_mutex * const mutex_) : images(images_),
-                                                      totalScannedWindows(totalScannedWindows_),
+                                                      totalPositiveInstances(totalPositiveInstances_),
+                                                      totalNegativeInstances(totalNegativeInstances_),
                                                       evaluatedImages(evaluatedImages_),
                                                       strongHypothesis(strongHypothesis_),
                                                       entries(entries_),
@@ -194,18 +196,20 @@ struct ParallelScan
 
     void operator()(tbb::blocked_range< unsigned int > & range) const
     {
-        unsigned int scannedWindows = 0;
+        unsigned int positiveInstancesCount = 0;
+        unsigned int negativeInstancesCount = 0;
         RocScanner<WeakHypothesisType> scanner(strongHypothesis);
 
         for(unsigned int k = range.begin(); k != range.end(); ++k)
         {
             ImageAndGroundTruth imageAndGt = (*images)[k];
-            scannedWindows += scanner.scan(imageAndGt.image, imageAndGt.faces, *entries);
+            scanner.scan(imageAndGt.image, imageAndGt.faces, *entries, positiveInstancesCount, negativeInstancesCount);
         }
 
         {
             tbb::queuing_mutex::scoped_lock lock(*mutex);
-            *totalScannedWindows += scannedWindows;
+            *totalPositiveInstances += positiveInstancesCount;
+            *totalNegativeInstances += negativeInstancesCount;
             *evaluatedImages += range.size();
 
             std::cout << "\rProgress " << 100 * (*evaluatedImages) / images->size() << '%';
@@ -223,8 +227,8 @@ struct ParallelScan
  */
 struct RocPoint
 {
-    int falsePositives;
-    int truePositives;
+    unsigned int falsePositives;
+    unsigned int truePositives;
 
     RocPoint() : falsePositives(0),
                  truePositives(0) {}
@@ -237,16 +241,28 @@ struct RocPoint
 
 
 
-void fromScannerEntries2RocCurve(tbb::concurrent_vector<ScannerEntry> & entries, std::vector<RocPoint> & rocCurve)
+inline double trapezoid_area(const double x1, const double x2, const double y1, const double y2)
 {
     //As seen in "An introduction to ROC analysis, from Tom Fawcett, 2005, Elsevier."
+    return std::abs(x1 - x2) * ((y1 + y2) / 2.0f);
+}
 
+void fromScannerEntries2RocCurve(const unsigned int total_positives, const unsigned int total_negatives,
+                                 tbb::concurrent_vector<ScannerEntry> & entries,
+                                 std::vector<RocPoint> & rocCurve,
+                                 double & area_under_the_curve)
+{
+    //As seen in "An introduction to ROC analysis, from Tom Fawcett, 2005, Elsevier."
     tbb::parallel_sort(entries.begin(), entries.end());
 
     unsigned int false_positives = 0;
     unsigned int true_positives = 0;
+    unsigned int false_positives_prev = 0;
+    unsigned int true_positives_prev = 0;
 
-    float f_prev = std::numeric_limits<float>::min();
+    area_under_the_curve = .0f;
+
+    float f_prev = -std::numeric_limits<float>::max(); //http://stackoverflow.com/questions/3529394/obtain-minimum-negative-float-value-in-c
 
     for(tbb::concurrent_vector<ScannerEntry>::iterator entry = entries.begin(); entry != entries.end(); ++entry)
     {
@@ -255,8 +271,12 @@ void fromScannerEntries2RocCurve(tbb::concurrent_vector<ScannerEntry> & entries,
             RocPoint p;
             p.truePositives = true_positives;
             p.falsePositives = false_positives;
-
             rocCurve.push_back(p);
+
+            area_under_the_curve += trapezoid_area(false_positives, false_positives_prev, true_positives, true_positives_prev);
+            false_positives_prev = false_positives;
+            true_positives_prev = true_positives;
+
             f_prev = entry->featureValue;
         }
 
@@ -268,14 +288,19 @@ void fromScannerEntries2RocCurve(tbb::concurrent_vector<ScannerEntry> & entries,
     p.truePositives = true_positives;
     p.falsePositives = false_positives;
     rocCurve.push_back(p); //This is 1, 1
+
+    area_under_the_curve += trapezoid_area(total_negatives, false_positives_prev, total_negatives, true_positives_prev);
+    area_under_the_curve /= (double)total_positives * total_negatives; // scale from P * N onto the unit square
 }
 
 
 
 typedef boost::unordered_map< std::string, std::vector<cv::Rect> > GroundTruthMap;
 
-
-
+/**
+ * Loads the instance of GroundTruthMap gtmap with ground truth data found in groundTruthFile.
+ * The total amount of faces will be recorded in totalFaces output parameter.
+ */
 bool getGroundTruth(const std::string groundTruthFile, GroundTruthMap & gtmap, int & totalFaces)
 {
     std::ifstream truthStream(groundTruthFile.c_str());
@@ -464,32 +489,34 @@ int ___main(const std::string testImagesIndexFileName,
 
 
 
+    unsigned int totalPositiveInstances = 0;
+    unsigned int totalNegativeInstances = 0;
     tbb::concurrent_vector<ScannerEntry> entries;
     {
         unsigned int evaluatedImages = 0;
-        unsigned int totalScannedWindows = 0;
 
         std::cout << "\rProgress 0%";
         std::cout.flush();
-
         tbb::queuing_mutex mutex;
         tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
                           ParallelScan<WeakHypothesisType>(&images,
-                                                           &totalScannedWindows,
+                                                           &totalPositiveInstances,
+                                                           &totalNegativeInstances,
                                                            &evaluatedImages,
                                                            &strongHypothesis,
                                                            &entries,
                                                            &mutex) );
 
-        std::cout << "\nTotal scanned windows:" << totalScannedWindows << std::endl;
+        std::cout << "\rTotal positive windows: " << totalPositiveInstances;
+        std::cout << "\nTotal negative windows: " << totalNegativeInstances;
+        std::cout << "\nTotal scanned windows : " << totalPositiveInstances + totalNegativeInstances << std::endl;
     }
 
-    std::cout << "\nBuilding ROC curve...";
-    std::cout.flush();
-
+    std::cout << "\nBuilding ROC curve..." << std::endl;
+    double areaUnderTheCurve = .0f;
     std::vector<RocPoint> rocCurve;
-    fromScannerEntries2RocCurve(entries, rocCurve);
-    std::cout << "Built a ROC curve with " << rocCurve.size() << " ROC points.\n";
+    fromScannerEntries2RocCurve(totalPositiveInstances, totalNegativeInstances, entries, rocCurve, areaUnderTheCurve);
+    std::cout << "\rBuilt a ROC curve with " << rocCurve.size() << " ROC points and total area " << areaUnderTheCurve << ".\n";
 
     {
         std::cout << "\nWriting ROC curve to file " << rocCurveFile << '.' << std::endl;
