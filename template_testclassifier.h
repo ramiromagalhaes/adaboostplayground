@@ -478,8 +478,9 @@ int ___main(const std::string testImagesIndexFileName,
     int totalFacesInGroundTruth = 0;
     std::vector<ImageAndGroundTruth> images;
 
-    //I can use the getTestImages__2 to test the classifier an image database like those used in trainning.
-    //Remember to change the name of the ___main parameters.
+    //I can use the getTestImages__2 to test the classifier an image database like those used in trainning, i.e.,
+    //a huge image composed of many 20x20 pixels images.
+    //If doinf this, remember to also change the name of the ___main function parameters.
     //if ( !getTestImages__2(positivesFile, negativesFile, images, totalFacesInGroundTruth) )
     if ( !getTestImages(testImagesIndexFileName, groundTruthFileName, images, totalFacesInGroundTruth) )
     {
