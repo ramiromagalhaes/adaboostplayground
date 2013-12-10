@@ -18,7 +18,7 @@ class StrongHypothesis {
 private:
 
     /**
-     * @brief The entry class holds the WeakHypothesis pointer and it's weight.
+     * @brief The entry class holds the WeakHypothesis and it's weight.
      */
     class entry {
     public:
@@ -44,7 +44,9 @@ public:
                          writeToStreamOnInsert(false) {}
 
     /**
-     * This constructor should never be used, except during trainning.
+     * This constructor should only be used during trainning. It sets the instance
+     * of this class to write to a file located at the path_ argument the new entries
+     * (alpha and WeakHypothesisType instances) that are insert()'ed in the instance.
      */
     StrongHypothesis(std::string path_) : threshold(0),
                                           hypothesis(0),
