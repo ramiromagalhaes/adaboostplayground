@@ -412,6 +412,10 @@ bool getTestImages(const std::string indexFileName,
 
 
 
+/**
+ * Use getTestImages__2 to test the classifier with an image database like those used in trainning,
+ * i.e., a huge image composed of many 20x20 pixels images.
+ */
 bool getTestImages__2(const std::string positivesFile,
                       const std::string negativesFile,
                       std::vector<ImageAndGroundTruth> & images,
