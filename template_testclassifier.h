@@ -247,10 +247,11 @@ inline double trapezoid_area(const double x1, const double x2, const double y1, 
     return std::abs(x1 - x2) * ((y1 + y2) / 2.0f);
 }
 
-void fromScannerEntries2RocCurve(const unsigned int total_positives, const unsigned int total_negatives,
-                                 tbb::concurrent_vector<ScannerEntry> & entries,
-                                 std::vector<RocPoint> & rocCurve,
-                                 double & area_under_the_curve)
+void scannerEntries2RocCurve(const unsigned int total_positives,
+                             const unsigned int total_negatives,
+                             tbb::concurrent_vector<ScannerEntry> & entries,
+                             std::vector<RocPoint> & rocCurve,
+                             double & area_under_curve)
 {
     //As seen in "An introduction to ROC analysis, from Tom Fawcett, 2005, Elsevier."
     tbb::parallel_sort(entries.begin(), entries.end());
@@ -260,7 +261,7 @@ void fromScannerEntries2RocCurve(const unsigned int total_positives, const unsig
     unsigned int false_positives_prev = 0;
     unsigned int true_positives_prev = 0;
 
-    area_under_the_curve = .0f;
+    area_under_curve = .0f;
 
     float f_prev = -std::numeric_limits<float>::max(); //http://stackoverflow.com/questions/3529394/obtain-minimum-negative-float-value-in-c
 
@@ -273,14 +274,14 @@ void fromScannerEntries2RocCurve(const unsigned int total_positives, const unsig
             p.falsePositives = false_positives;
             rocCurve.push_back(p);
 
-            area_under_the_curve += trapezoid_area(false_positives, false_positives_prev, true_positives, true_positives_prev);
+            area_under_curve += trapezoid_area(false_positives, false_positives_prev, true_positives, true_positives_prev);
             false_positives_prev = false_positives;
             true_positives_prev = true_positives;
 
             f_prev = entry->featureValue;
         }
 
-        true_positives += entry->isTrueFaceRegion;
+        true_positives  +=  entry->isTrueFaceRegion;
         false_positives += !entry->isTrueFaceRegion;
     }
 
@@ -289,8 +290,8 @@ void fromScannerEntries2RocCurve(const unsigned int total_positives, const unsig
     p.falsePositives = false_positives;
     rocCurve.push_back(p); //This is 1, 1
 
-    area_under_the_curve += trapezoid_area(total_negatives, false_positives_prev, total_negatives, true_positives_prev);
-    area_under_the_curve /= (double)total_positives * total_negatives; // scale from P * N onto the unit square
+    area_under_curve += trapezoid_area(total_negatives, false_positives_prev, total_negatives, true_positives_prev);
+    area_under_curve /= (double)total_positives * total_negatives; // scale from P * N onto the unit square
 }
 
 
@@ -498,6 +499,7 @@ int ___main(const std::string testImagesIndexFileName,
 
         std::cout << "\rProgress 0%";
         std::cout.flush();
+
         tbb::queuing_mutex mutex;
         tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
                           ParallelScan<WeakHypothesisType>(&images,
@@ -516,7 +518,7 @@ int ___main(const std::string testImagesIndexFileName,
     std::cout << "\nBuilding ROC curve..." << std::endl;
     double areaUnderTheCurve = .0f;
     std::vector<RocPoint> rocCurve;
-    fromScannerEntries2RocCurve(totalPositiveInstances, totalNegativeInstances, entries, rocCurve, areaUnderTheCurve);
+    scannerEntries2RocCurve(totalPositiveInstances, totalNegativeInstances, entries, rocCurve, areaUnderTheCurve);
     std::cout << "\rBuilt a ROC curve with " << rocCurve.size() << " ROC points and total area " << areaUnderTheCurve << ".\n";
 
     {
