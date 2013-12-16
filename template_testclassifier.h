@@ -14,6 +14,8 @@
 #include <boost/unordered_map.hpp>
 #include <boost/filesystem.hpp>
 
+#include "testdatabase.h"
+
 #include "common.h"
 #include "stronghypothesis.h"
 #include "scanner.h"
@@ -151,17 +153,9 @@ public:
 
 private:
     StrongHypothesis<WeakClassifierType> const * const classifier;
-    const int initial_size; //initial width and height of the detector
+    const int initial_size;     //initial width and height of the detector
     const float scaling_factor; //how mutch the scale will change per iteration
-    const float delta; //window shift constant
-};
-
-
-
-struct ImageAndGroundTruth
-{
-    cv::Mat image;
-    std::vector<cv::Rect> faces;
+    const float delta;          //window shift constant
 };
 
 
@@ -296,164 +290,9 @@ void scannerEntries2RocCurve(const unsigned int total_positives,
 
 
 
-typedef boost::unordered_map< std::string, std::vector<cv::Rect> > GroundTruthMap;
-
-/**
- * Loads the instance of GroundTruthMap gtmap with ground truth data found in groundTruthFile.
- * The total amount of faces will be recorded in totalFaces output parameter.
- */
-bool getGroundTruth(const std::string groundTruthFile, GroundTruthMap & gtmap, int & totalFaces)
-{
-    std::ifstream truthStream(groundTruthFile.c_str());
-    if (!truthStream.is_open())
-    {
-        return false;
-    }
-
-    while( !truthStream.eof() )
-    {
-        std::string line;
-        std::getline(truthStream, line);
-
-        if (line.empty())
-        {
-            break;
-        }
-
-        std::string imageFileName;
-        cv::Point2f leftEye, rightEye;
-
-        std::istringstream lineStream(line);
-        lineStream >> imageFileName
-                   >> leftEye.x
-                   >> leftEye.y
-                   >> rightEye.x
-                   >> rightEye.y;
-
-        //Calculate face region from eye position.
-        //Here this is done exactly as I extract faces from the BioId database.
-        const float distanceBetweenEyes = cv::norm(rightEye-leftEye);
-        const float roiWidthHeight = distanceBetweenEyes / 0.5154f;
-        cv::Rect faceRegion(rightEye.x - roiWidthHeight * 0.2423f,
-                            rightEye.y - roiWidthHeight * 0.25f,
-                            roiWidthHeight, roiWidthHeight);
-
-        if ( gtmap.find(imageFileName) == gtmap.end() )
-        {
-            std::vector<cv::Rect> rects;
-            rects.push_back(faceRegion);
-
-            gtmap.insert( std::make_pair(imageFileName, rects) );
-        }
-        else
-        {
-            gtmap[imageFileName].push_back(faceRegion);
-        }
-
-        ++totalFaces;
-    }
-
-    return true;
-}
 
 
 
-bool getTestImages(const std::string indexFileName,
-                   const std::string groundTruthFileName,
-                   std::vector<ImageAndGroundTruth> & images,
-                   int & totalFacesInGroundTruth)
-{
-    totalFacesInGroundTruth = 0;
-    GroundTruthMap gtmap;
-
-    if( !getGroundTruth(groundTruthFileName, gtmap, totalFacesInGroundTruth) )
-    {
-        return false;
-    }
-
-    std::ifstream indexStream(indexFileName.c_str());
-    if (!indexStream.is_open())
-    {
-        return false;
-    }
-
-    while( !indexStream.eof() )
-    {
-        std::string imagePath;
-        std::getline(indexStream, imagePath);
-
-        if (imagePath.empty())
-        {
-            break;
-        }
-
-        ImageAndGroundTruth iagt;
-        iagt.image = cv::imread(imagePath, cv::DataType<unsigned char>::type);
-        if ( !iagt.image.data )
-        {
-            return false;
-        }
-        const std::string filename = boost::filesystem::path(imagePath).filename().native();
-        if (gtmap.find(filename) == gtmap.end())
-        {
-            iagt.faces = std::vector<cv::Rect>(0);
-        }
-        else
-        {
-            iagt.faces = gtmap.at(filename);
-        }
-
-        images.push_back(iagt);
-    }
-
-    indexStream.close();
-    return true;
-}
-
-
-
-/**
- * Use getTestImages__2 to test the classifier with an image database like those used in trainning,
- * i.e., a huge image composed of many 20x20 pixels images.
- */
-bool getTestImages__2(const std::string positivesFile,
-                      const std::string negativesFile,
-                      std::vector<ImageAndGroundTruth> & images,
-                      int & totalFacesInGroundTruth)
-{
-    std::vector<cv::Mat> samples;
-
-    if ( !SampleExtractor::fromImageFile(positivesFile, samples) )
-    {
-        return false;
-    }
-
-    totalFacesInGroundTruth = samples.size();
-    for(std::vector<cv::Mat>::iterator sample = samples.begin(); sample != samples.end(); ++sample)
-    {
-        ImageAndGroundTruth iagt;
-        iagt.image = *sample;
-        iagt.faces.push_back(cv::Rect(0, 0, sample->cols, sample->rows));
-
-        images.push_back(iagt);
-    }
-
-    samples.clear();
-
-    if ( !SampleExtractor::fromImageFile(negativesFile, samples) )
-    {
-        return false;
-    }
-    for(std::vector<cv::Mat>::iterator sample = samples.begin(); sample != samples.end(); ++sample)
-    {
-        ImageAndGroundTruth iagt;
-        iagt.image = *sample;
-
-        images.push_back(iagt);
-    }
-
-    return true;
-}
 
 
 
@@ -483,20 +322,21 @@ int ___main(const std::string testImagesIndexFileName,
     int totalFacesInGroundTruth = 0;
     std::vector<ImageAndGroundTruth> images;
 
-    //I can use the getTestImages__2 to test the classifier an image database like those used in trainning, i.e.,
-    //a huge image composed of many 20x20 pixels images.
-    //If doinf this, remember to also change the name of the ___main function parameters.
-    //if ( !getTestImages__2(positivesFile, negativesFile, images, totalFacesInGroundTruth) )
-    if ( !getTestImages(testImagesIndexFileName, groundTruthFileName, images, totalFacesInGroundTruth) )
     {
-        return 13;
+        TestDatabase database;
+        if ( !database.load(testImagesIndexFileName, groundTruthFileName) )
+        {
+            return 13;
+        }
+        images = database.getImagesAndGroundTruthAsVector(); //TODO strong candidate to ".swap(images);"
+        totalFacesInGroundTruth = database.size_annotations();
     }
     std::cout << "Loaded " << images.size() << " images and " << totalFacesInGroundTruth << " ground truth entries." << std::endl;
 
 
 
-    unsigned int totalPositiveInstances = 0;
-    unsigned int totalNegativeInstances = 0;
+    unsigned int totalPositiveWindows = 0;
+    unsigned int totalNegativeWindows = 0;
     tbb::concurrent_vector<ScannerEntry> entries;
     {
         unsigned int evaluatedImages = 0;
@@ -507,22 +347,22 @@ int ___main(const std::string testImagesIndexFileName,
         tbb::queuing_mutex mutex;
         tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
                           ParallelScan<WeakHypothesisType>(&images,
-                                                           &totalPositiveInstances,
-                                                           &totalNegativeInstances,
+                                                           &totalPositiveWindows,
+                                                           &totalNegativeWindows,
                                                            &evaluatedImages,
                                                            &strongHypothesis,
                                                            &entries,
                                                            &mutex) );
 
-        std::cout << "\rTotal positive windows: " << totalPositiveInstances;
-        std::cout << "\nTotal negative windows: " << totalNegativeInstances;
-        std::cout << "\nTotal scanned windows : " << totalPositiveInstances + totalNegativeInstances << std::endl;
+        std::cout << "\rTotal positive windows: " << totalPositiveWindows;
+        std::cout << "\nTotal negative windows: " << totalNegativeWindows;
+        std::cout << "\nTotal scanned windows : " << totalPositiveWindows + totalNegativeWindows << std::endl;
     }
 
     std::cout << "\nBuilding ROC curve..." << std::endl;
     double areaUnderTheCurve = .0f;
     std::vector<RocPoint> rocCurve;
-    scannerEntries2RocCurve(totalPositiveInstances, totalNegativeInstances, entries, rocCurve, areaUnderTheCurve);
+    scannerEntries2RocCurve(totalPositiveWindows, totalNegativeWindows, entries, rocCurve, areaUnderTheCurve);
     std::cout << "\rBuilt a ROC curve with " << rocCurve.size() << " ROC points and total area " << areaUnderTheCurve << ".\n";
 
     {
