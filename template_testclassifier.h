@@ -60,41 +60,6 @@ struct ScannerEntry
 
 
 
-inline cv::Point2f center(const cv::Rect & rect)
-{
-    return cv::Point(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
-}
-
-
-
-/**
- * The criteria implemented here was taken from Pavani's article "Haar-like features with optimally
- * weighted rectangles for rapid object detection". If rectangle r matches a ground truth considering
- * Pavani's matching criteria, this function returns true.
- */
-inline bool matchesGroundTruth(const cv::Rect & r, const std::vector<cv::Rect> & groundTruths)
-{
-    for (std::vector<cv::Rect>::const_iterator groundTruth = groundTruths.begin(); groundTruth != groundTruths.end(); ++groundTruth )
-    {
-        if ( groundTruth->width  * 0.9f <=  r.width  && r.width  <= groundTruth->width  * 1.1f
-          && groundTruth->height * 0.9f <=  r.height && r.height <= groundTruth->height * 1.1f )
-        {
-            const cv::Point2f rCenter  = center(r);
-            const cv::Point2f gtCenter = center(*groundTruth);
-            float distance = cv::norm(gtCenter - rCenter);
-
-            if ( distance <= groundTruth->width * 0.1f && distance <= groundTruth->height * 0.1f )
-            {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-
-
 /**
  * Iterates over an image producing instances of ScannerEntry. Latter, such entries will be processed
  * so a ROC curve is produced.
@@ -107,6 +72,8 @@ public:
                                                                            initial_size(20),
                                                                            scaling_factor(1.25f),
                                                                            delta(1.5f) {}
+
+
 
     void scan(const cv::Mat & image, const std::vector<cv::Rect> & groundTruth,
               tbb::concurrent_vector<ScannerEntry> & entries,
@@ -152,6 +119,41 @@ public:
     }
 
 private:
+    inline cv::Point2f center(const cv::Rect & rect)
+    {
+        return cv::Point(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
+    }
+
+
+
+    /**
+     * The criteria implemented here was taken from Pavani's article "Haar-like features with optimally
+     * weighted rectangles for rapid object detection". If rectangle r matches a ground truth considering
+     * Pavani's matching criteria, this function returns true.
+     */
+    inline bool matchesGroundTruth(const cv::Rect & r, const std::vector<cv::Rect> & groundTruths)
+    {
+        for (std::vector<cv::Rect>::const_iterator groundTruth = groundTruths.begin(); groundTruth != groundTruths.end(); ++groundTruth )
+        {
+            if ( groundTruth->width  * 0.9f <=  r.width  && r.width  <= groundTruth->width  * 1.1f
+              && groundTruth->height * 0.9f <=  r.height && r.height <= groundTruth->height * 1.1f )
+            {
+                const cv::Point2f rCenter  = center(r);
+                const cv::Point2f gtCenter = center(*groundTruth);
+                const float distance = cv::norm(gtCenter - rCenter);
+
+                if ( distance <= groundTruth->width * 0.1f && distance <= groundTruth->height * 0.1f )
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+
     StrongHypothesis<WeakClassifierType> const * const classifier;
     const int initial_size;     //initial width and height of the detector
     const float scaling_factor; //how mutch the scale will change per iteration
@@ -238,7 +240,9 @@ struct RocPoint
 inline double trapezoid_area(const double x1, const double x2, const double y1, const double y2)
 {
     //As seen in "An introduction to ROC analysis, from Tom Fawcett, 2005, Elsevier."
-    return std::abs(x1 - x2) * ((y1 + y2) / 2.0f);
+    const double base = std::abs(x1 - x2);
+    const double avg_height = (y1 + y2) / 2.0;
+    return  base * avg_height;
 }
 
 void scannerEntries2RocCurve(const unsigned int total_positives,
@@ -287,12 +291,6 @@ void scannerEntries2RocCurve(const unsigned int total_positives,
     area_under_curve += trapezoid_area(total_negatives, false_positives_prev, total_negatives, true_positives_prev);
     area_under_curve /= (double)total_positives * total_negatives; // scale from P * N onto the unit square
 }
-
-
-
-
-
-
 
 
 
