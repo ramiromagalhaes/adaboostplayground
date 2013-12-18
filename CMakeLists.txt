@@ -47,17 +47,9 @@ add_executable( train_my_classifier train_my_classifier.cpp template_trainclassi
 target_link_libraries( train_my_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( train_my_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 
-add_executable( train_my_varnorm_classifier train_my_varnorm_classifier.cpp template_trainclassifier.h ${common_source_files} )
-target_link_libraries( train_my_varnorm_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( train_my_varnorm_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
 add_executable( train_pavani_classifier train_pavani_classifier.cpp template_trainclassifier.h ${common_source_files} )
 target_link_libraries( train_pavani_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( train_pavani_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
-add_executable( train_pavani_varnorm_classifier train_pavani_varnorm_classifier.cpp template_trainclassifier.h ${common_source_files} )
-target_link_libraries( train_pavani_varnorm_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( train_pavani_varnorm_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 
 #TESTING Programs
 add_executable( test_vj_classifier test_vj_classifier.cpp template_testclassifier.h ${common_source_files} )
@@ -68,17 +60,9 @@ add_executable( test_my_classifier test_my_classifier.cpp template_testclassifie
 target_link_libraries( test_my_classifier debug     haarcommon-debug   testdatabase-tools ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( test_my_classifier optimized haarcommon-release testdatabase-tools ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 
-add_executable( test_my_varnorm_classifier test_my_varnorm_classifier.cpp template_testclassifier.h ${common_source_files} )
-target_link_libraries( test_my_varnorm_classifier debug     haarcommon-debug   testdatabase-tools ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( test_my_varnorm_classifier optimized haarcommon-release testdatabase-tools ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
 add_executable( test_pavani_classifier test_pavani_classifier.cpp template_testclassifier.h ${common_source_files} )
 target_link_libraries( test_pavani_classifier debug     haarcommon-debug   testdatabase-tools ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 target_link_libraries( test_pavani_classifier optimized haarcommon-release testdatabase-tools ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
-add_executable( test_pavani_varnorm_classifier test_pavani_varnorm_classifier.cpp template_testclassifier.h ${common_source_files} )
-target_link_libraries( test_pavani_varnorm_classifier debug     haarcommon-debug   testdatabase-tools ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( test_pavani_varnorm_classifier optimized haarcommon-release testdatabase-tools ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
 
 #SHOW Program
 add_executable( detect detect.cpp ${common_source_files} )

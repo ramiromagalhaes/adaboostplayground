@@ -130,7 +130,7 @@ public:
 
 
 
-    //This is supposed to be used only during trainning
+    //This is supposed to be used only during trainning and ROC curve construction
     float featureValue(const Example &example, const float scale = 1.0f) const
     {
         return evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
@@ -155,11 +155,9 @@ typedef ThresholdedWeakClassifier<HaarWavelet, VarianceNormalizedWaveletEvaluato
 
 //Pavani's classifier.
 typedef ThresholdedWeakClassifier<HaarWavelet, IntensityNormalizedWaveletEvaluator> PavaniHaarClassifier;
-typedef ThresholdedWeakClassifier<HaarWavelet, VarianceNormalizedWaveletEvaluator>  PavaniVarNormHaarClassifier;
 
 //My classifier
 typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvaluator> MyHaarClassifier;
-typedef ThresholdedWeakClassifier<MyHaarWavelet, VarianceNormalizedWaveletEvaluator>  MyVarNormHaarClassifier;
 
 
 
