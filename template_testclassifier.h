@@ -39,15 +39,15 @@ struct ScannerEntry
 {
     cv::Rect position;
     float featureValue;
-    bool isTrueFaceRegion;
+    bool isPositive;
 
-    ScannerEntry() : position(0, 0, 0, 0), featureValue(0), isTrueFaceRegion(false) {}
+    ScannerEntry() : position(0, 0, 0, 0), featureValue(0), isPositive(false) {}
 
     ScannerEntry(const cv::Rect & position_,
                  const float featureValue_,
                  const bool validDetection_) : position(position_),
                                                featureValue(featureValue_),
-                                               isTrueFaceRegion(validDetection_) {}
+                                               isPositive(validDetection_) {}
 
     /**
      * The "natural" ordering for a list of instances of this class is the decreasing order.
@@ -101,7 +101,7 @@ public:
                 for (roi.y = 1; roi.y <= integralSum.rows - roi.height; roi.y += shift)
                 {
                     cv::Rect exampleRoi = roi;
-                    --exampleRoi.x; //Correctly position the roi over the integral images
+                    --exampleRoi.x; //Correctly position the roi over the integral images so we can 'cut' them properly
                     --exampleRoi.y; //Note that we iterate over x and y from 1 (see the fors above)
                     exampleRoi.width = exampleRoi.height = exampleRoi.height + 1; //integral images have +1 sizes if compared to the original image
 
@@ -279,8 +279,8 @@ void scannerEntries2RocCurve(const unsigned int total_positives,
             f_prev = entry->featureValue;
         }
 
-        true_positives  +=  entry->isTrueFaceRegion;
-        false_positives += !entry->isTrueFaceRegion;
+        true_positives  +=  entry->isPositive;
+        false_positives += !entry->isPositive;
     }
 
     RocPoint p;
@@ -312,7 +312,7 @@ int ___main(const std::string testImagesIndexFileName,
             return 11;
         }
 
-        std::cout << "Loaded strong classifier." << std::endl;
+        std::cout << "Loaded strong classifier from " << strongHypothesisFile << std::endl;
     }
 
 
