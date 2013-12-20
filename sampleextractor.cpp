@@ -56,6 +56,41 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size,
     return true;
 }
 
+bool SampleExtractor::extractSamplesWithIndex(const std::string &imagePath, const std::string &indexPath, std::vector<LabeledExample> &samples, Classification c)
+{
+    std::ifstream indexStream(indexPath.c_str());
+    if (!indexStream.is_open())
+    {
+        return false;
+    }
+
+    const cv::Mat full_image = cv::imread(imagePath, cv::DataType<unsigned char>::type);
+    if (full_image.data == 0)
+    {
+        return false;
+    }
+
+    while(! indexStream.eof() )
+    {
+        std::string line;
+        std::getline(indexStream, line);
+
+        if (line.empty())
+        {
+            break;
+        }
+
+        std::istringstream lineInputStream(line);
+        int index;
+        lineInputStream >> index;
+
+        const cv::Rect sampleRoi(index * 20, 0, 20, 20);
+        const cv::Mat sample = full_image(sampleRoi);
+
+        samples.push_back(LabeledExample(sample, c));
+    }
+}
+
 bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<LabeledExample> &samples, Classification c)
 {
     std::ifstream indexStream(indexPath.c_str());
