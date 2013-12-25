@@ -89,6 +89,8 @@ bool SampleExtractor::extractSamplesWithIndex(const std::string &imagePath, cons
 
         samples.push_back(LabeledExample(sample, c));
     }
+
+    return true;
 }
 
 bool SampleExtractor::fromIndexFile(const std::string & indexPath, std::vector<LabeledExample> &samples, Classification c)

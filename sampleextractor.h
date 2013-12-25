@@ -25,7 +25,7 @@ public:
                                     std::vector<unsigned int> *sampleIndexes = 0);
 
     /**
-     * 'Cuts' samples from an image using an index. The index 'points' to parts of the big image.
+     * 'Cuts' samples from an image using an index. The index 'points' to rectangles inside the big image.
      */
     static bool extractSamplesWithIndex(const std::string &imagePath, const std::string &indexPath, std::vector<LabeledExample> &samples, Classification c);
 
