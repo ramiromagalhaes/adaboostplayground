@@ -19,6 +19,7 @@
 template<typename WeakHypothesisType>
 int ___main(const std::string positivesFile,
            const std::string negativesFile,
+           const std::string negativesIndexFile,
            const std::string waveletsFile,
            const std::string strongHypothesisFile,
            const unsigned int maximum_iterations)
@@ -35,7 +36,7 @@ int ___main(const std::string positivesFile,
 
         //Viola and Jones state they used "6000 such non-face sub-windows" while building the cascade (2004, section 5.2).
         //On section 4.2 they show a different "simple experiment".
-        if ( !SampleExtractor::extractRandomSample(6000, negativesFile, negativeSamples, no) )
+        if ( !SampleExtractor::extractSamplesWithIndex(negativesFile, negativesIndexFile, negativeSamples, no) )
         {
             return 17;
         }
