@@ -288,7 +288,7 @@ void scannerEntries2RocCurve(const unsigned int total_positives,
     p.falsePositives = false_positives;
     rocCurve.push_back(p); //This is 1, 1
 
-    area_under_curve += trapezoid_area(total_negatives, false_positives_prev, total_negatives, true_positives_prev);
+    area_under_curve += trapezoid_area(total_negatives, false_positives_prev, total_positives, true_positives_prev);
     area_under_curve /= (double)total_positives * total_negatives; // scale from P * N onto the unit square
 }
 
