@@ -1,69 +1,29 @@
-cmake_minimum_required(VERSION 2.8)
-
-project(adaboostplayground)
+project( adaboostplayground )
+cmake_minimum_required( VERSION 2.8 )
 
 # Debug and release configurations
-set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -D_DEBUG -Wextra -Wall -pedantic")
-set(CMAKE_CSS_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
+set( CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} -ggdb -D_DEBUG -Wextra -Wall -pedantic" )
+set( CMAKE_CSS_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall" )
 
-find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui)
+# This is where all binaries should be placed
+set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} )
+
+# Include OpenCV and Boost libraries
+find_package( OpenCV REQUIRED COMPONENTS core imgproc highgui )
 find_package( Boost REQUIRED COMPONENTS filesystem system )
+# TODO What about Intel TBB?
+
+# The common header files found in this project
+include_directories( common )
 
 # Depends on my haarcommon library
 include_directories( /home/ramiro/workspace/haarcommon/src/ )
-
-# Reference to external lib
-# You can define two import-locations: one for debug and one for release.
 add_library( haarcommon-release SHARED IMPORTED )
+add_library( haarcommon-debug   SHARED IMPORTED )
 set_target_properties( haarcommon-release PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build/src/libhaarcommon.so )
-add_library( haarcommon-debug SHARED IMPORTED )
-set_target_properties( haarcommon-debug PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build-debug/src/libhaarcommon.so )
+set_target_properties( haarcommon-debug   PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build-debug/src/libhaarcommon.so )
 
+# The subprojects
+add_subdirectory(train)
+add_subdirectory(test)
 
-
-set(common_source_files
-    common.h
-    labeledexample.h
-    stronghypothesis.h
-    adaboost.h
-    weakhypothesis.h
-    sampleextractor.h
-    sampleextractor.cpp)
-
-set(test_source_files
-    scanner.h
-    testdatabase.h
-    testdatabase.cpp)
-
-
-
-#TRAINNING Programs
-add_executable( train_vj_classifier train_vj_classifier.cpp template_trainclassifier.h ${common_source_files} )
-target_link_libraries( train_vj_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( train_vj_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
-add_executable( train_my_classifier train_my_classifier.cpp template_trainclassifier.h ${common_source_files} )
-target_link_libraries( train_my_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( train_my_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
-add_executable( train_pavani_classifier train_pavani_classifier.cpp template_trainclassifier.h ${common_source_files} )
-target_link_libraries( train_pavani_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( train_pavani_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
-#TESTING Programs
-add_executable( test_vj_classifier test_vj_classifier.cpp template_testclassifier.h ${common_source_files} ${test_source_files} )
-target_link_libraries( test_vj_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( test_vj_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
-add_executable( test_my_classifier test_my_classifier.cpp template_testclassifier.h ${common_source_files} ${test_source_files} )
-target_link_libraries( test_my_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( test_my_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
-add_executable( test_pavani_classifier test_pavani_classifier.cpp template_testclassifier.h ${common_source_files} ${test_source_files} )
-target_link_libraries( test_pavani_classifier debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( test_pavani_classifier optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-
-#SHOW Program
-add_executable( detect detect.cpp ${common_source_files} )
-target_link_libraries( detect debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)
-target_link_libraries( detect optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} tbb)

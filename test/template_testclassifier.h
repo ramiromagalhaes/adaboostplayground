@@ -20,7 +20,6 @@
 #include "stronghypothesis.h"
 #include "scanner.h"
 #include "weakhypothesis.h"
-#include "sampleextractor.h"
 
 
 
