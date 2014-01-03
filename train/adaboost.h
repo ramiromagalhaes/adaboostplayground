@@ -333,20 +333,6 @@ public:
             //A progress counter
             unsigned long count = 0;
 
-            /*
-             *USEFUL SINGLE THREAD DEBUG THING
-            DecisionStumpWeakLearner dswl(&weak_learner_mutex,
-                                     &allSamples,
-                                     &weight_distribution,
-                                     &hypothesis,
-                                     &weighted_error,
-                                     &weak_hypothesis_index,
-                                     &count,
-                                     progressCallback);
-            tbb::blocked_range< unsigned int > range(0, hypothesis.size());
-            dswl( range );
-            */
-
             //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
             tbb::parallel_for( tbb::blocked_range< unsigned int >(0, hypothesis.size()),
                                DecisionStumpWeakLearner(&weak_learner_mutex,
@@ -366,17 +352,6 @@ public:
                 return false;
             }
 
-
-            /*
-             * PIECE OF CODE USUFUL FOR DEBUGGING
-            #include <sstream>
-            std::stringstream oss;
-            oss << "file-" << t << ".csv";
-            std::ofstream debugFile(oss.str().c_str());
-            std::vector<weight_type> old(weight_distribution.size());
-            std::copy(weight_distribution.begin(), weight_distribution.end(), old.begin());
-            */
-
             //Now we just have to update the weight distribution of the samples.
             //Normalization factor is not inside the block because we report it to the progressCallback.
             const weight_type normalizationFactor =
@@ -384,15 +359,6 @@ public:
                                               alpha,
                                               hypothesis[weak_hypothesis_index],
                                               weight_distribution );
-
-            /*
-            for( WeightVector::size_type i = 0; i < allSamples.size(); ++i )
-            {
-                debugFile << old[i] << ' ' << hypothesis[weak_hypothesis_index].classify( *(allSamples[i]) ) << ' ' << allSamples[i]->getLabel() << ' ' << weight_distribution[i] << std::endl;
-            }
-            debugFile.close();
-            */
-
 
             if (progressCallback)
             {
