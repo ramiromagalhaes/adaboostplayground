@@ -1,6 +1,5 @@
 # TRAINING tools build file
 set(train_source_files
-    weaklearner.h
     sampleextractor.h
     sampleextractor.cpp
     adaboost.h
