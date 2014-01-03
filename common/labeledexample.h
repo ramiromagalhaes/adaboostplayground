@@ -76,11 +76,4 @@ public:
 
 
 
-/**
- * @brief LEContainer LabeledExample container type.
- */
-typedef std::vector< LabeledExample > LEContainer;
-
-
-
 #endif // LABELEDEXAMPLE_H
