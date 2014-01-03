@@ -285,7 +285,12 @@ public:
     Adaboost(ProgressCallback * progressCallback_) : progressCallback(progressCallback_),
                                                      weak_learner_mutex() {}
 
-    virtual ~Adaboost() {}
+    ~Adaboost() {
+        if ( !progressCallback )
+        {
+            delete progressCallback;
+        }
+    }
 
     /**
      *
