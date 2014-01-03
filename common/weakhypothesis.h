@@ -15,6 +15,10 @@
 #include "labeledexample.h"
 
 
+
+/**
+ * Loads many WeakHypothesis found in a file to a vector of HaarClassifierType.
+ */
 template<typename HaarClassifierType>
 bool loadHaarClassifiers(const std::string &filename, std::vector<HaarClassifierType> &classifiers)
 {
@@ -56,6 +60,9 @@ bool loadHaarClassifiers(const std::string &filename, std::vector<HaarClassifier
 
 
 
+/**
+ * Template for a weak classifier that uses a Haar-like feature.
+ */
 template <typename FeatureType, typename HaarEvaluatorType>
 class ThresholdedWeakClassifier
 {
@@ -141,7 +148,7 @@ public:
         return featureValue(example, scale) * p <= theta * p ? yes : no;
     }
 
-protected:
+private:
     FeatureType feature;
     HaarEvaluatorType evaluator; //TODO use a static variable
     float theta;
@@ -158,6 +165,68 @@ typedef ThresholdedWeakClassifier<HaarWavelet, IntensityNormalizedWaveletEvaluat
 
 //My classifier
 typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvaluator> MyHaarClassifier;
+
+
+
+/**
+ * A classifier that uses as classification criteria the naive Bayes rule.
+ */
+template <typename FeatureType, typename PositiveHaarEvaluatorType, typename NegativeHaarEvaluatorType>
+class NaiveBayesWeakClassifier
+{
+public:
+    NaiveBayesWeakClassifier() {}
+
+    NaiveBayesWeakClassifier(FeatureType & f, PositiveHaarEvaluatorType posEval, NegativeHaarEvaluatorType negEval) : feature(f),
+                                                                                                                      positiveEvaluator(posEval),
+                                                                                                                      negativeEvaluator(negEval) {}
+
+    NaiveBayesWeakClassifier(const NaiveBayesWeakClassifier & c) : feature(c.feature),
+                                                                   positiveEvaluator(c.positiveEvaluator),
+                                                                   negativeEvaluator(c.negativeEvaluator) {}
+
+    NaiveBayesWeakClassifier & operator=(const NaiveBayesWeakClassifier & c)
+    {
+        feature = c.feature;
+        positiveEvaluator = c.positiveEvaluator;
+        negativeEvaluator = c.negativeEvaluator;
+
+        return *this;
+    }
+
+    ~NaiveBayesWeakClassifier() {}
+
+    virtual bool read(std::istream & in)
+    {
+        return feature.read(in)
+                && positiveEvaluator.read(in)
+                && negativeEvaluator(in);
+    }
+
+    virtual bool write(std::ostream & out) const
+    {
+        return feature.write(out)
+                && positiveEvaluator.write(out)
+                && negativeEvaluator(out);
+    }
+
+    //This is supposed to be used only during trainning and ROC curve construction
+    float featureValue(const Example &example, const float scale = 1.0f) const
+    {
+        //TODO review me!!!
+        return positiveEvaluator(example, scale) - negativeEvaluator(example, scale);
+    }
+
+    Classification classify(const Example &example, const float scale = 1.0f) const
+    {
+        return positiveEvaluator(example, scale) < negativeEvaluator(example, scale) ? yes : no;
+    }
+
+private:
+    FeatureType feature;
+    PositiveHaarEvaluatorType positiveEvaluator;
+    NegativeHaarEvaluatorType negativeEvaluator;
+};
 
 
 
