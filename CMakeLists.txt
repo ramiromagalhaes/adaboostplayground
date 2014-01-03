@@ -24,6 +24,7 @@ set_target_properties( haarcommon-release PROPERTIES IMPORTED_LOCATION /home/ram
 set_target_properties( haarcommon-debug   PROPERTIES IMPORTED_LOCATION /home/ramiro/workspace/haarcommon-build-debug/src/libhaarcommon.so )
 
 # The subprojects
+add_subdirectory(common)
 add_subdirectory(train)
 add_subdirectory(test)
 
