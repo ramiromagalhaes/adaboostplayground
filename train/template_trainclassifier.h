@@ -49,7 +49,7 @@ int ___main(const std::string positivesFile,
         std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 
-    Adaboost<WeakHypothesisType> boosting(new SimpleProgressCallback());
+    Adaboost<WeakHypothesisType> boosting;
 
     try {
         boosting.train(positiveSamples,

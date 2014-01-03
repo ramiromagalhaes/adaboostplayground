@@ -279,7 +279,7 @@ protected:
 
 
 public:
-    Adaboost() : progressCallback(0),
+    Adaboost() : progressCallback(new SimpleProgressCallback()),
                  weak_learner_mutex() {}
 
     Adaboost(ProgressCallback * progressCallback_) : progressCallback(progressCallback_),

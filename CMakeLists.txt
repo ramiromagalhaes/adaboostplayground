@@ -27,4 +27,3 @@ set_target_properties( haarcommon-debug   PROPERTIES IMPORTED_LOCATION /home/ram
 add_subdirectory(common)
 add_subdirectory(train)
 add_subdirectory(test)
-
