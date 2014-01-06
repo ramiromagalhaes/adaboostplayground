@@ -171,7 +171,7 @@ typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvalu
 /**
  * A classifier that uses as classification criteria the naive Bayes rule.
  */
-template <typename FeatureType, typename PositiveHaarEvaluatorType, typename NegativeHaarEvaluatorType>
+template <typename FeatureType, typename PositiveHaarEvaluatorType, typename NegativeHaarEvaluatorType> //TODO do not use TEMPLATES; use a Strategy instead.
 class NaiveBayesWeakClassifier
 {
 public:
@@ -226,6 +226,44 @@ private:
     FeatureType feature;
     PositiveHaarEvaluatorType positiveEvaluator;
     NegativeHaarEvaluatorType negativeEvaluator;
+
+
+    class PositiveHaarEvaluator {
+    public:
+        PositiveHaarEvaluator() {}
+        PositiveHaarEvaluator(std::vector<feature_value_type> & mean__,
+                              cv::Mat< cv::DataType<feature_value_type>::type > & covarMatrix__)
+        {
+            mean = mean__;
+            covarMatrix = covarMatrix__;
+        }
+
+        operator() (Example &example, const float scale = 1.0f) const
+        {
+            //TODO get SRFS value from example and scale
+            //TODO get its probability to happen. consider boost: http://www.boost.org/doc/libs/1_53_0/libs/math/doc/sf_and_dist/html/
+        }
+
+    private:
+        std::vector<feature_value_type> mean;
+        cv::Mat< cv::DataType<feature_value_type>::type > covarMatrix; //TODO consider using BOOST statistics module?
+    };
+
+    class NegativeHaarEvaluator {
+    public:
+        NegativeHaarEvaluator() {}
+        NegativeHaarEvaluator()
+        {
+            //Sets the histogram
+        }
+
+        operator() (Example &example, const float scale = 1.0f) const
+        {
+            //TODO get SRFS value from example and scale
+            //TODO create a hash from the SRFS value to seek for its probability in the histogram table.
+        }
+    };
+
 };
 
 
