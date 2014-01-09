@@ -8,6 +8,8 @@
 
 #include <opencv2/core/core.hpp>
 
+#include <boost/math/distributions/normal.hpp>
+
 #include <haarwavelet.h>
 #include <haarwaveletevaluators.h>
 
@@ -171,25 +173,25 @@ typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvalu
 /**
  * A classifier that uses as classification criteria the naive Bayes rule.
  */
-template <typename FeatureType, typename PositiveHaarEvaluatorType, typename NegativeHaarEvaluatorType> //TODO do not use TEMPLATES; use a Strategy instead.
+template <typename FeatureType>
 class NaiveBayesWeakClassifier
 {
 public:
     NaiveBayesWeakClassifier() {}
 
-    NaiveBayesWeakClassifier(FeatureType & f, PositiveHaarEvaluatorType posEval, NegativeHaarEvaluatorType negEval) : feature(f),
-                                                                                                                      positiveEvaluator(posEval),
-                                                                                                                      negativeEvaluator(negEval) {}
+    NaiveBayesWeakClassifier(FeatureType & f) : feature(f),
+                                                positiveProbability(NormalFeatureValueProbability()),
+                                                negativeProbability(HistogramFeatureValueProbability()) {}
 
     NaiveBayesWeakClassifier(const NaiveBayesWeakClassifier & c) : feature(c.feature),
-                                                                   positiveEvaluator(c.positiveEvaluator),
-                                                                   negativeEvaluator(c.negativeEvaluator) {}
+                                                                   positiveProbability(c.positiveProbability),
+                                                                   negativeProbability(c.negativeProbability) {}
 
     NaiveBayesWeakClassifier & operator=(const NaiveBayesWeakClassifier & c)
     {
         feature = c.feature;
-        positiveEvaluator = c.positiveEvaluator;
-        negativeEvaluator = c.negativeEvaluator;
+        positiveProbability = c.positiveProbability;
+        negativeProbability = c.negativeProbability;
 
         return *this;
     }
@@ -199,71 +201,133 @@ public:
     virtual bool read(std::istream & in)
     {
         return feature.read(in)
-                && positiveEvaluator.read(in)
-                && negativeEvaluator(in);
+                && positiveProbability.read(in)
+                && negativeProbability.read(in);
     }
 
     virtual bool write(std::ostream & out) const
     {
         return feature.write(out)
-                && positiveEvaluator.write(out)
-                && negativeEvaluator(out);
+                && positiveProbability.write(out)
+                && negativeProbability.write(out);
     }
 
     //This is supposed to be used only during trainning and ROC curve construction
     float featureValue(const Example &example, const float scale = 1.0f) const
     {
         //TODO review me!!!
-        return positiveEvaluator(example, scale) - negativeEvaluator(example, scale);
+        return positiveProbability(0) - negativeProbability(0);
     }
 
     Classification classify(const Example &example, const float scale = 1.0f) const
     {
-        return positiveEvaluator(example, scale) < negativeEvaluator(example, scale) ? yes : no;
+        return positiveProbability(0) < negativeProbability(0) ? yes : no;
     }
 
 private:
-    FeatureType feature;
-    PositiveHaarEvaluatorType positiveEvaluator;
-    NegativeHaarEvaluatorType negativeEvaluator;
 
-
-    class PositiveHaarEvaluator {
+    /**
+     * Estimates the probability of a certain feature value being picked using a normal
+     * (Gaussian) distribution with the specified mean and standard deviation.
+     */
+    class NormalFeatureValueProbability {
     public:
-        PositiveHaarEvaluator() {}
-        PositiveHaarEvaluator(std::vector<feature_value_type> & mean__,
-                              cv::Mat< cv::DataType<feature_value_type>::type > & covarMatrix__)
+        NormalFeatureValueProbability() {}
+        NormalFeatureValueProbability(feature_value_type mean, feature_value_type stdDev)
         {
-            mean = mean__;
-            covarMatrix = covarMatrix__;
+            distribution = boost::math::normal_distribution<feature_value_type>(mean, stdDev);
         }
 
-        operator() (Example &example, const float scale = 1.0f) const
+        bool read(std::istream & in)
         {
-            //TODO get SRFS value from example and scale
-            //TODO get its probability to happen. consider boost: http://www.boost.org/doc/libs/1_53_0/libs/math/doc/sf_and_dist/html/
+            feature_value_type mean, stdDev;
+            in >> mean
+               >> stdDev;
+
+            distribution = boost::math::normal_distribution(mean, stdDev);
+            return true;
+        }
+
+        bool write(std::ostream & out) const
+        {
+            out << ' '
+                << distribution.mean() << ' '
+                << distribution.standard_deviation();
+
+            return true;
+        }
+
+        feature_value_type operator() (const feature_value_type featureValue) const
+        {
+            return boost::math::pdf(distribution, featureValue);
         }
 
     private:
-        std::vector<feature_value_type> mean;
-        cv::Mat< cv::DataType<feature_value_type>::type > covarMatrix; //TODO consider using BOOST statistics module?
+        boost::math::normal_distribution<feature_value_type> distribution;
     };
 
-    class NegativeHaarEvaluator {
+    /**
+     * Estimates the probability of a certain feature value using a 100 buckets histogram. It is
+     * assumed that the feature values ranges from -sqrt(2) to +sqrt(2).
+     */
+    class HistogramFeatureValueProbability {
     public:
-        NegativeHaarEvaluator() {}
-        NegativeHaarEvaluator()
+        HistogramFeatureValueProbability() {}
+        HistogramFeatureValueProbability(std::vector<feature_value_type> &histogram_)
         {
-            //Sets the histogram
+            histogram = histogram_;
         }
 
-        operator() (Example &example, const float scale = 1.0f) const
+        bool read(std::istream & in)
         {
-            //TODO get SRFS value from example and scale
-            //TODO create a hash from the SRFS value to seek for its probability in the histogram table.
+            for (int i = 0; i < 100; ++i)
+            {
+                feature_value_type p;
+                in >> p;
+                histogram.push_back(p);
+            }
+
+            if (i == 100)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
+
+        bool write(std::ostream & out) const
+        {
+            for (int i = 0; i < 100; ++i)
+            {
+                out << histogram[i];
+            }
+
+            if (i == 100)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        feature_value_type operator() (const feature_value_type featureValue) const
+        {
+            int index = (int)(50 * featureValue / std::sqrt(2)) + 50;
+            return histogram[index];
+        }
+
+        std::vector<feature_value_type> histogram;
     };
 
+
+
+    FeatureType feature;
+    NormalFeatureValueProbability positiveProbability;
+    HistogramFeatureValueProbability negativeProbability;
 };
 
 
