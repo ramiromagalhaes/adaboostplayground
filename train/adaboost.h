@@ -19,6 +19,8 @@
  */
 struct ProgressCallback
 {
+    virtual ~ProgressCallback() =0;
+
     virtual void beginAdaboostIteration(const unsigned int iteration) =0;
 
     virtual void tick (const unsigned long current, const unsigned long total) =0;
@@ -28,6 +30,9 @@ struct ProgressCallback
                                      const weight_type lowest_classifier_error,
                                      const unsigned int classifier_idx) =0;
 };
+
+//http://stackoverflow.com/questions/8513408/c-abstract-base-class-constructors-destructors-general-correctness
+ProgressCallback::~ProgressCallback() {} //All destructors must exist
 
 /**
  * A simple implementation of a ProgressCallback.
