@@ -244,7 +244,7 @@ private:
             in >> mean
                >> stdDev;
 
-            distribution = boost::math::normal_distribution(mean, stdDev);
+            distribution = boost::math::normal_distribution<feature_value_type>(mean, stdDev);
             return true;
         }
 
@@ -280,7 +280,8 @@ private:
 
         bool read(std::istream & in)
         {
-            for (int i = 0; i < 100; ++i)
+            int i = 0;
+            for (; i < 100; ++i)
             {
                 feature_value_type p;
                 in >> p;
@@ -299,7 +300,8 @@ private:
 
         bool write(std::ostream & out) const
         {
-            for (int i = 0; i < 100; ++i)
+            int i = 0;
+            for (; i < 100; ++i)
             {
                 out << histogram[i];
             }
