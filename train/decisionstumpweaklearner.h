@@ -166,7 +166,7 @@ public:
                 lock.release();
             }
 
-            //synchronization should happen INSIDE the if
+            //synchronization needed only INSIDE the if
             if (progressCallback)
             {
                 tbb::queuing_mutex::scoped_lock lock(*mutex);
