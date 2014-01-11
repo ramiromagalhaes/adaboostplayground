@@ -144,13 +144,13 @@ public:
             //Train weak learner and get weak hypothesis so that it "minimalizes" the weighted error.
             tbb::parallel_for( tbb::blocked_range< unsigned int >(0, hypothesis.size()),
                                DecisionStumpWeakLearner<WeakHypothesisType>(&weak_learner_mutex,
-                                                        &allSamples,
-                                                        &weight_distribution,
-                                                        &hypothesis,
-                                                        &weighted_error,
-                                                        &weak_hypothesis_index,
-                                                        &count,
-                                                        progressCallback) );
+                                                                            &allSamples,
+                                                                            &weight_distribution,
+                                                                            &hypothesis,
+                                                                            &weighted_error,
+                                                                            &weak_hypothesis_index,
+                                                                            &count,
+                                                                            progressCallback) );
 
             //Set alpha for this iteration
             const weight_type alpha = 0.5f * std::log( (1.0f - weighted_error) / weighted_error );
