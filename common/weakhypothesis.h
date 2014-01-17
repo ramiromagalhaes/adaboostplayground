@@ -174,20 +174,20 @@ typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvalu
  * A classifier that uses as classification criteria the naive Bayes rule.
  */
 template <typename FeatureType>
-class NaiveBayesWeakClassifier
+class BayesWeakClassifier
 {
 public:
-    NaiveBayesWeakClassifier() {}
+    BayesWeakClassifier() {}
 
-    NaiveBayesWeakClassifier(FeatureType & f) : feature(f),
-                                                positiveProbability(NormalFeatureValueProbability()),
-                                                negativeProbability(HistogramFeatureValueProbability()) {}
+    BayesWeakClassifier(FeatureType & f) : feature(f),
+                                           positiveProbability(NormalFeatureValueProbability()),
+                                           negativeProbability(HistogramFeatureValueProbability()) {}
 
-    NaiveBayesWeakClassifier(const NaiveBayesWeakClassifier & c) : feature(c.feature),
-                                                                   positiveProbability(c.positiveProbability),
-                                                                   negativeProbability(c.negativeProbability) {}
+    BayesWeakClassifier(const BayesWeakClassifier & c) : feature(c.feature),
+                                                         positiveProbability(c.positiveProbability),
+                                                         negativeProbability(c.negativeProbability) {}
 
-    NaiveBayesWeakClassifier & operator=(const NaiveBayesWeakClassifier & c)
+    BayesWeakClassifier & operator=(const BayesWeakClassifier & c)
     {
         feature = c.feature;
         positiveProbability = c.positiveProbability;
@@ -196,7 +196,7 @@ public:
         return *this;
     }
 
-    ~NaiveBayesWeakClassifier() {}
+    ~BayesWeakClassifier() {}
 
     virtual bool read(std::istream & in)
     {
