@@ -1,7 +1,7 @@
 # TRAINING tools build file
 set(headers
     progresscallback.h
-    decisionstumpweaklearner.h
+    weaklearner.h
     sampleextractor.h
     adaboost.h
     template_trainclassifier.h)

@@ -12,7 +12,7 @@
 #include "stronghypothesis.h"
 #include "progresscallback.h"
 
-#include "decisionstumpweaklearner.h"
+#include "weaklearner.h"
 
 
 

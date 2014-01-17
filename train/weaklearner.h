@@ -201,4 +201,6 @@ private:
     ProgressCallback                          * const progressCallback;
 };
 
+
+
 #endif // DECISIONSTUMPWEAKLEARNER_H
