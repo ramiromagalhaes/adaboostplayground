@@ -173,7 +173,7 @@ typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvalu
 /**
  * A classifier that uses as classification criteria the naive Bayes rule.
  */
-template <typename FeatureType>
+template <typename FeatureType, typename HaarEvaluatorType>
 class BayesWeakClassifier
 {
 public:
@@ -215,13 +215,14 @@ public:
     //This is supposed to be used only during trainning and ROC curve construction
     float featureValue(const Example &example, const float scale = 1.0f) const
     {
-        //TODO review me!!!
-        return positiveProbability(0) - negativeProbability(0);
+        const float featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
+        return positiveProbability(featureValue) - negativeProbability(featureValue);
     }
 
     Classification classify(const Example &example, const float scale = 1.0f) const
     {
-        return positiveProbability(0) < negativeProbability(0) ? yes : no;
+        const float featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
+        return positiveProbability(featureValue) < negativeProbability(featureValue) ? yes : no;
     }
 
 private:
@@ -330,10 +331,12 @@ private:
 
 
     FeatureType feature;
+    HaarEvaluatorType evaluator; //TODO use a static variable
     NormalFeatureValueProbability positiveProbability;
     HistogramFeatureValueProbability negativeProbability;
 };
 
 
+typedef BayesWeakClassifier<HaarWavelet, IntensityNormalizedWaveletEvaluator> BayesianHaarClassifier;
 
 #endif // WEAKHYPOTHESIS_h
