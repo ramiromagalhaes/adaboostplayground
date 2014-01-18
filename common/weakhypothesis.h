@@ -319,9 +319,9 @@ private:
 
         feature_value_type operator() (const feature_value_type featureValue) const
         {
-            int index = featureValue >= std::sqrt(2) ? 100 :
-                        featureValue <= -std::sqrt(2) ? 0 :
-                        (int)(50.0 * featureValue / std::sqrt(2)) + 50;
+            const int index = featureValue >= std::sqrt(2) ? 100 :
+                              featureValue <= -std::sqrt(2) ? 0 :
+                              (int)(50.0 * featureValue / std::sqrt(2)) + 50;
             return histogram[index];
         }
 
