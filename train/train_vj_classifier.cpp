@@ -18,7 +18,7 @@ int main(int, char **argv) {
     const std::string strongHypothesisFile = argv[5];
     const unsigned int maximum_iterations = charToInt(argv[6]);
 
-    ___main<ViolaJonesClassifier>(
+    ___main<ViolaJonesClassifier, DecisionStumpWeakLearner<ViolaJonesClassifier> >(
                 positivesFile,
                 negativesFile,
                 negativesIndexFile,

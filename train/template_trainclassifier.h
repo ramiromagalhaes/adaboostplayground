@@ -9,14 +9,15 @@
 #include <opencv2/core/core.hpp>
 
 #include "common.h"
+#include "weakhypothesis.h"
+#include "weaklearner.h"
+#include "sampleextractor.h"
 #include "stronghypothesis.h"
 #include "adaboost.h"
-#include "weakhypothesis.h"
-#include "sampleextractor.h"
 
 
 
-template<typename WeakHypothesisType>
+template<typename WeakHypothesisType, typename WeakLearnerType>
 int ___main(const std::string positivesFile,
            const std::string negativesFile,
            const std::string negativesIndexFile,
@@ -49,7 +50,7 @@ int ___main(const std::string positivesFile,
         std::cout << "Loaded " << hypothesis.size() << " weak classifiers." << std::endl;
     }
 
-    Adaboost<WeakHypothesisType> boosting;
+    Adaboost<WeakHypothesisType, WeakLearnerType > boosting;
 
     try {
         boosting.train(positiveSamples,
