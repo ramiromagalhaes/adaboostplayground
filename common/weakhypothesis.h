@@ -173,15 +173,14 @@ typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvalu
 /**
  * A classifier that uses as classification criteria the naive Bayes rule.
  */
-template <typename FeatureType, typename HaarEvaluatorType>
 class BayesWeakClassifier
 {
 public:
     BayesWeakClassifier() {}
 
-    BayesWeakClassifier(FeatureType & f) : feature(f),
-                                           positiveProbability(NormalFeatureValueProbability()),
-                                           negativeProbability(HistogramFeatureValueProbability()) {}
+    BayesWeakClassifier(DualWeightHaarWavelet & f) : feature(f),
+                                                     positiveProbability(NormalFeatureValueProbability()),
+                                                     negativeProbability(HistogramFeatureValueProbability()) {}
 
     BayesWeakClassifier(const BayesWeakClassifier & c) : feature(c.feature),
                                                          positiveProbability(c.positiveProbability),
@@ -215,14 +214,14 @@ public:
     //This is supposed to be used only during trainning and ROC curve construction
     float featureValue(const Example &example, const float scale = 1.0f) const
     {
-        const float featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
-        return positiveProbability(featureValue) - negativeProbability(featureValue);
+        const std::pair<float,float> featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
+        return positiveProbability(featureValue.first) - negativeProbability(featureValue.second);
     }
 
     Classification classify(const Example &example, const float scale = 1.0f) const
     {
-        const float featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
-        return positiveProbability(featureValue) < negativeProbability(featureValue) ? yes : no;
+        const std::pair<float,float> featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
+        return positiveProbability(featureValue.first) < negativeProbability(featureValue.second) ? yes : no;
     }
 
 private:
@@ -330,13 +329,13 @@ private:
 
 
 
-    FeatureType feature;
-    HaarEvaluatorType evaluator; //TODO use a static variable
+    DualWeightHaarWavelet feature;
+    IntensityNormalizedWaveletEvaluator evaluator; //TODO use a static variable
     NormalFeatureValueProbability positiveProbability;
     HistogramFeatureValueProbability negativeProbability;
 };
 
 
-typedef BayesWeakClassifier<HaarWavelet, IntensityNormalizedWaveletEvaluator> BayesianHaarClassifier;
+typedef BayesWeakClassifier BayesianHaarClassifier;
 
 #endif // WEAKHYPOTHESIS_h
