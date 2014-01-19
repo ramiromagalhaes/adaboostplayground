@@ -9,14 +9,14 @@
  * @brief weight_type Weighs used for training should adopt this type.
  *                    We use float as a default.
  */
-typedef float weight_type;
+typedef float weight_type; // TODO move to haarcommon
 
 
 
 /**
  * @brief weight_type Holds feature values.
  */
-typedef float feature_value_type;
+typedef float feature_value_type; //TODO move to haarcommon
 
 
 
