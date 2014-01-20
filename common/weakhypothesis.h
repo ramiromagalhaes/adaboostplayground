@@ -16,7 +16,7 @@
 #include "common.h"
 #include "labeledexample.h"
 
-
+#define HISTOGRAM_BUCKETS 12
 
 /**
  * Loads many WeakHypothesis found in a file to a vector of HaarClassifierType.
@@ -221,7 +221,9 @@ public:
     Classification classify(const Example &example, const float scale = 1.0f) const
     {
         const std::pair<float,float> featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
-        return positiveProbability(featureValue.first) < negativeProbability(featureValue.second) ? yes : no;
+        const feature_value_type pos = positiveProbability(featureValue.first);
+        const feature_value_type neg = negativeProbability(featureValue.second);
+        return pos < neg ? yes : no;
     }
 
 private:
@@ -232,42 +234,45 @@ private:
      */
     class NormalFeatureValueProbability {
     public:
-        NormalFeatureValueProbability() {}
-        NormalFeatureValueProbability(feature_value_type mean, feature_value_type stdDev)
-        {
-            distribution = boost::math::normal_distribution<feature_value_type>(mean, stdDev);
-        }
+        NormalFeatureValueProbability() : distribution(boost::math::normal_distribution<feature_value_type>()),
+                                          mean(.0),
+                                          stdDev(1.0){}
+
+        NormalFeatureValueProbability(feature_value_type mean_,
+                                      feature_value_type stdDev_) : distribution(boost::math::normal_distribution<feature_value_type>()),
+                                                                    mean(mean_),
+                                                                    stdDev(stdDev_) {}
 
         bool read(std::istream & in)
         {
-            feature_value_type mean, stdDev;
             in >> mean
                >> stdDev;
 
-            distribution = boost::math::normal_distribution<feature_value_type>(mean, stdDev);
             return true;
         }
 
         bool write(std::ostream & out) const
         {
             out << ' '
-                << distribution.mean() << ' '
-                << distribution.standard_deviation();
+                << mean << ' '
+                << stdDev;
 
             return true;
         }
 
         feature_value_type operator() (const feature_value_type featureValue) const
         {
-            return boost::math::pdf(distribution, featureValue);
+            //normalize the featurValue prior to discovering its probability
+            return boost::math::pdf(distribution, (featureValue - mean)/stdDev);
         }
 
     private:
         boost::math::normal_distribution<feature_value_type> distribution;
+        feature_value_type mean, stdDev;
     };
 
     /**
-     * Estimates the probability of a certain feature value using a 100 buckets histogram. It is
+     * Estimates the probability of a certain feature value using a HISTOGRAM_BUCKETS buckets histogram. It is
      * assumed that the feature values ranges from -sqrt(2) to +sqrt(2).
      */
     class HistogramFeatureValueProbability {
@@ -281,46 +286,32 @@ private:
         bool read(std::istream & in)
         {
             int i = 0;
-            for (; i < 100; ++i)
+            for (; i < HISTOGRAM_BUCKETS; ++i)
             {
                 feature_value_type p;
                 in >> p;
                 histogram.push_back(p);
             }
 
-            if (i == 100)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return true;
         }
 
         bool write(std::ostream & out) const
         {
             int i = 0;
-            for (; i < 100; ++i)
+            for (; i < HISTOGRAM_BUCKETS; ++i)
             {
-                out << histogram[i];
+                out << ' ' << histogram[i];
             }
 
-            if (i == 100)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return true;
         }
 
         feature_value_type operator() (const feature_value_type featureValue) const
         {
-            const int index = featureValue >= std::sqrt(2) ? 100 :
+            const int index = featureValue >= std::sqrt(2) ? HISTOGRAM_BUCKETS :
                               featureValue <= -std::sqrt(2) ? 0 :
-                              (int)(50.0 * featureValue / std::sqrt(2)) + 50;
+                              (int)(HISTOGRAM_BUCKETS/2.0 * featureValue / std::sqrt(2)) + HISTOGRAM_BUCKETS/2;
             return histogram[index];
         }
 
