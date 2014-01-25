@@ -9,6 +9,7 @@
 #include <opencv2/core/core.hpp>
 
 #include <boost/math/distributions/normal.hpp>
+#include <boost/math/distributions/laplace.hpp>
 
 #include <haarwavelet.h>
 #include <haarwaveletevaluators.h>
@@ -176,8 +177,7 @@ typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvalu
  */
 class NormalFeatureValueProbability {
 public:
-    NormalFeatureValueProbability() : distribution(boost::math::normal_distribution<feature_value_type>()),
-                                      mean(.0),
+    NormalFeatureValueProbability() : mean(.0),
                                       stdDev(1.0){}
 
     NormalFeatureValueProbability(feature_value_type mean_,
@@ -208,6 +208,46 @@ public:
 
 private:
     boost::math::normal_distribution<feature_value_type> distribution;
+    feature_value_type mean, stdDev;
+};
+
+
+
+/**
+ *
+ */
+class LaplaceFeatureValueProbability {
+public:
+    LaplaceFeatureValueProbability() : mean(.0),
+                                       stdDev(1.0){}
+
+    LaplaceFeatureValueProbability(feature_value_type mean_,
+                                  feature_value_type stdDev_) : mean(mean_),
+                                                                stdDev(stdDev_) {}
+
+    bool read(std::istream & in)
+    {
+        in >> mean
+           >> stdDev;
+        return true;
+    }
+
+    bool write(std::ostream & out) const
+    {
+        out << ' '
+            << mean << ' '
+            << stdDev;
+        return true;
+    }
+
+    feature_value_type operator() (const feature_value_type featureValue) const
+    {
+        //normalize the featurValue prior to discovering its probability
+        return boost::math::pdf(distribution, (featureValue - mean)/stdDev);
+    }
+
+private:
+    boost::math::laplace_distribution<feature_value_type> distribution;
     feature_value_type mean, stdDev;
 };
 
@@ -334,5 +374,6 @@ private:
 
 typedef BayesWeakClassifier<NormalFeatureValueProbability, HistogramFeatureValueProbability> NormalAndHistogramHaarClassifier;
 typedef BayesWeakClassifier<NormalFeatureValueProbability, NormalFeatureValueProbability>    NormalAndNormalHaarClassifier;
+typedef BayesWeakClassifier<LaplaceFeatureValueProbability, NormalFeatureValueProbability>   LaplaceAndNormalHaarClassifier;
 
 #endif // WEAKHYPOTHESIS_h
