@@ -16,8 +16,6 @@
 #include "common.h"
 #include "labeledexample.h"
 
-#define HISTOGRAM_BUCKETS 12
-
 /**
  * Loads many WeakHypothesis found in a file to a vector of HaarClassifierType.
  */
@@ -272,7 +270,7 @@ private:
     };
 
     /**
-     * Estimates the probability of a certain feature value using a HISTOGRAM_BUCKETS buckets histogram. It is
+     * Estimates the probability of a certain feature value using a histogram. It is
      * assumed that the feature values ranges from -sqrt(2) to +sqrt(2).
      */
     class HistogramFeatureValueProbability {
@@ -285,8 +283,10 @@ private:
 
         bool read(std::istream & in)
         {
-            int i = 0;
-            for (; i < HISTOGRAM_BUCKETS; ++i)
+            int buckets = 0;
+            in >> buckets;
+
+            for (int i = 0; i < buckets; ++i)
             {
                 feature_value_type p;
                 in >> p;
@@ -298,8 +298,9 @@ private:
 
         bool write(std::ostream & out) const
         {
-            int i = 0;
-            for (; i < HISTOGRAM_BUCKETS; ++i)
+            out << ' ' << histogram.size();
+
+            for (int i = 0; i < histogram.size(); ++i)
             {
                 out << ' ' << histogram[i];
             }
@@ -309,9 +310,10 @@ private:
 
         feature_value_type operator() (const feature_value_type featureValue) const
         {
-            const int index = featureValue >= std::sqrt(2) ? HISTOGRAM_BUCKETS :
+            const int buckets = histogram.size();
+            const int index = featureValue >= std::sqrt(2) ? buckets :
                               featureValue <= -std::sqrt(2) ? 0 :
-                              (int)(HISTOGRAM_BUCKETS/2.0 * featureValue / std::sqrt(2)) + HISTOGRAM_BUCKETS/2;
+                              (int)((buckets/2.0) * featureValue / std::sqrt(2)) + (buckets/2);
             return histogram[index];
         }
 
