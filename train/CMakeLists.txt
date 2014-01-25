@@ -29,3 +29,6 @@ add_executable( train_my2nd_classifier train_my2nd_classifier.cpp   ${train_prog
 target_link_libraries( train_my2nd_classifier debug         haarcommon-debug   tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 target_link_libraries( train_my2nd_classifier optimized     haarcommon-release tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 
+add_executable( train_my3rd_classifier train_my3rd_classifier.cpp   ${train_program} )
+target_link_libraries( train_my3rd_classifier debug         haarcommon-debug   tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+target_link_libraries( train_my3rd_classifier optimized     haarcommon-release tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )

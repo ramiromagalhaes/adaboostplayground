@@ -168,17 +168,114 @@ typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvalu
 
 
 
+
+
+/**
+ * Estimates the probability of a certain feature value being picked using a normal
+ * (Gaussian) distribution with the specified mean and standard deviation.
+ */
+class NormalFeatureValueProbability {
+public:
+    NormalFeatureValueProbability() : distribution(boost::math::normal_distribution<feature_value_type>()),
+                                      mean(.0),
+                                      stdDev(1.0){}
+
+    NormalFeatureValueProbability(feature_value_type mean_,
+                                  feature_value_type stdDev_) : distribution(boost::math::normal_distribution<feature_value_type>()),
+                                                                mean(mean_),
+                                                                stdDev(stdDev_) {}
+
+    bool read(std::istream & in)
+    {
+        in >> mean
+           >> stdDev;
+        return true;
+    }
+
+    bool write(std::ostream & out) const
+    {
+        out << ' '
+            << mean << ' '
+            << stdDev;
+        return true;
+    }
+
+    feature_value_type operator() (const feature_value_type featureValue) const
+    {
+        //normalize the featurValue prior to discovering its probability
+        return boost::math::pdf(distribution, (featureValue - mean)/stdDev);
+    }
+
+private:
+    boost::math::normal_distribution<feature_value_type> distribution;
+    feature_value_type mean, stdDev;
+};
+
+
+
+/**
+ * Estimates the probability of a certain feature value using a histogram. It is
+ * assumed that the feature values ranges from -sqrt(2) to +sqrt(2).
+ */
+class HistogramFeatureValueProbability {
+public:
+    HistogramFeatureValueProbability() {}
+
+    HistogramFeatureValueProbability(std::vector<feature_value_type> &histogram_)
+    {
+        histogram = histogram_;
+    }
+
+    bool read(std::istream & in)
+    {
+        int buckets = 0;
+        in >> buckets;
+
+        for (int i = 0; i < buckets; ++i)
+        {
+            feature_value_type p;
+            in >> p;
+            histogram.push_back(p);
+        }
+
+        return true;
+    }
+
+    bool write(std::ostream & out) const
+    {
+        out << ' ' << histogram.size();
+
+        for (unsigned int i = 0; i < histogram.size(); ++i)
+        {
+            out << ' ' << histogram[i];
+        }
+
+        return true;
+    }
+
+    feature_value_type operator() (const feature_value_type featureValue) const
+    {
+        const int buckets = histogram.size();
+        const int index = featureValue >= std::sqrt(2) ? buckets :
+                          featureValue <= -std::sqrt(2) ? 0 :
+                          (int)((buckets/2.0) * featureValue / std::sqrt(2)) + (buckets/2);
+        return histogram[index];
+    }
+
+    std::vector<feature_value_type> histogram;
+};
+
+
+
 /**
  * A classifier that uses as classification criteria the naive Bayes rule.
  */
+template <typename PositiveProbabilityEvaluatorType, typename NegativeProbabilityEvaluatorType>
 class BayesWeakClassifier
 {
 public:
-    BayesWeakClassifier() {}
 
-    BayesWeakClassifier(DualWeightHaarWavelet & f) : feature(f),
-                                                     positiveProbability(NormalFeatureValueProbability()),
-                                                     negativeProbability(HistogramFeatureValueProbability()) {}
+    BayesWeakClassifier() {}
 
     BayesWeakClassifier(const BayesWeakClassifier & c) : feature(c.feature),
                                                          positiveProbability(c.positiveProbability),
@@ -224,111 +321,18 @@ public:
         return pos < neg ? yes : no;
     }
 
+
+
 private:
-
-    /**
-     * Estimates the probability of a certain feature value being picked using a normal
-     * (Gaussian) distribution with the specified mean and standard deviation.
-     */
-    class NormalFeatureValueProbability {
-    public:
-        NormalFeatureValueProbability() : distribution(boost::math::normal_distribution<feature_value_type>()),
-                                          mean(.0),
-                                          stdDev(1.0){}
-
-        NormalFeatureValueProbability(feature_value_type mean_,
-                                      feature_value_type stdDev_) : distribution(boost::math::normal_distribution<feature_value_type>()),
-                                                                    mean(mean_),
-                                                                    stdDev(stdDev_) {}
-
-        bool read(std::istream & in)
-        {
-            in >> mean
-               >> stdDev;
-
-            return true;
-        }
-
-        bool write(std::ostream & out) const
-        {
-            out << ' '
-                << mean << ' '
-                << stdDev;
-
-            return true;
-        }
-
-        feature_value_type operator() (const feature_value_type featureValue) const
-        {
-            //normalize the featurValue prior to discovering its probability
-            return boost::math::pdf(distribution, (featureValue - mean)/stdDev);
-        }
-
-    private:
-        boost::math::normal_distribution<feature_value_type> distribution;
-        feature_value_type mean, stdDev;
-    };
-
-    /**
-     * Estimates the probability of a certain feature value using a histogram. It is
-     * assumed that the feature values ranges from -sqrt(2) to +sqrt(2).
-     */
-    class HistogramFeatureValueProbability {
-    public:
-        HistogramFeatureValueProbability() {}
-        HistogramFeatureValueProbability(std::vector<feature_value_type> &histogram_)
-        {
-            histogram = histogram_;
-        }
-
-        bool read(std::istream & in)
-        {
-            int buckets = 0;
-            in >> buckets;
-
-            for (int i = 0; i < buckets; ++i)
-            {
-                feature_value_type p;
-                in >> p;
-                histogram.push_back(p);
-            }
-
-            return true;
-        }
-
-        bool write(std::ostream & out) const
-        {
-            out << ' ' << histogram.size();
-
-            for (int i = 0; i < histogram.size(); ++i)
-            {
-                out << ' ' << histogram[i];
-            }
-
-            return true;
-        }
-
-        feature_value_type operator() (const feature_value_type featureValue) const
-        {
-            const int buckets = histogram.size();
-            const int index = featureValue >= std::sqrt(2) ? buckets :
-                              featureValue <= -std::sqrt(2) ? 0 :
-                              (int)((buckets/2.0) * featureValue / std::sqrt(2)) + (buckets/2);
-            return histogram[index];
-        }
-
-        std::vector<feature_value_type> histogram;
-    };
-
-
-
     DualWeightHaarWavelet feature;
-    IntensityNormalizedWaveletEvaluator evaluator; //TODO use a static variable
-    NormalFeatureValueProbability positiveProbability;
-    HistogramFeatureValueProbability negativeProbability;
+    IntensityNormalizedWaveletEvaluator evaluator; //TODO use a static variable?
+
+    PositiveProbabilityEvaluatorType positiveProbability;
+    NegativeProbabilityEvaluatorType negativeProbability;
 };
 
 
-typedef BayesWeakClassifier BayesianHaarClassifier;
+typedef BayesWeakClassifier<NormalFeatureValueProbability, HistogramFeatureValueProbability> NormalAndHistogramHaarClassifier;
+typedef BayesWeakClassifier<NormalFeatureValueProbability, NormalFeatureValueProbability>    NormalAndNormalHaarClassifier;
 
 #endif // WEAKHYPOTHESIS_h
