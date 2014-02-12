@@ -308,20 +308,63 @@ public:
 
 
 /**
+ * A quadratic discriminant to be used by the feature classifier.
+ */
+class SingleVariableQuadraticDiscriminant {
+public:
+    SingleVariableQuadraticDiscriminant() : mean(0), variance(1), prior(1) {}
+
+    SingleVariableQuadraticDiscriminant(feature_value_type variance_,
+                                        feature_value_type mean_,
+                                        feature_value_type prior_) : mean(mean_),
+                                                                     variance(variance_),
+                                                                     prior(prior_) {}
+
+    bool read(std::istream & in)
+    {
+        in >> mean
+           >> variance
+           >> prior;
+        return true;
+    }
+
+    bool write(std::ostream & out) const
+    {
+        out << ' '
+            << mean << ' '
+            << variance << ' '
+            << prior;
+        return true;
+    }
+
+    feature_value_type operator() (const feature_value_type featureValue) const
+    {
+        return featureValue * featureValue / (-2.0 * variance) +
+               featureValue * mean / variance +
+               (mean * mean / (-2.0 * variance) - std::log(variance)/2.0 + std::log(prior));
+    }
+
+private:
+    feature_value_type mean, variance, prior;
+};
+
+
+
+/**
  * A classifier that uses as classification criteria the naive Bayes rule.
  */
 template <typename PositiveProbabilityEvaluatorType, typename NegativeProbabilityEvaluatorType>
-class BayesWeakClassifier
+class DualWeightVectorBayesWeakClassifier
 {
 public:
 
-    BayesWeakClassifier() {}
+    DualWeightVectorBayesWeakClassifier() {}
 
-    BayesWeakClassifier(const BayesWeakClassifier & c) : feature(c.feature),
+    DualWeightVectorBayesWeakClassifier(const DualWeightVectorBayesWeakClassifier & c) : feature(c.feature),
                                                          positiveProbability(c.positiveProbability),
                                                          negativeProbability(c.negativeProbability) {}
 
-    BayesWeakClassifier & operator=(const BayesWeakClassifier & c)
+    DualWeightVectorBayesWeakClassifier & operator=(const DualWeightVectorBayesWeakClassifier & c)
     {
         feature = c.feature;
         positiveProbability = c.positiveProbability;
@@ -330,7 +373,7 @@ public:
         return *this;
     }
 
-    ~BayesWeakClassifier() {}
+    ~DualWeightVectorBayesWeakClassifier() {}
 
     virtual bool read(std::istream & in)
     {
@@ -358,10 +401,8 @@ public:
         const std::pair<float,float> featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
         const feature_value_type pos = positiveProbability(featureValue.first);
         const feature_value_type neg = negativeProbability(featureValue.second);
-        return pos < neg ? yes : no;
+        return pos > neg ? yes : no;
     }
-
-
 
 private:
     DualWeightHaarWavelet feature;
@@ -372,8 +413,75 @@ private:
 };
 
 
-typedef BayesWeakClassifier<NormalFeatureValueProbability, HistogramFeatureValueProbability> NormalAndHistogramHaarClassifier;
-typedef BayesWeakClassifier<NormalFeatureValueProbability, NormalFeatureValueProbability>    NormalAndNormalHaarClassifier;
-typedef BayesWeakClassifier<LaplaceFeatureValueProbability, NormalFeatureValueProbability>   LaplaceAndNormalHaarClassifier;
+typedef DualWeightVectorBayesWeakClassifier<NormalFeatureValueProbability, HistogramFeatureValueProbability> NormalAndHistogramHaarClassifier;
+typedef DualWeightVectorBayesWeakClassifier<NormalFeatureValueProbability, NormalFeatureValueProbability>    NormalAndNormalHaarClassifier;
+typedef DualWeightVectorBayesWeakClassifier<LaplaceFeatureValueProbability, NormalFeatureValueProbability>   LaplaceAndNormalHaarClassifier;
+
+
+
+/**
+ * A classifier that uses as classification criteria the naive Bayes rule.
+ */
+template <typename DiscriminantType>
+class SingleWeightVectorBayesWeakClassifier
+{
+public:
+
+    SingleWeightVectorBayesWeakClassifier() {}
+
+    SingleWeightVectorBayesWeakClassifier(const SingleWeightVectorBayesWeakClassifier & c) : feature(c.feature),
+                                                         positiveDiscriminant(c.positiveDiscriminant),
+                                                         negativeDiscriminant(c.negativeDiscriminant) {}
+
+    SingleWeightVectorBayesWeakClassifier & operator=(const SingleWeightVectorBayesWeakClassifier & c)
+    {
+        feature = c.feature;
+        positiveDiscriminant = c.positiveDiscriminant;
+        negativeDiscriminant = c.negativeDiscriminant;
+
+        return *this;
+    }
+
+    ~SingleWeightVectorBayesWeakClassifier() {}
+
+    virtual bool read(std::istream & in)
+    {
+        return feature.read(in)
+                && positiveDiscriminant.read(in)
+                && negativeDiscriminant.read(in);
+    }
+
+    virtual bool write(std::ostream & out) const
+    {
+        return feature.write(out)
+                && positiveDiscriminant.write(out)
+                && negativeDiscriminant.write(out);
+    }
+
+    //This is supposed to be used only during trainning and ROC curve construction
+    float featureValue(const Example &example, const float scale = 1.0f) const
+    {
+        const float featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
+        return positiveDiscriminant(featureValue) - negativeDiscriminant(featureValue);
+    }
+
+    Classification classify(const Example &example, const float scale = 1.0f) const
+    {
+        const float featureValue = evaluator(feature, example.getIntegralSum(), example.getIntegralSquare(), scale);
+        const feature_value_type pos = positiveDiscriminant(featureValue);
+        const feature_value_type neg = negativeDiscriminant(featureValue);
+        return pos > neg ? yes : no;
+    }
+
+private:
+    HaarWavelet feature;
+    IntensityNormalizedWaveletEvaluator evaluator; //TODO use a static variable?
+
+    DiscriminantType positiveDiscriminant, negativeDiscriminant;
+};
+
+
+typedef SingleWeightVectorBayesWeakClassifier<SingleVariableQuadraticDiscriminant> AdhikariHaarClassifier;
+
 
 #endif // WEAKHYPOTHESIS_h
