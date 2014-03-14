@@ -1,6 +1,10 @@
 #include "template_trainclassifier.h"
 
 /**
+ * Trains the classifier proposed as new at A New Method for Haar-Like Features Weight
+ * Adjustment Using Principal Component Analysis for Face Detection
+ * (http://www.thinkmind.org/index.php?view=article&articleid=icons_2014_3_20_40057)
+ *
  * Arguments:
  *     positivesIndexFile
  *     positivesImageFile
