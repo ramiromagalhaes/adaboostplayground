@@ -50,7 +50,7 @@ protected:
 
         for( WeightVector::size_type i = 0; i < allSamples.size(); ++i )
         {
-            Classification c = selected_hypothesis.classify( *(allSamples[i]) );
+            const Classification c = selected_hypothesis.classify( *(allSamples[i]) );
 
             //This is the original Adaboost weight update. Viola and Jones report a slightly different equation,
             //but their starting weights are a little different too.
@@ -109,7 +109,7 @@ public:
 
 
         //allSamples collects pointers to both positive and negative LabeledExamples
-        std::vector<const LabeledExample *> allSamples(positiveSamples.size() + negativeSamples.size());//TODO make the LabeledExample pointer constant?
+        std::vector<const LabeledExample *> allSamples(positiveSamples.size() + negativeSamples.size());
         std::transform(positiveSamples.begin(), positiveSamples.end(),
                        allSamples.begin(),
                        ToPointer());
