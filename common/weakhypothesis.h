@@ -177,17 +177,21 @@ typedef ThresholdedWeakClassifier<MyHaarWavelet, IntensityNormalizedWaveletEvalu
  */
 class NormalFeatureValueProbability {
 public:
-    NormalFeatureValueProbability() : mean(.0),
+    NormalFeatureValueProbability() : prior(1.0),
+                                      mean(.0),
                                       stdDev(1.0){}
 
-    NormalFeatureValueProbability(feature_value_type mean_,
+    NormalFeatureValueProbability(feature_value_type prior_,
+                                  feature_value_type mean_,
                                   feature_value_type stdDev_) : distribution(boost::math::normal_distribution<feature_value_type>()),
+                                                                prior(prior_),
                                                                 mean(mean_),
                                                                 stdDev(stdDev_) {}
 
     bool read(std::istream & in)
     {
-        in >> mean
+        in >> prior
+           >> mean
            >> stdDev;
         return true;
     }
@@ -195,6 +199,7 @@ public:
     bool write(std::ostream & out) const
     {
         out << ' '
+            << prior << ' '
             << mean << ' '
             << stdDev;
         return true;
@@ -202,13 +207,14 @@ public:
 
     feature_value_type operator() (const feature_value_type featureValue) const
     {
-        //normalize the featurValue prior to discovering its probability
-        return boost::math::pdf(distribution, (featureValue - mean)/stdDev);
+        return prior
+                * boost::math::pdf(distribution,
+                                   (featureValue - mean)/stdDev); //normalize the featureValue before calculating its probability
     }
 
 private:
     boost::math::normal_distribution<feature_value_type> distribution;
-    feature_value_type mean, stdDev;
+    feature_value_type prior, mean, stdDev;
 };
 
 
@@ -218,16 +224,20 @@ private:
  */
 class LaplaceFeatureValueProbability {
 public:
-    LaplaceFeatureValueProbability() : mean(.0),
-                                       stdDev(1.0){}
+    LaplaceFeatureValueProbability() : prior(1.0),
+                                       mean(.0),
+                                       stdDev(1.0) {}
 
-    LaplaceFeatureValueProbability(feature_value_type mean_,
-                                  feature_value_type stdDev_) : mean(mean_),
+    LaplaceFeatureValueProbability(feature_value_type prior_,
+                                   feature_value_type mean_,
+                                   feature_value_type stdDev_) : prior(prior_),
+                                                                mean(mean_),
                                                                 stdDev(stdDev_) {}
 
     bool read(std::istream & in)
     {
-        in >> mean
+        in >> prior
+           >> mean
            >> stdDev;
         return true;
     }
@@ -235,6 +245,7 @@ public:
     bool write(std::ostream & out) const
     {
         out << ' '
+            << prior << ' '
             << mean << ' '
             << stdDev;
         return true;
@@ -242,13 +253,14 @@ public:
 
     feature_value_type operator() (const feature_value_type featureValue) const
     {
-        //normalize the featurValue prior to discovering its probability
-        return boost::math::pdf(distribution, (featureValue - mean)/stdDev);
+        return prior *
+                boost::math::pdf(distribution,
+                                 (featureValue - mean)/stdDev); //normalize the featurValue before discovering its probability
     }
 
 private:
     boost::math::laplace_distribution<feature_value_type> distribution;
-    feature_value_type mean, stdDev;
+    feature_value_type prior, mean, stdDev;
 };
 
 
@@ -268,6 +280,8 @@ public:
 
     bool read(std::istream & in)
     {
+        in >> prior;
+
         int buckets = 0;
         in >> buckets;
 
@@ -283,7 +297,7 @@ public:
 
     bool write(std::ostream & out) const
     {
-        out << ' ' << histogram.size();
+        out << ' ' << prior << ' ' << histogram.size();
 
         for (unsigned int i = 0; i < histogram.size(); ++i)
         {
@@ -299,10 +313,11 @@ public:
         const int index = featureValue >= std::sqrt(2) ? buckets :
                           featureValue <= -std::sqrt(2) ? 0 :
                           (int)((buckets/2.0) * featureValue / std::sqrt(2)) + (buckets/2);
-        return histogram[index];
+        return histogram[index] * prior;
     }
 
     std::vector<feature_value_type> histogram;
+    feature_value_type prior;
 };
 
 
@@ -351,7 +366,8 @@ private:
 
 
 /**
- * A classifier that uses as classification criteria the naive Bayes rule.
+ * A classifier that evaluates a single feature using 2 different weights: positive and negative.
+ * It compares the positive and negative result and classifies accordingly.
  */
 template <typename PositiveProbabilityEvaluatorType, typename NegativeProbabilityEvaluatorType>
 class DualWeightVectorBayesWeakClassifier
@@ -417,6 +433,8 @@ typedef DualWeightVectorBayesWeakClassifier<NormalFeatureValueProbability, Histo
 typedef DualWeightVectorBayesWeakClassifier<NormalFeatureValueProbability, NormalFeatureValueProbability>    NormalAndNormalHaarClassifier;
 typedef DualWeightVectorBayesWeakClassifier<LaplaceFeatureValueProbability, NormalFeatureValueProbability>   LaplaceAndNormalHaarClassifier;
 
+typedef DualWeightVectorBayesWeakClassifier<HistogramFeatureValueProbability, HistogramFeatureValueProbability> HistogramAndHistogramHaarClassifier;
+
 
 
 /**
@@ -475,7 +493,7 @@ public:
 
 private:
     HaarWavelet feature;
-    IntensityNormalizedWaveletEvaluator evaluator; //TODO use a static variable?
+    VarianceNormalizedWaveletEvaluator evaluator; //Notice the usage of VARIANCE normalization, instead of intensity normalization
 
     DiscriminantType positiveDiscriminant, negativeDiscriminant;
 };
