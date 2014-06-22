@@ -37,6 +37,6 @@ add_executable( train_adhikari_classifier train_adhikari_classifier.cpp   ${trai
 target_link_libraries( train_adhikari_classifier debug      haarcommon-debug   tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 target_link_libraries( train_adhikari_classifier optimized  haarcommon-release tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 
-add_executable( train_histhist_classifier train_histhist_classifier.cpp         ${train_program} )
-target_link_libraries( train_histhist_classifier debug      haarcommon-debug   tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )
-target_link_libraries( train_histhist_classifier optimized  haarcommon-release tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+add_executable( train_rasolzadeh_classifier train_rasolzadeh_classifier.cpp         ${train_program} )
+target_link_libraries( train_rasolzadeh_classifier debug      haarcommon-debug   tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+target_link_libraries( train_rasolzadeh_classifier optimized  haarcommon-release tbb ${OpenCV_LIBS} ${Boost_LIBRARIES} )

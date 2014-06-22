@@ -270,6 +270,7 @@ private:
  * assumed that the feature values ranges from -sqrt(2) to +sqrt(2).
  */
 class HistogramFeatureValueProbability {
+    //TODO this is the same as the HistogramDiscriminant. Purge this!
 public:
     HistogramFeatureValueProbability() {}
 
@@ -325,11 +326,11 @@ public:
 /**
  * A quadratic discriminant to be used by the feature classifier.
  */
-class SingleVariableQuadraticDiscriminant {
+class GaussianQuadraticDiscriminant {
 public:
-    SingleVariableQuadraticDiscriminant() : mean(0), variance(1), prior(1) {}
+    GaussianQuadraticDiscriminant() : mean(0), variance(1), prior(1) {}
 
-    SingleVariableQuadraticDiscriminant(feature_value_type variance_,
+    GaussianQuadraticDiscriminant(feature_value_type variance_,
                                         feature_value_type mean_,
                                         feature_value_type prior_) : mean(mean_),
                                                                      variance(variance_),
@@ -361,6 +362,61 @@ public:
 
 private:
     feature_value_type mean, variance, prior;
+};
+
+
+
+/**
+ * Estimates the probability of a certain feature value using a histogram. It is
+ * assumed that the feature values ranges from -sqrt(2) to +sqrt(2).
+ */
+class HistogramDiscriminant {
+public:
+    HistogramDiscriminant() : prior(0) {}
+
+    HistogramDiscriminant(feature_value_type prior_) : prior(prior_) {}
+
+    bool read(std::istream & in)
+    {
+        in >> prior;
+
+        int buckets = 0;
+        in >> buckets;
+
+        for (int i = 0; i < buckets; ++i)
+        {
+            feature_value_type p;
+            in >> p;
+            histogram.push_back(p);
+        }
+
+        return true;
+    }
+
+    bool write(std::ostream & out) const
+    {
+        out << ' ' << prior << ' ' << histogram.size();
+
+        for (unsigned int i = 0; i < histogram.size(); ++i)
+        {
+            out << ' ' << histogram[i];
+        }
+
+        return true;
+    }
+
+    feature_value_type operator() (const feature_value_type featureValue) const
+    {
+        const int buckets = histogram.size();
+        const int index = featureValue >= std::sqrt(2) ? buckets :
+                          featureValue <= -std::sqrt(2) ? 0 :
+                          (int)((buckets/2.0) * featureValue / std::sqrt(2)) + (buckets/2);
+        return histogram[index] * prior;
+    }
+
+private:
+    std::vector<feature_value_type> histogram;
+    feature_value_type prior;
 };
 
 
@@ -432,13 +488,13 @@ private:
 typedef DualWeightVectorBayesWeakClassifier<NormalFeatureValueProbability, HistogramFeatureValueProbability> NormalAndHistogramHaarClassifier;
 typedef DualWeightVectorBayesWeakClassifier<NormalFeatureValueProbability, NormalFeatureValueProbability>    NormalAndNormalHaarClassifier;
 typedef DualWeightVectorBayesWeakClassifier<LaplaceFeatureValueProbability, NormalFeatureValueProbability>   LaplaceAndNormalHaarClassifier;
-
 typedef DualWeightVectorBayesWeakClassifier<HistogramFeatureValueProbability, HistogramFeatureValueProbability> HistogramAndHistogramHaarClassifier;
 
 
 
 /**
  * A classifier that uses as classification criteria the naive Bayes rule.
+ * Works with VARIANCE normalization.
  */
 template <typename DiscriminantType>
 class SingleWeightVectorBayesWeakClassifier
@@ -499,7 +555,8 @@ private:
 };
 
 
-typedef SingleWeightVectorBayesWeakClassifier<SingleVariableQuadraticDiscriminant> AdhikariHaarClassifier;
+typedef SingleWeightVectorBayesWeakClassifier<GaussianQuadraticDiscriminant> AdhikariHaarClassifier;
+typedef SingleWeightVectorBayesWeakClassifier<HistogramDiscriminant> RasolzadehHaarClassifier;
 
 
 #endif // WEAKHYPOTHESIS_h
