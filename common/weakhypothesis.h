@@ -311,9 +311,9 @@ public:
     feature_value_type operator() (const feature_value_type featureValue) const
     {
         const int buckets = histogram.size();
-        const int index = featureValue >= std::sqrt(2) ? buckets :
+        const int index = featureValue >= std::sqrt(2) ? buckets - 1 :
                           featureValue <= -std::sqrt(2) ? 0 :
-                          (int)((buckets/2.0) * featureValue / std::sqrt(2)) + (buckets/2);
+                          (int)((buckets/2.0) * featureValue / std::sqrt(2.0)) + (buckets/2.0);
         return histogram[index] * prior;
     }
 
@@ -408,9 +408,9 @@ public:
     feature_value_type operator() (const feature_value_type featureValue) const
     {
         const int buckets = histogram.size();
-        const int index = featureValue >= std::sqrt(2) ? buckets :
+        const int index = featureValue >= std::sqrt(2) ? buckets - 1 :
                           featureValue <= -std::sqrt(2) ? 0 :
-                          (int)((buckets/2.0) * featureValue / std::sqrt(2)) + (buckets/2);
+                          (int)((buckets/2.0) * featureValue / std::sqrt(2.0)) + (buckets/2.0);
         return histogram[index] * prior;
     }
 
