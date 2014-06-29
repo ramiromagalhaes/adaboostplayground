@@ -36,13 +36,13 @@ read that paper.
 struct ScannerEntry
 {
     cv::Rect position;
-    float featureValue;
+    double featureValue;
     bool isPositive;
 
-    ScannerEntry() : position(0, 0, 0, 0), featureValue(0), isPositive(false) {}
+    ScannerEntry() : position(0, 0, 0, 0), featureValue(.0), isPositive(false) {}
 
     ScannerEntry(const cv::Rect & position_,
-                 const float featureValue_,
+                 const double featureValue_,
                  const bool validDetection_) : position(position_),
                                                featureValue(featureValue_),
                                                isPositive(validDetection_) {}
@@ -66,10 +66,10 @@ template<typename WeakClassifierType>
 class RocScanner
 {
 public:
-    RocScanner(StrongHypothesis<WeakClassifierType> * const classifier_) : classifier(classifier_),
-                                                                           initial_size(20),
-                                                                           scaling_factor(1.25),
-                                                                           delta(1.5) {}
+    RocScanner(StrongHypothesis<WeakClassifierType> & classifier_) : classifier(classifier_),
+                                                                     initial_size(20),
+                                                                     scaling_factor(1.25),
+                                                                     delta(1.5) {}
 
 
 
@@ -103,7 +103,7 @@ public:
 
                     const Example example(integralSum(integralRoi), integralSquare(integralRoi));
 
-                    ScannerEntry e(roi, classifier->classificationValue(example, scale), isFaceRegion);
+                    ScannerEntry e(roi, classifier.classificationValue(example, scale), isFaceRegion);
                     entries.push_back(e);
 
                     positiveInstances += isFaceRegion;
@@ -149,7 +149,7 @@ private:
 
 
 
-    StrongHypothesis<WeakClassifierType> const * const classifier;
+    const StrongHypothesis<WeakClassifierType> & classifier;
     const int initial_size;      //initial width and height of the detector
     const double scaling_factor; //how mutch the scale will change per iteration
     const double delta;          //window shift constant
@@ -163,27 +163,27 @@ private:
 template<typename WeakHypothesisType>
 struct ParallelScan
 {
-    std::vector<ImageAndGroundTruth> * const images;
-    unsigned int * const totalPositiveInstances;
-    unsigned int * const totalNegativeInstances;
-    unsigned int * const evaluatedImages;
-    StrongHypothesis<WeakHypothesisType> * const strongHypothesis;
-    tbb::concurrent_vector<ScannerEntry> * const entries;
-    tbb::queuing_mutex * const mutex;
+    std::vector<ImageAndGroundTruth> & images;
+    unsigned int & totalPositiveInstances;
+    unsigned int & totalNegativeInstances;
+    unsigned int & evaluatedImages;
+    StrongHypothesis<WeakHypothesisType> & strongHypothesis;
+    tbb::concurrent_vector<ScannerEntry> & entries;
+    tbb::queuing_mutex & mutex;
 
-    ParallelScan(std::vector<ImageAndGroundTruth> * const images_,
-                 unsigned int * const totalPositiveInstances_,
-                 unsigned int * const totalNegativeInstances_,
-                 unsigned int * const evaluatedImages_,
-                 StrongHypothesis<WeakHypothesisType> * const strongHypothesis_,
-                 tbb::concurrent_vector<ScannerEntry> * const entries_,
-                 tbb::queuing_mutex * const mutex_) : images(images_),
-                                                      totalPositiveInstances(totalPositiveInstances_),
-                                                      totalNegativeInstances(totalNegativeInstances_),
-                                                      evaluatedImages(evaluatedImages_),
-                                                      strongHypothesis(strongHypothesis_),
-                                                      entries(entries_),
-                                                      mutex(mutex_) {}
+    ParallelScan(std::vector<ImageAndGroundTruth>     & images_,
+                 unsigned int                         & totalPositiveInstances_,
+                 unsigned int                         & totalNegativeInstances_,
+                 unsigned int                         & evaluatedImages_,
+                 StrongHypothesis<WeakHypothesisType> & strongHypothesis_,
+                 tbb::concurrent_vector<ScannerEntry> & entries_,
+                 tbb::queuing_mutex                   & mutex_) : images(images_),
+                                                                  totalPositiveInstances(totalPositiveInstances_),
+                                                                  totalNegativeInstances(totalNegativeInstances_),
+                                                                  evaluatedImages(evaluatedImages_),
+                                                                  strongHypothesis(strongHypothesis_),
+                                                                  entries(entries_),
+                                                                  mutex(mutex_) {}
 
     void operator()(tbb::blocked_range< unsigned int > & range) const
     {
@@ -194,16 +194,16 @@ struct ParallelScan
             unsigned int positiveInstancesCount = 0;
             unsigned int negativeInstancesCount = 0;
 
-            ImageAndGroundTruth imageAndGt = (*images)[k];
-            scanner.scan(imageAndGt.image, imageAndGt.faces, *entries, positiveInstancesCount, negativeInstancesCount);
+            ImageAndGroundTruth imageAndGt = images[k];
+            scanner.scan(imageAndGt.image, imageAndGt.faces, entries, positiveInstancesCount, negativeInstancesCount);
 
             {
-                tbb::queuing_mutex::scoped_lock lock(*mutex);
-                *totalPositiveInstances += positiveInstancesCount;
-                *totalNegativeInstances += negativeInstancesCount;
-                *evaluatedImages += 1;
+                tbb::queuing_mutex::scoped_lock lock(mutex);
+                totalPositiveInstances += positiveInstancesCount;
+                totalNegativeInstances += negativeInstancesCount;
+                evaluatedImages += 1;
 
-                std::cout << "\rProgress " << 100 * (*evaluatedImages) / images->size() << '%';
+                std::cout << "\rProgress " << 100 * evaluatedImages / images.size() << '%';
                 std::cout.flush();
 
                 lock.release();
@@ -262,9 +262,9 @@ void scannerEntries2RocCurve(const unsigned int total_positives,
     unsigned int false_positives_prev = 0;
     unsigned int true_positives_prev = 0;
 
-    area_under_curve = .0f;
+    area_under_curve = .0;
 
-    float f_prev = -std::numeric_limits<float>::max(); //http://stackoverflow.com/questions/3529394/obtain-minimum-negative-float-value-in-c
+    double f_prev = -std::numeric_limits<double>::max(); //http://stackoverflow.com/questions/3529394/obtain-minimum-negative-float-value-in-c
 
     for(tbb::concurrent_vector<ScannerEntry>::iterator entry = entries.begin(); entry != entries.end(); ++entry)
     {
@@ -347,13 +347,13 @@ int ___main(const std::string testImagesIndexFileName,
 
         tbb::queuing_mutex mutex;
         tbb::parallel_for(tbb::blocked_range< unsigned int >(0, images.size()),
-                          ParallelScan<WeakHypothesisType>(&images,
-                                                           &totalPositiveWindows,
-                                                           &totalNegativeWindows,
-                                                           &evaluatedImages,
-                                                           &strongHypothesis,
-                                                           &entries,
-                                                           &mutex) );
+                          ParallelScan<WeakHypothesisType>(images,
+                                                           totalPositiveWindows,
+                                                           totalNegativeWindows,
+                                                           evaluatedImages,
+                                                           strongHypothesis,
+                                                           entries,
+                                                           mutex) );
 
         std::cout << "\rTotal evaluated images: " << evaluatedImages;
         std::cout << "\rTotal positive windows: " << totalPositiveWindows;
