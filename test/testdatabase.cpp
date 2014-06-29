@@ -66,11 +66,11 @@ bool TestDatabase::loadGroundTruth(const std::string &grountTruthPath)
         cv::Point2f leftEye, rightEye;
 
         std::istringstream lineStream(line);
-        lineStream >> imageFileName
+        lineStream >> imageFileName //In the documentation (http://vasc.ri.cmu.edu/idb/html/face/frontal_images/),
+                   >> rightEye.x    //they say the first input is the left eye, then the right eye, but they mean
+                   >> rightEye.y    //the VIEWER's left, NOT the SUBJECT's.
                    >> leftEye.x
-                   >> leftEye.y
-                   >> rightEye.x
-                   >> rightEye.y;
+                   >> leftEye.y;
 
         //Calculate face region from eye position.
         //Here this is done exactly as I extract faces from the BioId database.
