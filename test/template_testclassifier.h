@@ -18,7 +18,6 @@
 
 #include "common.h"
 #include "stronghypothesis.h"
-#include "scanner.h"
 #include "weakhypothesis.h"
 
 
@@ -69,8 +68,8 @@ class RocScanner
 public:
     RocScanner(StrongHypothesis<WeakClassifierType> * const classifier_) : classifier(classifier_),
                                                                            initial_size(20),
-                                                                           scaling_factor(1.25f),
-                                                                           delta(1.5f) {}
+                                                                           scaling_factor(1.25),
+                                                                           delta(1.5) {}
 
 
 
@@ -83,31 +82,28 @@ public:
         cv::Mat integralSquare(image.rows + 1, image.cols + 1, cv::DataType<double>::type);
         cv::integral(image, integralSum, integralSquare, cv::DataType<double>::type);
 
-        //TODO review how we iterate over the image. This ROI seems to be iterating over the original
-        //image, but it is also transformed in the ROI that iterates over the integrals. It is confusing
-        //and probably performs worse then it could be.
-        cv::Rect roi(0, 0, initial_size, initial_size);
+        //This algorithm will iterate over the INTEGRAL images, reflecting what would be happening while
+        //iterating over the real image.
 
-        for(float scale = 1.5f; scale * initial_size <= image.cols
-                             && scale * initial_size <= image.rows; scale *= scaling_factor)
+        for(double scale = 1.5; scale * initial_size < integralSum.cols
+                             && scale * initial_size < integralSum.rows; scale *= scaling_factor)
         {
-            const float shift = delta * scale; //like Viola and Jones do
+            const double shift = delta * scale;
+            cv::Rect integralRoi(0, 0, (initial_size * scale) + 1, (initial_size * scale) + 1); //The integral image ROI is 1 unit bigger than the original image ROI.
 
-            roi.width = roi.height = initial_size * scale;
-
-            for (roi.x = 1; roi.x <= integralSum.cols - roi.width; roi.x += shift)
+            for (integralRoi.x = 0; integralRoi.x <= integralSum.cols - integralRoi.width; integralRoi.x += shift)
             {
-                for (roi.y = 1; roi.y <= integralSum.rows - roi.height; roi.y += shift)
+                for (integralRoi.y = 0; integralRoi.y <= integralSum.rows - integralRoi.height; integralRoi.y += shift)
                 {
-                    cv::Rect exampleRoi = roi;
-                    --exampleRoi.x; //Correctly position the roi over the integral images so we can 'cut' them properly
-                    --exampleRoi.y; //Note that we iterate over x and y from 1 (see the fors above)
-                    exampleRoi.width = exampleRoi.height = exampleRoi.height + 1; //integral images have +1 sizes if compared to the original image
+                    cv::Rect roi = integralRoi; //This is the ROI on the real image. We need it because the
+                    roi.width -= 1;             //integral images ROIs are 1 unit bigger the the original.
+                    roi.height -= 1;            //This unit shouldn't be used when scaling the real image ROI.
 
-                    const Example example(integralSum(exampleRoi), integralSquare(exampleRoi));
-                    const bool isFaceRegion = matchesGroundTruth(exampleRoi, groundTruth);
+                    const bool isFaceRegion = matchesGroundTruth(roi, groundTruth); //if true, detections on this ROI are true positives
 
-                    ScannerEntry e( exampleRoi, classifier->classificationValue(example, scale), isFaceRegion);
+                    const Example example(integralSum(integralRoi), integralSquare(integralRoi));
+
+                    ScannerEntry e(roi, classifier->classificationValue(example, scale), isFaceRegion);
                     entries.push_back(e);
 
                     positiveInstances += isFaceRegion;
@@ -120,7 +116,7 @@ public:
 private:
     inline cv::Point2f center(const cv::Rect & rect)
     {
-        return cv::Point(rect.x + rect.width/2.0f, rect.y + rect.height/2.0f);
+        return cv::Point2f(rect.x + rect.width/2.0, rect.y + rect.height/2.0);
     }
 
 
@@ -130,18 +126,18 @@ private:
      * weighted rectangles for rapid object detection". If rectangle r matches a ground truth considering
      * Pavani's matching criteria, this function returns true.
      */
-    inline bool matchesGroundTruth(const cv::Rect & r, const std::vector<cv::Rect> & groundTruths)
+    inline bool matchesGroundTruth(const cv::Rect & roi, const std::vector<cv::Rect> & groundTruths)
     {
         for (std::vector<cv::Rect>::const_iterator groundTruth = groundTruths.begin(); groundTruth != groundTruths.end(); ++groundTruth )
         {
-            if ( groundTruth->width  * 0.9f <=  r.width  && r.width  <= groundTruth->width  * 1.1f
-              && groundTruth->height * 0.9f <=  r.height && r.height <= groundTruth->height * 1.1f )
+            if ( groundTruth->width  * 0.9 <=  roi.width  && roi.width  <= groundTruth->width  * 1.1
+              && groundTruth->height * 0.9 <=  roi.height && roi.height <= groundTruth->height * 1.1 )
             {
-                const cv::Point2f rCenter  = center(r);
+                const cv::Point2f rCenter  = center(roi);
                 const cv::Point2f gtCenter = center(*groundTruth);
                 const float distance = cv::norm(gtCenter - rCenter);
 
-                if ( distance <= groundTruth->width * 0.1f && distance <= groundTruth->height * 0.1f )
+                if ( distance <= groundTruth->width * 0.1 && distance <= groundTruth->height * 0.1 )
                 {
                     return true;
                 }
@@ -154,9 +150,9 @@ private:
 
 
     StrongHypothesis<WeakClassifierType> const * const classifier;
-    const int initial_size;     //initial width and height of the detector
-    const float scaling_factor; //how mutch the scale will change per iteration
-    const float delta;          //window shift constant
+    const int initial_size;      //initial width and height of the detector
+    const double scaling_factor; //how mutch the scale will change per iteration
+    const double delta;          //window shift constant
 };
 
 
@@ -191,26 +187,27 @@ struct ParallelScan
 
     void operator()(tbb::blocked_range< unsigned int > & range) const
     {
-        unsigned int positiveInstancesCount = 0;
-        unsigned int negativeInstancesCount = 0;
         RocScanner<WeakHypothesisType> scanner(strongHypothesis);
 
         for(unsigned int k = range.begin(); k != range.end(); ++k)
         {
+            unsigned int positiveInstancesCount = 0;
+            unsigned int negativeInstancesCount = 0;
+
             ImageAndGroundTruth imageAndGt = (*images)[k];
             scanner.scan(imageAndGt.image, imageAndGt.faces, *entries, positiveInstancesCount, negativeInstancesCount);
-        }
 
-        {
-            tbb::queuing_mutex::scoped_lock lock(*mutex);
-            *totalPositiveInstances += positiveInstancesCount;
-            *totalNegativeInstances += negativeInstancesCount;
-            *evaluatedImages += range.size();
+            {
+                tbb::queuing_mutex::scoped_lock lock(*mutex);
+                *totalPositiveInstances += positiveInstancesCount;
+                *totalNegativeInstances += negativeInstancesCount;
+                *evaluatedImages += 1;
 
-            std::cout << "\rProgress " << 100 * (*evaluatedImages) / images->size() << '%';
-            std::cout.flush();
+                std::cout << "\rProgress " << 100 * (*evaluatedImages) / images->size() << '%';
+                std::cout.flush();
 
-            lock.release();
+                lock.release();
+            }
         }
     }
 };
@@ -232,6 +229,13 @@ struct RocPoint
     {
         return falsePositives < rh.falsePositives;
     }
+
+    friend std::ofstream& operator<<(std::ofstream& ofs, RocPoint &p)
+    {
+        ofs << p.falsePositives << ' ' << p.truePositives << '\n';
+        return ofs;
+    }
+
 };
 
 
@@ -351,6 +355,7 @@ int ___main(const std::string testImagesIndexFileName,
                                                            &entries,
                                                            &mutex) );
 
+        std::cout << "\rTotal evaluated images: " << evaluatedImages;
         std::cout << "\rTotal positive windows: " << totalPositiveWindows;
         std::cout << "\nTotal negative windows: " << totalNegativeWindows;
         std::cout << "\nTotal scanned windows : " << totalPositiveWindows + totalNegativeWindows << std::endl;
@@ -372,10 +377,10 @@ int ___main(const std::string testImagesIndexFileName,
         }
         for (std::vector<RocPoint>::iterator rocPoint = rocCurve.begin(); rocPoint != rocCurve.end(); ++rocPoint)
         {
-            rocOut << rocPoint->falsePositives << ' ' << rocPoint->truePositives << std::endl;
-            rocOut.flush();
+            rocOut << *rocPoint;
         }
 
+        rocOut.flush();
         rocOut.close();
     }
 
