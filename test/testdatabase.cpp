@@ -14,10 +14,14 @@ bool TestDatabase::loadImages(const std::string & indexFileName)
     {
         std::string imagePath;
         std::getline(indexStream, imagePath);
-
         if (imagePath.empty())
         {
             break;
+        }
+
+        if ( !boost::filesystem::exists(imagePath) )
+        {
+            return false;
         }
 
         ImageAndGroundTruth iagt;
