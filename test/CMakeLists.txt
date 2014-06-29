@@ -1,6 +1,5 @@
 # TESTING tools build file
 set(test_source_files
-    scanner.h
     testdatabase.h
     testdatabase.cpp
     template_testclassifier.h)
