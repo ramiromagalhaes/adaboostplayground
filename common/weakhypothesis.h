@@ -151,7 +151,7 @@ public:
 
 private:
     FeatureType feature;
-    HaarEvaluatorType evaluator; //TODO use a static variable
+    HaarEvaluatorType evaluator;
     float theta;
     float p;
 };
@@ -478,7 +478,7 @@ public:
 
 private:
     DualWeightHaarWavelet feature;
-    IntensityNormalizedWaveletEvaluator evaluator; //TODO use a static variable?
+    IntensityNormalizedWaveletEvaluator evaluator;
 
     PositiveProbabilityEvaluatorType positiveProbability;
     NegativeProbabilityEvaluatorType negativeProbability;
