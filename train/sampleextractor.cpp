@@ -135,7 +135,7 @@ bool SampleExtractor::fromImageFile(const std::string &imagePath, std::vector<La
     samples.resize(total_images);
     for (unsigned int i = 0; i < total_images; ++i)
     {
-        cv::Rect roi(i * 20, 0, roiSize.width, roiSize.height);
+        cv::Rect roi(i * roiSize.width, 0, roiSize.width, roiSize.height);
 
         cv::Mat image = cv::Mat(full_image, roi);
         if ( !image.data )
@@ -158,7 +158,7 @@ bool SampleExtractor::fromImageFile(const std::string &imagePath, std::vector<cv
     samples.resize(total_images);
     for (unsigned int i = 0; i < total_images; ++i)
     {
-        cv::Rect roi(i * 20, 0, roiSize.width, roiSize.height);
+        cv::Rect roi(i * roiSize.width, 0, roiSize.width, roiSize.height);
 
         cv::Mat image = cv::Mat(full_image, roi);
         if ( !image.data )
