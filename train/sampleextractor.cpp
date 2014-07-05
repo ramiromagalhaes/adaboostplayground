@@ -42,7 +42,7 @@ bool SampleExtractor::extractRandomSample(const unsigned int sample_size,
             sampleIndexes->push_back(sampleX);
         }
 
-        cv::Rect roi(sampleX * 20, 0, roiSize.width, roiSize.height);
+        cv::Rect roi(sampleX * roiSize.width, 0, roiSize.width, roiSize.height);
 
         cv::Mat image = cv::Mat(full_image, roi);
         if ( !image.data )
