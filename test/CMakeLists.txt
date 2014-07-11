@@ -32,3 +32,7 @@ target_link_libraries( test_rasolzadeh_classifier optimized haarcommon-release t
 add_executable( showregions showregions.cpp testdatabase.cpp)
 target_link_libraries( showregions debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} )
 target_link_libraries( showregions optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+
+add_executable( detect_pavani detect_pavani.cpp testdatabase.cpp)
+target_link_libraries( detect_pavani debug     haarcommon-debug   ${OpenCV_LIBS} ${Boost_LIBRARIES} )
+target_link_libraries( detect_pavani optimized haarcommon-release ${OpenCV_LIBS} ${Boost_LIBRARIES} )
