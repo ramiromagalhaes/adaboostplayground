@@ -9,6 +9,8 @@
 #include "weakhypothesis.h"
 
 
+#define USAGE_MSG "USAGE: " << argv[0] << " IMAGE_PATH CLASSIFIER_PATH THRESHOLD" << std::endl
+
 
 /**
  * Iterates over an image producing instances of ScannerEntry. Latter, such entries will be processed
@@ -73,16 +75,21 @@ private:
 /**
  *
  */
-int main(int, char **argv) {
+int main(int argc, char **argv) {
+    if (argc != 4) {
+        std::cout << USAGE_MSG;
+
+        return 1;
+    }
+
     const std::string imagePath = argv[1];
     const std::string classifierPath = argv[2];
     const std::string thresholdParam = argv[3];
 
-
-
     cv::Mat image = cv::imread(imagePath, cv::DataType<unsigned char>::type);
     if ( !image.data )
     {
+        std::cout << USAGE_MSG;
         return 2;
     }
 
